@@ -1,0 +1,7 @@
+# Obsidian local-only state (machine-specific, noisy diffs)
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache
+
+# OS cruft
+.DS_Store
