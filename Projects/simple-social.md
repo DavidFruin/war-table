@@ -13,6 +13,7 @@ Always faster, safer, less code, simpler, cleaner looking, easier to understand.
 
 ## Decisions
 - Keep the CLI, TUI, API backend, web frontend, iOS frontend and Android frontend separate. Only the interactive CLI and the TUI are built on top of the CLI.
+- **`/users` returning every user's email is being left as-is — very likely by design, not a leak.** Investigated: `getUserInfo` already lets any authenticated user fetch any single user's email given only a `userId`, no follow/ownership check; `getUserPosts` has the same shape (public-profile app — following curates the home feed, it isn't a privacy boundary). `/users` returning the same data in bulk doesn't expose anything not already reachable one call at a time, and `search.js` is built directly on the bulk version (there's no separate username field — email is the only identifier people search/follow/mention by), so restricting it would break search for no real reduction in exposure. If this is worth revisiting, the actual question is whether the app should have a username distinct from email at all — that's a product decision, not a bug fix.
 
 ## Open — features
 - [ ] Spinner loading: home screen on first load, media uploading, posts loading on a page
@@ -36,7 +37,6 @@ Always faster, safer, less code, simpler, cleaner looking, easier to understand.
 - [ ] Flash when expanding a post — doesn't reproduce. Possibly images shifting the page as they load (no reserved space). Confirm with Dave what he saw.
 - [ ] Coming back from an expanded post lands a little below where you were — doesn't reproduce, scroll restore measured correct.
 - [ ] **Clean URLs (fix hash routing):** want `dev.davidfruin.com/feed` instead of `/app.html#/feed`. Needs an Apache rewrite (non-file paths serve `app.html`), router switched from `hashchange` to `pushState`/`popstate`, 28 `app.html` references updated (sw.js, manifest start_url, api.php push URLs, header, pwa.js, index.html) and 18 test files. Old `#/` links and already-sent push notifications must keep working. All-or-nothing change — do it with Dave watching on his phone, not unattended.
-- [ ] **Wizard CLI media upload doesn't check the file exists locally first**: a bad `--media`/media-path answer in `simple-social-cli-interactive` round-trips to the server and comes back as `media.php`'s generic "No file was selected" instead of a clear client-side error. Found 2026-09-23 while testing terminal clients against dev.
 
 ## Open — database
 - [ ] **Biggest structural problem:** posts are one JSON blob in `users.posts` — can't be indexed or queried, and concurrent writes to the same user can overwrite each other. Real migration; not done unattended.
@@ -49,10 +49,10 @@ Always faster, safer, less code, simpler, cleaner looking, easier to understand.
 ## Open — privacy
 - [ ] Some internal docs in the repo are reachable from the live site's web root. Block them or move them out (needs an `.htaccess` change — only when Dave asks directly).
 - [ ] Decide on a retention period for the API log.
-- [ ] **`/users` (and `sscli users`) returns every user's full email address to any authenticated user.** Confirm whether that's intentional. Found 2026-09-23 while testing terminal clients against dev.
 
 ## Done (recent)
 - Post ID collision fixed. Two-part: bump the second forward when taken, then found that alone didn't survive genuinely concurrent creates (both requests read the same stale posts array), so wrapped the read-check-write in a `BEGIN IMMEDIATE` transaction. Verified with concurrent (`Promise.all`) creates across 3 rounds.
+- Wizard and plain CLI now check a `--media` path exists locally (`access(path, R_OK)`) before uploading, instead of round-tripping a bad path to the server for a generic error. Verified in both.
 - Links in post text; tagging people in posts and comments
 - Navigation-hand setting now explains what it actually does (it isn't phones-only)
 - Phone create-post page: Post button moved into thumb reach
