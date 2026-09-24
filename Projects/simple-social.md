@@ -12,8 +12,35 @@ Small social app: PHP API backend + web frontend (PWA), live at app.davidfruin.c
 Always faster, safer, less code, simpler, cleaner looking, easier to understand.
 
 ## Decisions
-- Keep the CLI, TUI, API backend, web frontend, iOS frontend and Android frontend separate. Only the interactive CLI and the TUI are built on top of the CLI.
+- Keep the CLI, TUI and API backend separate from the client UI layer. Only the interactive CLI and the TUI are built on top of the CLI. **Superseded 2026-09-24:** web and mobile no longer have to be separate — see Planning section below. The React Native app is explicitly meant to reuse from the web frontend.
 - **`/users` returning every user's email is being left as-is — very likely by design, not a leak.** Investigated: `getUserInfo` already lets any authenticated user fetch any single user's email given only a `userId`, no follow/ownership check; `getUserPosts` has the same shape (public-profile app — following curates the home feed, it isn't a privacy boundary). `/users` returning the same data in bulk doesn't expose anything not already reachable one call at a time, and `search.js` is built directly on the bulk version (there's no separate username field — email is the only identifier people search/follow/mention by), so restricting it would break search for no real reduction in exposure. If this is worth revisiting, the actual question is whether the app should have a username distinct from email at all — that's a product decision, not a bug fix.
+
+## Planning — future architecture (2026-09-24)
+
+Long-term direction for the backend and client stack, worked out with `/grill-me`. This fleshes out ideas already sitting in the app's own `notes.md` wishlist (detach backend from frontend, split into services, eventual CI/CD) rather than replacing them.
+
+**Backend — modular monolith, not microservices (yet)**
+- Stay PHP. Refactor the existing `api.php`/`media.php` in place (strangler-style), not a from-scratch rewrite.
+- Split into modules, each its own folder: `auth/`, `users/`, `posts/`, `comments/`, `follows/`, `notifications/` (includes push-subscription registration), `media/`. Can split further later; deliberately not going to separately-deployed microservices unless it's actually needed.
+- Composer + PSR-4 autoloading (`App\` → `src/`) landed 2026-09-24 (commit `ef9ab2d`) — autoloader skeleton only, no dependencies yet, ready for the module split. `vendor/` is gitignored and blocked in `.htaccess` (docroot == repo root, so it'd otherwise be web-reachable).
+- Known issues get fixed as part of this migration, not deferred — including the posts-JSON-blob-to-real-table migration (see Open — database), which lands *before* the folder reorg.
+- Deploy stays manual `git pull` for now. Moving to GitHub Actions deploying to the same server is the agreed direction, but that pipeline is its own separate planning effort.
+
+**Frontend — TypeScript + Vite + shadcn**
+- Full recreation of the web frontend (currently vanilla JS, no build step, no TS) in TypeScript/Vite/shadcn.
+- No need to preserve the current retro-BBS visual identity — that's covered by the terminal clients (CLI/wizard/TUI) instead.
+- Backend goes first; frontend rewrite starts once the backend's structure/API surface has settled.
+
+**Mobile — React Native as a bridge, not the destination**
+- A React Native app, built from/sharing with the new web frontend, is the step after the web rewrite — explicitly a bridge toward eventual true-native (Swift/Kotlin) apps, not the end state.
+- How much actually gets shared with web (just the logic/API-client layer vs. UI-level sharing via a cross-platform kit) is deliberately left open until the React migration itself starts.
+
+**Next steps**
+- [ ] Backend module split (auth/users/posts/comments/follows/notifications/media)
+- [ ] Land the posts-table migration to dev and prod (tracked in Open — database)
+- [ ] Plan the GitHub Actions deploy pipeline
+- [ ] TS/Vite/shadcn frontend rewrite
+- [ ] React Native app — decide code-sharing approach then
 
 ## Open — features
 - [ ] Spinner loading: home screen on first load, media uploading, posts loading on a page
