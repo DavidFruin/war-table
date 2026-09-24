@@ -27,14 +27,24 @@ This file only handles getting you in and out correctly.
 3. **Read `AGENTS.md`** at the vault's root if you haven't already this
    session — it defines the note structure, tone, and what counts as worth
    recording. Follow it exactly rather than improvising a different shape.
-4. **Read the project's note**: `Projects/<project-name>.md`, or
+4. **Check `Areas/active-work.md`** for a row on this same project before
+   going any further. A row there that isn't stale (see AGENTS.md's
+   staleness guidance) means another agent is already on it — pick
+   different, non-overlapping work, or surface the conflict to Dave rather
+   than deciding for him. Don't skip this because it feels unlikely; it's
+   the entire reason this file exists.
+5. **Read the project's note**: `Projects/<project-name>.md`, or
    `Projects/<project-name>/README.md` for a project that holds actual files
    (configs, snippets) rather than just notes. Match `<project-name>` to the
    repo's name first; if that note doesn't exist, check for a looser name
    match before concluding there isn't one.
-5. If no note exists at all, that's fine — proceed with the work. Create one
+6. If no note exists at all, that's fine — proceed with the work. Create one
    (from `Templates/project.md`) once there's something worth recording, not
    preemptively.
+7. **Claim your row in `Areas/active-work.md`**: machine/agent name, project,
+   a short phrase for what, a UTC timestamp. Commit and push it *on its own*,
+   immediately — don't wait and batch it with anything else. Other agents
+   checking step 4 above are relying on this being current.
 
 ## After meaningful progress
 
@@ -52,6 +62,15 @@ than silently dropping context a future session would want.
    `git add -A && git commit -m "<project>: <one line>" && git push`
 4. If the push is rejected (someone else pushed first), pull, resolve, and
    push again rather than force-pushing.
+
+## When you stop
+
+Whenever you stop working on the project — finished, blocked, moving to
+something else, ending the session — **remove your row from
+`Areas/active-work.md`** (or replace it with the new thing, if you're moving
+straight to other work) and push. Do this even if the work itself produced
+nothing worth recording in the project's own note; the claim still needs
+releasing so it doesn't sit there looking like someone's still on it.
 
 ## Hard rules
 
