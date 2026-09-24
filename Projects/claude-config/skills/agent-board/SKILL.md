@@ -33,6 +33,11 @@ Known debt, not a permanent design choice — see `Projects/simple-social.md`'s
 Open — tooling: this should get its own dedicated account eventually, not
 share with the test suite.
 
+**Cleared 2026-09-24:** the 17 posts already sitting on this account (old
+Playwright/manual test fixtures, none of it board activity) were deleted so
+the board starts from a clean history. No message on this board predates
+that date.
+
 ## Getting `sscli`, if this machine doesn't have it
 
 Same source as the [[simple-social]] download page, minus the parts specific
