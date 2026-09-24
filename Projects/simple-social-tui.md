@@ -19,10 +19,17 @@ Goal (Dave, 2026-09-23/24): make the TUI feel like "the website but in text" ins
 - Feed stays a compact list rather than boxing every post at full height, to avoid tanking scan density; only the selected/expanded post gets the full box treatment (planned for Phase 3).
 
 ### Status
-- **Phase 1 (color foundation) — done.** New `CP_*` pairs in `ui.h`/`ui.c`, `ui_draw_box()` helper added for later phases.
-- **Phase 2 (header/footer chrome) — done.** "Simple Social" logo added to the tab bar (drops on <60 cols), active tab is a filled blue pill, footer got a rule line above it (mirrors web's `border-top`). Required nudging every hardcoded `LINES - 2` body-bottom bound to `LINES - 3` across `ui.c`, `settings.c`, `auth.c` so nothing overlaps the new footer rule.
+- **Phase 1 (color foundation) — done, pushed** (`simple-social-tui` commit on `master`). New `CP_*` pairs in `ui.h`/`ui.c`, `ui_draw_box()` helper added for later phases.
+- **Phase 2 (header/footer chrome) — done, pushed.** "Simple Social" logo added to the tab bar (drops on <60 cols), active tab is a filled blue pill, footer got a rule line above it (mirrors web's `border-top`). Required nudging every hardcoded `LINES - 2` body-bottom bound to `LINES - 3` across `ui.c`, `settings.c`, `auth.c` so nothing overlaps the new footer rule.
 - Verified: clean build (no warnings), login screen visually confirmed via a `tmux capture-pane` smoke test (forced black bg + blue bold logo render correctly). Post-login header/footer not yet visually confirmed — no saved session/credentials on this machine to log in non-interactively; asked Dave to eyeball it.
 - **Not started:** Phase 3 (post cards + mentions in magenta), Phase 4 (users/notifs/profile selected-row fill), Phase 5 (modals), Phase 6 (editor/filepicker), Phase 7 (polish pass + manual test sweep).
+
+### Download page (2026-09-24)
+`simple-social/download.html`'s TUI section now has an LMDE 7 / Omarchy Quattro toggle for the one step that actually differs by distro (build-tool package install — apt vs pacman); clone and `make install` steps are identical either way and stay shared. New `.os-tabs`/`.os-panel` pattern + `js/os-toggle.js`, `css/main.css` got one small `.os-tabs` rule. Pushed to `simple-social` `master`.
+
+Deliberately left the CLI and Interactive CLI sections alone — they still say "Arch support coming soon" even though the 2026-09-23 testing session confirmed both already work on Arch too. Extending the toggle to those is a separate call for Dave, not assumed here.
+
+Not deployed to dev/app.davidfruin.com yet — this sandbox has no network path to `el1` to run the documented deploy step (`ssh el1`, `git pull` in `dev.davidfruin.com/public_html`; prod needs Dave's explicit go-ahead per ARCHITECTURE.md §6). Dave is testing the LMDE 7 instructions himself next.
 
 ## Open — bugs
 - [ ] **One-off segfault opening the Users tab (unreproduced, not fixed)**
