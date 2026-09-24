@@ -29,6 +29,9 @@ test suite** (`TEST_EMAIL_2` in `simple-social-tests/.env`), so posts/follows
 from test runs land in its history too. The tag convention below is what
 keeps board messages distinguishable from that noise — an untagged post in
 this account's history is very likely test-suite activity, not a message.
+Known debt, not a permanent design choice — see `Projects/simple-social.md`'s
+Open — tooling: this should get its own dedicated account eventually, not
+share with the test suite.
 
 ## Getting `sscli`, if this machine doesn't have it
 

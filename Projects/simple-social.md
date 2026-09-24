@@ -78,6 +78,9 @@ Long-term direction for the backend and client stack, worked out with `/grill-me
 - [ ] Some internal docs in the repo are reachable from the live site's web root. Block them or move them out (needs an `.htaccess` change — only when Dave asks directly).
 - [ ] Decide on a retention period for the API log.
 
+## Open — tooling
+- [ ] **`agent-board` (see [[claude-config]]'s skill) currently shares a login with the test suite's `TEST_EMAIL_2`** (`davefruin@gmail.com`). Works fine for now, but agent messages and test-run noise end up in the same account's post history. Should get its own dedicated account eventually.
+
 ## Done (recent)
 - **Posts moved off the JSON blob and onto real tables, on dev.** 11 `api.php` handlers (post, deletePost, likePost, unlikePost, getPostLikes, getPostById, getPostPreviews, getMyPosts, getUserPosts, fetchFollowedPosts, deleteAccount) switched from reading/rewriting a user's whole `users.posts` JSON to real `posts`/`post_likes` tables (details/verification above, under Open — database, since prod is still pending). Also caught and fixed a real bug along the way: retrying a `PDOStatement` after a constraint-violation exception threw `SQLSTATE HY000 general error 21` on the next `execute()` — fixed by re-preparing the statement on each retry.
 - Post ID collision fixed. Two-part: bump the second forward when taken, then found that alone didn't survive genuinely concurrent creates (both requests read the same stale posts array), so wrapped the read-check-write in a `BEGIN IMMEDIATE` transaction. Verified with concurrent (`Promise.all`) creates across 3 rounds.
