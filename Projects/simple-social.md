@@ -32,6 +32,7 @@ Always faster, safer, less code, simpler, cleaner looking, easier to understand.
 - Language switcher
 
 ## Open — bugs
+- [ ] **Dark mode: illegible blue link text** — not a themed color, it's the browser's unstyled default blue on three links with no CSS class: "Don't have an account? Register" / "Forgot password?" on the login page, "Already have an account? Login" on the register page. Everything else (nav, static pages, mentions, post links) already gets a theme-aware color. Narrow, cheap fix — just give those three a class.
 - [ ] Can't see all playback speed options — it's the browser's native video menu, clipped by the video box. Needs custom video controls.
 - [ ] 4px horizontal overflow on phones from `.notif-badge` (low importance)
 - [ ] Flash when expanding a post — doesn't reproduce. Possibly images shifting the page as they load (no reserved space). Confirm with Dave what he saw.
