@@ -19,4 +19,6 @@ git clone https://github.com/DavidFruin/war-table.git
 
 Open the folder as a vault in Obsidian, or edit files directly with any editor.
 
+**On a new machine:** also copy `Projects/claude-config/CLAUDE.md` to `~/.claude/CLAUDE.md` so Claude Code sessions there know about this vault too — it isn't automatic yet (see that project's notes).
+
 This repo is **public** — don't put credentials, tokens, or anything sensitive in it.
