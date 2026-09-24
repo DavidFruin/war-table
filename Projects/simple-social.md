@@ -37,6 +37,7 @@ Always faster, safer, less code, simpler, cleaner looking, easier to understand.
 - [ ] Coming back from an expanded post lands a little below where you were — doesn't reproduce, scroll restore measured correct.
 - [ ] Post IDs can collide when two posts are made in the same second. Needs a decision, since comments/media/likes all reference the post ID as a string.
 - [ ] **Clean URLs (fix hash routing):** want `dev.davidfruin.com/feed` instead of `/app.html#/feed`. Needs an Apache rewrite (non-file paths serve `app.html`), router switched from `hashchange` to `pushState`/`popstate`, 28 `app.html` references updated (sw.js, manifest start_url, api.php push URLs, header, pwa.js, index.html) and 18 test files. Old `#/` links and already-sent push notifications must keep working. All-or-nothing change — do it with Dave watching on his phone, not unattended.
+- [ ] **Wizard CLI media upload doesn't check the file exists locally first**: a bad `--media`/media-path answer in `simple-social-cli-interactive` round-trips to the server and comes back as `media.php`'s generic "No file was selected" instead of a clear client-side error. Found 2026-09-23 while testing terminal clients against dev.
 
 ## Open — database
 - [ ] **Biggest structural problem:** posts are one JSON blob in `users.posts` — can't be indexed or queried, and concurrent writes to the same user can overwrite each other. Real migration; not done unattended.
@@ -49,6 +50,7 @@ Always faster, safer, less code, simpler, cleaner looking, easier to understand.
 ## Open — privacy
 - [ ] Some internal docs in the repo are reachable from the live site's web root. Block them or move them out (needs an `.htaccess` change — only when Dave asks directly).
 - [ ] Decide on a retention period for the API log.
+- [ ] **`/users` (and `sscli users`) returns every user's full email address to any authenticated user.** Confirm whether that's intentional. Found 2026-09-23 while testing terminal clients against dev.
 
 ## Done (recent)
 - Links in post text; tagging people in posts and comments
@@ -65,6 +67,16 @@ Always faster, safer, less code, simpler, cleaner looking, easier to understand.
 - DB: missing `user_id` index on media added to source (existed on live DBs by hand only); media table now defined once in `schema.php`
 - Docs/tests: ARCHITECTURE.md rewritten; test suite reads `.env` itself; second test account created (13 tests now pass); session-expiry tests split into the real cases plus a silent-refresh test; impossible like-own-post test fixed
 - Refresh-token leak into the API log fixed
+
+## Terminal client testing — 2026-09-23 (machine: omarchy, Arch Linux)
+
+Cloned, built, and manually tested `sscli`, `sswiz`, and `sstui` end-to-end against dev.davidfruin.com: auth (login/logout/session persistence), feed, create/comment/like/delete post, follow/unfollow, notifications, and destructive-action confirm dialogs. Each tool keeps its own independent session, as documented. `download.html` only covers Debian/Ubuntu — on Arch the equivalent packages (`base-devel`, `ncurses`, `curl`, `pkgconf`) were already installed, so no distro-specific step was needed here.
+
+Machine-specific notes (not project facts, just what this session did):
+- No `sudo` available non-interactively, so binaries went to `~/.local/bin` instead of `/usr/local/bin`. Functionally identical.
+- API target overridden via `~/.config/simple-social-cli/config.ini` (`base_url=...`), shared by all three clients since they link the same vendored `ss_config.c`. **Currently still set to dev.davidfruin.com on this machine** — switch back before using these builds against production.
+- TUI Settings screen shows one config path (`~/.config/simple-social-tui/config.ini`) but the `api` line under it is actually read from the other config file above — minor display confusion, not a functional bug.
+- Double-checked two things that looked like bugs during testing but weren't: `q` quits the whole TUI from any view by design (`Esc`/`Backspace` is "back"), and Esc-to-cancel on a compose/comment box with text goes through a "Discard what you have written?" confirm first.
 
 ## Links
 - Live: https://app.davidfruin.com
