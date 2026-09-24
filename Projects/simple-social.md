@@ -11,6 +11,9 @@ Small social app: PHP API backend + web frontend (PWA), live at app.davidfruin.c
 ## Principles
 Always faster, safer, less code, simpler, cleaner looking, easier to understand.
 
+## In progress — claimed (2026-09-24)
+**Switching api.php's post handlers over to the posts/post_likes tables from schema.php.** Actively editing `api.php` (handlers: `post`, `deletePost`, `likePost`, `unlikePost`, `getPostLikes`, `getPostById`, `getPostPreviews`, `getMyPosts`, `getUserPosts`, `fetchFollowedPosts`, `deleteAccount`) and will run `migrate-posts.php` against dev's DB to verify. **Other agents: please hold off editing these handlers, `schema.php`, or `migrate-posts.php` until this note is removed** — same code, would conflict. Remove this section (and fold into Done/Open — database) once landed and verified on dev.
+
 ## Decisions
 - Keep the CLI, TUI, API backend, web frontend, iOS frontend and Android frontend separate. Only the interactive CLI and the TUI are built on top of the CLI.
 - **`/users` returning every user's email is being left as-is — very likely by design, not a leak.** Investigated: `getUserInfo` already lets any authenticated user fetch any single user's email given only a `userId`, no follow/ownership check; `getUserPosts` has the same shape (public-profile app — following curates the home feed, it isn't a privacy boundary). `/users` returning the same data in bulk doesn't expose anything not already reachable one call at a time, and `search.js` is built directly on the bulk version (there's no separate username field — email is the only identifier people search/follow/mention by), so restricting it would break search for no real reduction in exposure. If this is worth revisiting, the actual question is whether the app should have a username distinct from email at all — that's a product decision, not a bug fix.
