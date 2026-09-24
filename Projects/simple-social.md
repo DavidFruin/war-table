@@ -37,7 +37,7 @@ Long-term direction for the backend and client stack, worked out with `/grill-me
 
 **Next steps**
 - [ ] Backend module split (auth/users/posts/comments/follows/notifications/media)
-- [x] Land the posts-table migration to dev (done 2026-09-24) — [ ] prod still pending (tracked in Open — database)
+- [x] Land the posts-table migration to dev and prod (done 2026-09-24, see Done)
 - [ ] Plan the GitHub Actions deploy pipeline
 - [ ] TS/Vite/shadcn frontend rewrite
 - [ ] React Native app — decide code-sharing approach then
@@ -67,7 +67,7 @@ Long-term direction for the backend and client stack, worked out with `/grill-me
 - [ ] **Clean URLs (fix hash routing):** want `dev.davidfruin.com/feed` instead of `/app.html#/feed`. Needs an Apache rewrite (non-file paths serve `app.html`), router switched from `hashchange` to `pushState`/`popstate`, 28 `app.html` references updated (sw.js, manifest start_url, api.php push URLs, header, pwa.js, index.html) and 18 test files. Old `#/` links and already-sent push notifications must keep working. All-or-nothing change — do it with Dave watching on his phone, not unattended.
 
 ## Open — database
-- [ ] **Posts table migration — live on dev, prod not touched yet.** `posts`/`post_likes` tables and `migrate-posts.php` have been run against dev's real database (109 posts, 130 likes, 19 users, zero id collisions), and dev's Playwright suite passed against it (54 passed; the only 3 failures are `media-capture.spec.js`'s known-flaky fake-camera tests, unrelated to this and unrelated to posts). dev is now actually serving posts/likes from the new tables, not the JSON. **Next: prod (`app.davidfruin.com`) — back up its `userdata.db` first, then `git pull` and `php migrate-posts.php` there, only when Dave says go.** Once prod is confirmed working, `users.posts` (left untouched throughout, on both dev and prod) can be dropped — separate, later cleanup.
+- [ ] **`users.posts` JSON column can be dropped.** The posts-table migration (see Done) is live on both dev and prod now, and both are actually serving posts/likes from `posts`/`post_likes`, not the JSON. `users.posts` itself is still sitting there untouched on both, kept as a fallback. Dropping it (and the column-read code paths that never got removed, if any remain) is separate, later cleanup — no urgency, it's dead weight, not a liability.
 - [ ] No foreign keys — deleting a user leaves their media, comments and likes behind
 - [ ] `pending_users` has no primary key
 - [ ] `follows`/`followers` columns are typed NUMERIC but hold JSON text
@@ -82,7 +82,10 @@ Long-term direction for the backend and client stack, worked out with `/grill-me
 - [ ] **`agent-board` (see [[claude-config]]'s skill) currently shares a login with the test suite's `TEST_EMAIL_2`** (`davefruin@gmail.com`). Works fine for now, but agent messages and test-run noise end up in the same account's post history. Should get its own dedicated account eventually.
 
 ## Done (recent)
-- **Posts moved off the JSON blob and onto real tables, on dev.** 11 `api.php` handlers (post, deletePost, likePost, unlikePost, getPostLikes, getPostById, getPostPreviews, getMyPosts, getUserPosts, fetchFollowedPosts, deleteAccount) switched from reading/rewriting a user's whole `users.posts` JSON to real `posts`/`post_likes` tables (details/verification above, under Open — database, since prod is still pending). Also caught and fixed a real bug along the way: retrying a `PDOStatement` after a constraint-violation exception threw `SQLSTATE HY000 general error 21` on the next `execute()` — fixed by re-preparing the statement on each retry.
+- **Posts moved off the JSON blob and onto real tables — live on both dev and prod (2026-09-24).** 11 `api.php` handlers (post, deletePost, likePost, unlikePost, getPostLikes, getPostById, getPostPreviews, getMyPosts, getUserPosts, fetchFollowedPosts, deleteAccount) switched from reading/rewriting a user's whole `users.posts` JSON to real `posts`/`post_likes` tables. Also simplified post-id collision handling: `posts.id` is now a real PRIMARY KEY, so a collision fails the INSERT itself and the retry loop no longer needs the `BEGIN IMMEDIATE` transaction from the earlier fix. Caught and fixed a real bug along the way: retrying a `PDOStatement` after a constraint-violation exception threw `SQLSTATE HY000 general error 21` on the next `execute()` — fixed by re-preparing the statement on each retry.
+  - Verified locally first against a copy of dev's real data: every read handler's output matched the old code byte-for-byte (only exception: display order of likes tied to the same second, never sorted/asserted anywhere — cosmetic); write paths (create/like/unlike/delete, deleteAccount cleanup, forced double-collision retry) all behaved correctly.
+  - **Dev:** `userdata.db` backed up first, `migrate-posts.php` run (109 posts, 130 likes, 19 users, 0 collisions), dev's Playwright suite passed (54 passed; only the 3 known-flaky `media-capture.spec.js` fake-camera tests failed, unrelated).
+  - **Prod:** `userdata.db` backed up first, `migrate-posts.php` run (81 posts, 126 likes, 0 collisions), site and `api.php` confirmed responding normally afterward. `users.posts` is untouched on both — see Open — database for dropping it later.
 - Post ID collision fixed. Two-part: bump the second forward when taken, then found that alone didn't survive genuinely concurrent creates (both requests read the same stale posts array), so wrapped the read-check-write in a `BEGIN IMMEDIATE` transaction. Verified with concurrent (`Promise.all`) creates across 3 rounds.
 - Wizard and plain CLI now check a `--media` path exists locally (`access(path, R_OK)`) before uploading, instead of round-tripping a bad path to the server for a generic error. Verified in both.
 - Links in post text; tagging people in posts and comments
