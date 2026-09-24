@@ -35,7 +35,6 @@ Always faster, safer, less code, simpler, cleaner looking, easier to understand.
 - [ ] 4px horizontal overflow on phones from `.notif-badge` (low importance)
 - [ ] Flash when expanding a post — doesn't reproduce. Possibly images shifting the page as they load (no reserved space). Confirm with Dave what he saw.
 - [ ] Coming back from an expanded post lands a little below where you were — doesn't reproduce, scroll restore measured correct.
-- [ ] Post IDs can collide when two posts are made in the same second. Needs a decision, since comments/media/likes all reference the post ID as a string.
 - [ ] **Clean URLs (fix hash routing):** want `dev.davidfruin.com/feed` instead of `/app.html#/feed`. Needs an Apache rewrite (non-file paths serve `app.html`), router switched from `hashchange` to `pushState`/`popstate`, 28 `app.html` references updated (sw.js, manifest start_url, api.php push URLs, header, pwa.js, index.html) and 18 test files. Old `#/` links and already-sent push notifications must keep working. All-or-nothing change — do it with Dave watching on his phone, not unattended.
 - [ ] **Wizard CLI media upload doesn't check the file exists locally first**: a bad `--media`/media-path answer in `simple-social-cli-interactive` round-trips to the server and comes back as `media.php`'s generic "No file was selected" instead of a clear client-side error. Found 2026-09-23 while testing terminal clients against dev.
 
@@ -53,6 +52,7 @@ Always faster, safer, less code, simpler, cleaner looking, easier to understand.
 - [ ] **`/users` (and `sscli users`) returns every user's full email address to any authenticated user.** Confirm whether that's intentional. Found 2026-09-23 while testing terminal clients against dev.
 
 ## Done (recent)
+- Post ID collision fixed. Two-part: bump the second forward when taken, then found that alone didn't survive genuinely concurrent creates (both requests read the same stale posts array), so wrapped the read-check-write in a `BEGIN IMMEDIATE` transaction. Verified with concurrent (`Promise.all`) creates across 3 rounds.
 - Links in post text; tagging people in posts and comments
 - Navigation-hand setting now explains what it actually does (it isn't phones-only)
 - Phone create-post page: Post button moved into thumb reach
