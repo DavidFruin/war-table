@@ -15,7 +15,7 @@ The canonical copies live in this folder. `~/.claude/` on each machine should ma
 
 - `CLAUDE.md` — global rules file, normally installed at `~/.claude/CLAUDE.md`. Applies to every Claude Code session on the machine, in any project.
 - `AGENTS.md` — not created yet. Would hold cross-project agent instructions if/when Dave writes one (distinct from `~/war-table/AGENTS.md`, which only covers how agents use this vault).
-- `skills/` — empty. Dave's current skills (`diagnose-crash`, `omarchy`) are symlinks to Omarchy's system-provided defaults at `/usr/share/omarchy/default/agents/skills/`, not personal files, so there's nothing to check in yet. Any *personal* skill created later goes here.
+- `skills/` — `war-table/`: the first personal skill checked in here. Reads and updates this vault itself (clone/pull/locate the right note/push), deferring to the vault's own `AGENTS.md` for what to actually write rather than duplicating those conventions into the skill. Symlinked, not copied, onto each machine — see that skill's own "Setting this skill up on a new machine" section. Dave's other current skills (`diagnose-crash`, `omarchy`) are symlinks to Omarchy's system-provided defaults at `/usr/share/omarchy/default/agents/skills/`, not personal files, so they don't live here.
 
 ## Decisions
 
@@ -24,7 +24,7 @@ The canonical copies live in this folder. `~/.claude/` on each machine should ma
 
 ## Next steps
 - [ ] Decide: keep syncing `~/.claude/CLAUDE.md` here manually, or symlink `~/.claude/CLAUDE.md -> ~/war-table/Projects/claude-config/CLAUDE.md` for automatic sync (tradeoff: ~/.claude becomes dependent on the vault being cloned)
-- [ ] If/when personal skills are written, add them under `skills/` here (and symlink or copy into `~/.claude/skills/`)
+- [x] Personal skill written: `skills/war-table/` — symlink it into `~/.claude/skills/` on each machine (one command, see that skill's own setup section)
 - [ ] Write `AGENTS.md` here if cross-project agent conventions emerge beyond what's in CLAUDE.md
 
 ## Links
