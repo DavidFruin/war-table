@@ -16,6 +16,7 @@ The canonical copies live in this folder. `~/.claude/` on each machine should ma
 - `CLAUDE.md` — global rules file, normally installed at `~/.claude/CLAUDE.md`. Applies to every Claude Code session on the machine, in any project.
 - `AGENTS.md` — not created yet. Would hold cross-project agent instructions if/when Dave writes one (distinct from `~/war-table/AGENTS.md`, which only covers how agents use this vault).
 - `skills/` — `war-table/`: the first personal skill checked in here. Reads and updates this vault itself (clone/pull/locate the right note/push), deferring to the vault's own `AGENTS.md` for what to actually write rather than duplicating those conventions into the skill. Symlinked, not copied, onto each machine — see that skill's own "Setting this skill up on a new machine" section. Dave's other current skills (`diagnose-crash`, `omarchy`) are symlinks to Omarchy's system-provided defaults at `/usr/share/omarchy/default/agents/skills/`, not personal files, so they don't live here.
+  - `grill-me/` + `grilling/`: third-party skills vendored from [mattpocock/skills](https://github.com/mattpocock/skills) (`skills/productivity/grill-me` and `skills/productivity/grilling`), MIT licensed — see each folder's `LICENSE.txt`. `grill-me` is a thin `/grill-me`-only trigger (`disable-model-invocation: true`) that hands off to `grilling`, which holds the actual interview logic: relentlessly question a plan/idea in rounds until the "design tree" is fully resolved, no repo or code required. Also symlinked into `~/.claude/skills/` on each machine, unmodified from upstream.
 
 ## Decisions
 
@@ -25,6 +26,8 @@ The canonical copies live in this folder. `~/.claude/` on each machine should ma
 ## Next steps
 - [ ] Decide: keep syncing `~/.claude/CLAUDE.md` here manually, or symlink `~/.claude/CLAUDE.md -> ~/war-table/Projects/claude-config/CLAUDE.md` for automatic sync (tradeoff: ~/.claude becomes dependent on the vault being cloned)
 - [x] Personal skill written: `skills/war-table/` — symlink it into `~/.claude/skills/` on each machine (one command, see that skill's own setup section)
+- [x] Vendored `skills/grill-me/` and `skills/grilling/` from mattpocock/skills — symlink both into `~/.claude/skills/` on each machine:
+      `ln -sfn ~/war-table/Projects/claude-config/skills/grill-me ~/.claude/skills/grill-me && ln -sfn ~/war-table/Projects/claude-config/skills/grilling ~/.claude/skills/grilling`
 - [ ] Write `AGENTS.md` here if cross-project agent conventions emerge beyond what's in CLAUDE.md
 
 ## Links
