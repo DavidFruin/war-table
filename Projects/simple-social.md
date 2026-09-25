@@ -85,7 +85,6 @@ Long-term direction for the backend and client stack, worked out with `/grill-me
 - [ ] Three date formats across tables (unix numbers, `YYYY-MM-DD HH:MM:SS`, ISO strings)
 
 ## Open — privacy
-- [ ] **`notes.md` and `ARCHITECTURE.md` are both tracked in git and sit at the repo root, which is also the web docroot — so both deploy and are publicly readable** (confirmed 200 on live). `docs/database.html` is not part of this — it's gitignored, never actually deployed. Block the two tracked files or move them out (needs an `.htaccess` change — only when Dave asks directly).
 - [ ] Decide on a retention period for the API log.
 
 ## Open — tooling
