@@ -36,7 +36,7 @@ Long-term direction for the backend and client stack, worked out with `/grill-me
 - How much actually gets shared with web (just the logic/API-client layer vs. UI-level sharing via a cross-platform kit) is deliberately left open until the React migration itself starts.
 
 **Next steps**
-- [ ] Backend module split (auth/users/posts/comments/follows/notifications/media) -- in progress via looped `/split-backend-modules` runs: auth done (`0868f0b`), users done (`543f515`), both deployed to dev and verified against the test suite. Posts next.
+- [ ] Backend module split (auth/users/posts/comments/follows/notifications/media) -- in progress via looped `/split-backend-modules` runs: auth (`0868f0b`), users (`543f515`), posts (`c6e4e9f`, also fixed a real `__DIR__` path bug in deletePost's media cleanup and corrected the original module list which never assigned likePost/unlikePost/getPostLikes anywhere) all done, deployed to dev, verified. Test suite shows some flakiness under full-parallel runs (a "new" search.spec.js failure passed cleanly in isolation, and the session-expiry flake flips pass/fail run to run) -- pre-existing, not caused by the split, logged here rather than chased mid-migration. Comments next.
 - [x] Land the posts-table migration to dev and prod (done 2026-09-24, see Done)
 - [ ] Plan the GitHub Actions deploy pipeline
 - [ ] TS/Vite/shadcn frontend rewrite
