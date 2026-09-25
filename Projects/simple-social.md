@@ -36,7 +36,7 @@ Long-term direction for the backend and client stack, worked out with `/grill-me
 - How much actually gets shared with web (just the logic/API-client layer vs. UI-level sharing via a cross-platform kit) is deliberately left open until the React migration itself starts.
 
 **Next steps**
-- [ ] Backend module split (auth/users/posts/comments/follows/notifications/media) -- in progress via looped `/split-backend-modules` runs: auth (`0868f0b`), users (`543f515`), posts (`c6e4e9f`, also fixed a real `__DIR__` path bug in deletePost's media cleanup and corrected the original module list which never assigned likePost/unlikePost/getPostLikes anywhere), comments (`be056e8`), follows (`f16bb33`) all done, deployed to dev, verified. Notifications next.
+- [ ] Backend module split (auth/users/posts/comments/follows/notifications/media) -- in progress via looped `/split-backend-modules` runs: auth (`0868f0b`), users (`543f515`), posts (`c6e4e9f`, also fixed a real `__DIR__` path bug in deletePost's media cleanup and corrected the original module list which never assigned likePost/unlikePost/getPostLikes anywhere), comments (`be056e8`), follows (`f16bb33`), notifications (`5c93b9b`) all done, deployed to dev, verified. api.php now only has handle_deleteAccount left. Media (still media.php, not yet its own src/ folder) is the last module.
 - [x] Land the posts-table migration to dev and prod (done 2026-09-24, see Done)
 - [ ] Plan the GitHub Actions deploy pipeline
 - [ ] TS/Vite/shadcn frontend rewrite
