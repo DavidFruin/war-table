@@ -36,7 +36,7 @@ Long-term direction for the backend and client stack, worked out with `/grill-me
 - How much actually gets shared with web (just the logic/API-client layer vs. UI-level sharing via a cross-platform kit) is deliberately left open until the React migration itself starts.
 
 **Next steps**
-- [ ] Backend module split (auth/users/posts/comments/follows/notifications/media) -- in progress via looped `/split-backend-modules` runs: auth (`0868f0b`), users (`543f515`), posts (`c6e4e9f`, also fixed a real `__DIR__` path bug in deletePost's media cleanup and corrected the original module list which never assigned likePost/unlikePost/getPostLikes anywhere) all done, deployed to dev, verified. Test suite shows some flakiness under full-parallel runs (a "new" search.spec.js failure passed cleanly in isolation, and the session-expiry flake flips pass/fail run to run) -- pre-existing, not caused by the split, logged here rather than chased mid-migration. Comments next.
+- [ ] Backend module split (auth/users/posts/comments/follows/notifications/media) -- in progress via looped `/split-backend-modules` runs: auth (`0868f0b`), users (`543f515`), posts (`c6e4e9f`, also fixed a real `__DIR__` path bug in deletePost's media cleanup and corrected the original module list which never assigned likePost/unlikePost/getPostLikes anywhere), comments (`be056e8`) all done, deployed to dev, verified. Follows next.
 - [x] Land the posts-table migration to dev and prod (done 2026-09-24, see Done)
 - [ ] Plan the GitHub Actions deploy pipeline
 - [ ] TS/Vite/shadcn frontend rewrite
@@ -59,6 +59,8 @@ Long-term direction for the backend and client stack, worked out with `/grill-me
 - Language switcher
 
 ## Open — bugs
+- [ ] **`search.spec.js` flaky under Playwright, not a backend bug** — different tests in that file fail intermittently (dropdown item never becomes visible), even running just that one file alone. Checked directly against the live API during the backend-split test runs: `getUsers` correctly returns the target account every time it was queried fresh. So the data/query side is fine — this is a client-side/test-timing issue in the search dropdown's as-you-type rendering, not investigated further yet.
+- [ ] **`session-expiry.spec.js`'s "content actually renders after re-login" test flips pass/fail across otherwise-identical runs** — noticed repeatedly during the backend-split verification runs. Not chased down; flagging the pattern.
 - [ ] **Dark mode: illegible blue link text** — not a themed color, it's the browser's unstyled default blue on three links with no CSS class: "Don't have an account? Register" / "Forgot password?" on the login page, "Already have an account? Login" on the register page. Everything else (nav, static pages, mentions, post links) already gets a theme-aware color. Narrow, cheap fix — just give those three a class.
 - [ ] Can't see all playback speed options — it's the browser's native video menu, clipped by the video box. Needs custom video controls.
 - [ ] 4px horizontal overflow on phones from `.notif-badge` (low importance)
