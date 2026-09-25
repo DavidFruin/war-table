@@ -51,7 +51,7 @@ Long-term direction for the backend and client stack, worked out with `/grill-me
 - [ ] Better video controls (custom controls — also fixes the clipped playback-speed menu below)
 - [ ] Notifications when someone comments on a post you've commented on
 - [ ] Change the style and color of the theme selector
-- [ ] Media limits set in a config file
+- [x] Media limits set in a config file — already done, `config.php`'s `$CONFIG` (`media_max_image_bytes`, `media_max_video_bytes`, `media_max_audio_bytes`, `media_max_seconds`, `media_max_fps`, `media_max_side`)
 - [ ] Page listing upcoming features with ETAs
 
 ## Future ideas
@@ -74,7 +74,7 @@ Long-term direction for the backend and client stack, worked out with `/grill-me
 - [ ] 4px horizontal overflow on phones from `.notif-badge` (low importance)
 - [ ] Flash when expanding a post — doesn't reproduce. Possibly images shifting the page as they load (no reserved space). Confirm with Dave what he saw.
 - [ ] Coming back from an expanded post lands a little below where you were — doesn't reproduce, scroll restore measured correct.
-- [ ] **Clean URLs (fix hash routing):** want `dev.davidfruin.com/feed` instead of `/app.html#/feed`. Needs an Apache rewrite (non-file paths serve `app.html`), router switched from `hashchange` to `pushState`/`popstate`, 28 `app.html` references updated (sw.js, manifest start_url, api.php push URLs, header, pwa.js, index.html) and 18 test files. Old `#/` links and already-sent push notifications must keep working. All-or-nothing change — do it with Dave watching on his phone, not unattended.
+- [ ] **Clean URLs (fix hash routing):** want `dev.davidfruin.com/feed` instead of `/app.html#/feed`. Needs an Apache rewrite (non-file paths serve `app.html`), router switched from `hashchange` to `pushState`/`popstate`, 28 `app.html` references updated (sw.js, manifest start_url, api.php push URLs, header, pwa.js, index.html) and 18 test files. Old `#/` links and already-sent push notifications must keep working. **Deferred (Dave, 2026-09-25): fold into the React/Vite frontend rewrite rather than fixing standalone on the current vanilla-JS router** — see Planning section.
 
 ## Open — database
 - [ ] **`users.posts` JSON column can be dropped.** The posts-table migration (see Done) is live on both dev and prod now, and both are actually serving posts/likes from `posts`/`post_likes`, not the JSON. `users.posts` itself is still sitting there untouched on both, kept as a fallback. Dropping it (and the column-read code paths that never got removed, if any remain) is separate, later cleanup — no urgency, it's dead weight, not a liability.
@@ -85,11 +85,11 @@ Long-term direction for the backend and client stack, worked out with `/grill-me
 - [ ] Three date formats across tables (unix numbers, `YYYY-MM-DD HH:MM:SS`, ISO strings)
 
 ## Open — privacy
-- [ ] Some internal docs in the repo are reachable from the live site's web root. Block them or move them out (needs an `.htaccess` change — only when Dave asks directly).
+- [ ] **`notes.md` and `ARCHITECTURE.md` are both tracked in git and sit at the repo root, which is also the web docroot — so both deploy and are publicly readable** (confirmed 200 on live). `docs/database.html` is not part of this — it's gitignored, never actually deployed. Block the two tracked files or move them out (needs an `.htaccess` change — only when Dave asks directly).
 - [ ] Decide on a retention period for the API log.
 
 ## Open — tooling
-- [ ] **`agent-board` (see [[claude-config]]'s skill) currently shares a login with the test suite's `TEST_EMAIL_2`** (`davefruin@gmail.com`). Works fine for now, but agent messages and test-run noise end up in the same account's post history. Should get its own dedicated account eventually.
+- [x] **`agent-board`'s shared login — settled (Dave, 2026-09-25): not getting a separate dedicated account.** The shared credentials Dave already gave this session are the account going forward; agent messages and test-run noise sharing one account's post history is accepted, not a problem to solve.
 
 ## Done (recent)
 - **Migrated a real user's stranded dev-only activity to prod (2026-09-24).** A family member was using dev by mistake for part of a session, then switched to prod correctly partway through. Traced exactly what existed on dev but not prod (accounts on both sides predate this — same email/timestamp on both, likely from dev being seeded off a prod snapshot at some point) and migrated just the gap: one post ("Latest sketch") plus its photo, one like she'd received today that hadn't landed on prod, and 4 likes she gave on another user's posts (confirmed those target posts already existed on prod before inserting). All additive — nothing deleted from dev, nothing overwritten on prod. Confirmed working with a live fetch of the migrated photo (200, image/webp) after the insert.
