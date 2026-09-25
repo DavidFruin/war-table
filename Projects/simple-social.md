@@ -36,7 +36,7 @@ Long-term direction for the backend and client stack, worked out with `/grill-me
 - How much actually gets shared with web (just the logic/API-client layer vs. UI-level sharing via a cross-platform kit) is deliberately left open until the React migration itself starts.
 
 **Next steps**
-- [ ] Backend module split (auth/users/posts/comments/follows/notifications/media)
+- [ ] Backend module split (auth/users/posts/comments/follows/notifications/media) -- in progress via looped `/split-backend-modules` runs: auth done (`0868f0b`), users done (`543f515`), both deployed to dev and verified against the test suite. Posts next.
 - [x] Land the posts-table migration to dev and prod (done 2026-09-24, see Done)
 - [ ] Plan the GitHub Actions deploy pipeline
 - [ ] TS/Vite/shadcn frontend rewrite
