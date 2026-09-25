@@ -61,6 +61,8 @@ Long-term direction for the backend and client stack, worked out with `/grill-me
 - Complaints and ideas page: report a bug, report a person, suggest an idea
 - Maybe require a referral code to register
 - Language switcher
+- **Universal install script** (Dave, 2026-09-24): one `.sh` that installs the terminal client(s) on any Linux distro, auto-detecting the package manager instead of the current manual apt-vs-pacman split. `download.html`'s TUI section currently handles this with an explicit LMDE 7 / Omarchy Quattro tab toggle (added 2026-09-24) rather than detection — this would replace/automate that.
+- **Electron desktop app** (Dave, 2026-09-24): `download.html` already has a "Desktop" section with "Installation instructions are coming soon" as a placeholder — this is what fills it in.
 
 ## Open — bugs
 - [ ] **`search.spec.js` flaky under Playwright, not a backend bug** — different tests in that file fail intermittently (dropdown item never becomes visible), even running just that one file alone. Checked directly against the live API during the backend-split test runs: `getUsers` correctly returns the target account every time it was queried fresh. So the data/query side is fine — this is a client-side/test-timing issue in the search dropdown's as-you-type rendering, not investigated further yet.
