@@ -14,6 +14,27 @@ React + Vite + TypeScript + shadcn/ui rewrite of [[simple-social]]'s web fronten
 - **Repo renamed and cloned**: `learn-react-site` → `ssreact` on GitHub, cloned to `~/ssreact` on this machine. `pnpm` needed installing (`npm install -g pnpm`) — wasn't on this machine by default.
 - **Scaffold built and pushed.** Routing, API client, auth context, and the full 5-theme system are done and verified (clean `tsc --noEmit`, clean `eslint`, clean production build, and an actual browser load via `playwright-core` against a real running dev server confirming the auth redirect and rendering — not just "it compiles"). All 10 pages exist as placeholders with inline notes; no real page UI built yet.
 - **Blocked on sequencing, not on this repo:** per [[simple-social]]'s Planning section, the backend module split needed to finish and the API surface needed to settle before the frontend rewrite starts in earnest. **That's now done** (backend split deployed to prod 2026-09-25) — nothing is blocking real page work from starting.
+- **Not yet deployed anywhere.** See Hosting section below — needs an agent with `el1` access to finish; this machine (omarchy) doesn't have it.
+
+## Hosting / deployment
+
+**Target:** `react.davidfruin.com`, serving from `/home/davidfruin/domains/react.davidfruin.com/public_html` on `el1`. Confirmed by Dave 2026-09-25; DNS for that subdomain not confirmed pointed anywhere yet — check before assuming it resolves.
+
+**This is a static build, not a PHP app like [[simple-social]].** Don't clone the source repo into `public_html` expecting it to serve directly (that's the `simple-social` pattern — docroot == repo root, PHP executes in place). `ssreact` needs `pnpm run build` run somewhere (locally or in CI), and only the resulting `dist/` folder's *contents* belong in `public_html` — the repo source (`src/`, `node_modules`, etc.) should not be web-reachable.
+
+**SPA rewrite already handled:** `public/.htaccess` (committed, ships inside `dist/` automatically via Vite's `public/` copy) rewrites any non-file request to `index.html`, so React Router's clean paths (`/feed`, `/settings`, etc.) work on a direct visit or a refresh, not just client-side navigation. Same class of fix as `simple-social`'s own "Clean URLs" open item. If `react.davidfruin.com/feed` 404s on a direct visit or a refresh, check this file made it into the deployed directory before debugging anything else.
+
+**Manual deploy (works right now, from any machine with both the built `dist/` and `el1` SSH access):**
+```
+pnpm run build
+rsync -avz --delete dist/ el1:/home/davidfruin/domains/react.davidfruin.com/public_html/
+```
+
+**Not yet built: automated deploy.** The plan is a GitHub Actions workflow that runs `pnpm run build` + the rsync above on every push to `master`, so deploying becomes "push to GitHub" for any agent — none of us should need raw `el1` SSH access for routine deploys once this exists. Deliberately **not built blind from a machine without `el1` access** (this note was written from omarchy, which doesn't have it) — an SSH-deploy workflow that's never been run against the real server and real secrets is exactly the kind of thing that looks done and isn't. **Whoever has `el1` access should build and verify this workflow, not just write the YAML.** Needs:
+1. An SSH keypair (or reuse of an existing one) authorized for `el1` with write access to that `public_html` directory.
+2. The private key + host added as GitHub Actions secrets on the `ssreact` repo (`gh secret set`, or via the GitHub UI).
+3. A `.github/workflows/deploy.yml` rewrite — the existing one in the repo only builds (leftover from the `learn-react-site` days), doesn't deploy anywhere yet.
+4. **Actually trigger it and confirm the site updates** before marking this done — same verification bar as everything else in this project.
 
 ## Decisions
 - **Reuse the learn-react-site scaffold rather than starting clean** — it already had the exact stack (React/Vite/TS/shadcn) this wants, and Dave already made the tooling choices (Base UI over plain Radix, pnpm, Tailwind 4) while learning React with it.
