@@ -6,7 +6,7 @@ repo: https://github.com/DavidFruin/simple-social
 # simple-social
 
 ## Summary
-Small social app: PHP API backend + web frontend (PWA), live at app.davidfruin.com (dev at dev.davidfruin.com). Terminal front ends are separate repos: [[simple-social-cli]], [[simple-social-cli-interactive]] (wizard), [[simple-social-tui]].
+Small social app: PHP API backend + web frontend (PWA), live at app.davidfruin.com (dev at dev.davidfruin.com). Terminal front ends are separate repos: [[simple-social-cli]], [[simple-social-cli-interactive]] (wizard), [[simple-social-tui]]. The planned React rewrite of the web frontend is [[ssreact]].
 
 ## Principles
 Always faster, safer, less code, simpler, cleaner looking, easier to understand.
@@ -30,6 +30,7 @@ Long-term direction for the backend and client stack, worked out with `/grill-me
 - Full recreation of the web frontend (currently vanilla JS, no build step, no TS) in TypeScript/Vite/shadcn.
 - No need to preserve the current retro-BBS visual identity — that's covered by the terminal clients (CLI/wizard/TUI) instead.
 - Backend goes first; frontend rewrite starts once the backend's structure/API surface has settled.
+- **Has a concrete home now: [[ssreact]]** (2026-09-25) — Dave's own `learn-react-site` React-learning repo renamed and repurposed, since it already had the exact stack (React/Vite/TS/shadcn) this wants. Full component mapping and phased plan live in that note, not duplicated here.
 
 **Mobile — React Native as a bridge, not the destination**
 - A React Native app, built from/sharing with the new web frontend, is the step after the web rewrite — explicitly a bridge toward eventual true-native (Swift/Kotlin) apps, not the end state.
@@ -43,7 +44,7 @@ Long-term direction for the backend and client stack, worked out with `/grill-me
   - Test suite showed some flakiness unrelated to any of this (`search.spec.js`, `session-expiry.spec.js`'s re-login test) — confirmed via direct API calls that the backend data was correct each time; logged in Open — bugs rather than chased mid-migration.
 - [x] Land the posts-table migration to dev and prod (done 2026-09-24, see Done)
 - [ ] Plan the GitHub Actions deploy pipeline
-- [ ] TS/Vite/shadcn frontend rewrite
+- [ ] TS/Vite/shadcn frontend rewrite — see [[ssreact]] for the plan
 - [ ] React Native app — decide code-sharing approach then
 
 ## Open — features
