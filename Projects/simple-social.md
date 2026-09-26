@@ -64,7 +64,7 @@ Long-term direction for the backend and client stack, worked out with `/grill-me
 - Maybe require a referral code to register
 - Language switcher
 - **Universal install script** (Dave, 2026-09-24): one `.sh` that installs the terminal client(s) on any Linux distro, auto-detecting the package manager instead of the current manual apt-vs-pacman split. `download.html`'s TUI section currently handles this with an explicit LMDE 7 / Omarchy Quattro tab toggle (added 2026-09-24) rather than detection — this would replace/automate that.
-- **Electron desktop app** (Dave, 2026-09-24): `download.html` already has a "Desktop" section with "Installation instructions are coming soon" as a placeholder — this is what fills it in.
+- **Electron desktop app** (Dave, 2026-09-24): `download.html` already has a "Desktop" section with "Installation instructions are coming soon" as a placeholder — this is what fills it in. Repo created 2026-09-25: [[sselectron]].
 
 ## Open — bugs
 - [x] **`search.spec.js` flakiness — fixed 2026-09-24 (`e1b0700`).** Real bug, not test timing: `search.js`'s `render()` never awaited the user-list fetch before wiring up the search input, so typing a query before that fetch resolved filtered an empty list and showed a false "no users matching" state. Fixed by re-running the filter once the list actually loads, if a query's already typed. Verified with 3 clean full-file runs against dev after the fix (previously failed intermittently even alone).
