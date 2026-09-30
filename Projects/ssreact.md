@@ -27,11 +27,20 @@ React + Vite + TypeScript + shadcn/ui rewrite of [[simple-social]]'s web fronten
 
 **SPA rewrite already handled:** `public/.htaccess` (committed, ships inside `dist/` automatically via Vite's `public/` copy) rewrites any non-file request to `index.html`, so React Router's clean paths (`/feed`, `/settings`, etc.) work on a direct visit or a refresh, not just client-side navigation. Same class of fix as `simple-social`'s own "Clean URLs" open item. If `react.davidfruin.com/feed` 404s on a direct visit or a refresh, check this file made it into the deployed directory before debugging anything else.
 
-**Manual deploy (works right now, from any machine with both the built `dist/` and `el1` SSH access):**
+**Manual deploy (works right now, from any machine with both the built `dist/` and `el1` SSH access) — corrected 2026-09-30, the command below fixes two real bugs the original version of this note had:**
 ```
 pnpm run build
-rsync -avz --delete dist/ el1:/home/davidfruin/domains/react.davidfruin.com/public_html/
+rsync -rltz --no-owner --no-group --delete \
+  --exclude='api.php' --exclude='media.php' --exclude='config.php' --exclude='auth.php' \
+  --exclude='logging.php' --exclude='schema.php' --exclude='webpush.php' --exclude='clean-notifications.php' \
+  --exclude='composer.json' --exclude='composer.lock' --exclude='vendor/' --exclude='src/' \
+  --exclude='media/' \
+  dist/ el1:/home/davidfruin/domains/react.davidfruin.com/public_html/
 ```
+**Do not use plain `rsync -avz --delete dist/ ...` (the version this note used to say) — two real bugs found running it 2026-09-29/30:**
+1. **`-a` implies `-o -g` (owner/group preservation).** Since `public_html` needs `chgrp davidfruin` + setgid for PHP-FPM to be able to write there (see the permissions fix above), a plain `-a` deploy silently resets it back to `admin:admin` on *every* deploy — the very next deploy after that fix undid it, and uploads started failing with "Could not save the upload on the server" until this was caught. `--no-owner --no-group` stops rsync from touching that.
+2. **No `--exclude='media/'`.** Uploaded media lives in `public_html/media/`, which doesn't exist in the frontend's own `dist/` — a plain `--delete` deploy wipes the entire directory (and every user's uploaded files with it) on the next frontend-only deploy. Confirmed by reproducing it: an uploaded test image 404'd immediately after an unrelated redeploy.
+- **Whoever builds the GitHub Actions workflow (see below) must use this exact exclude list and `--no-owner --no-group`, not a simplified version** — both bugs above are easy to reintroduce by "cleaning up" this command.
 
 **Not yet built: automated deploy.** The plan is a GitHub Actions workflow that runs `pnpm run build` + the rsync above on every push to `master`, so deploying becomes "push to GitHub" for any agent — none of us should need raw `el1` SSH access for routine deploys once this exists. Deliberately **not built blind from a machine without `el1` access** (this note was written from omarchy, which doesn't have it) — an SSH-deploy workflow that's never been run against the real server and real secrets is exactly the kind of thing that looks done and isn't. **Whoever has `el1` access should build and verify this workflow, not just write the YAML.** Needs:
 1. An SSH keypair (or reuse of an existing one) authorized for `el1` with write access to that `public_html` directory.
@@ -68,6 +77,16 @@ rsync -avz --delete dist/ el1:/home/davidfruin/domains/react.davidfruin.com/publ
   - Draft persistence via `localStorage` (`ss_post_draft`), same key/shape as the original so a draft written by phase 2 (once media fields are added back) won't be silently dropped.
   - `mediaUrl` hardcoded `null` in the `api.createPost()` call for now — phases 2 (media upload via `Attachment`) and 3 (camera/mic capture modal, fully custom `MediaRecorder`/`getUserMedia`) are still open, see Next steps.
   - **Verified live** end to end: typing, char counter/limit, `@`-mention dropdown, insertion, and a real post through `react.davidfruin.com` — confirmed server-side the mention resolved to `@[26]` (not the readable email) and rendered back correctly as a profile link on the post page. Test post deleted after verification.
+- **Create Post phase 2 shipped 2026-09-30 (media upload)** — Dave said keep going after phase 1. Stopped again after phase 2, same reasoning: phase 3 (capture modal) is the biggest remaining chunk, check in first.
+  - File picker (`accept` list matches the original exactly: jpg/png/gif/webp images, mov/mp4/m4v video, wav/mp3 audio). New `src/lib/media-image.ts` (`renderImageFile`, ported from the original) re-encodes an image client-side before upload — fixes EXIF orientation, caps the longest side at 1920px to match the server, keeps PNG/GIF/WebP's alpha and converts everything else to JPEG.
+  - Rotate re-renders from the **original** picked file every time (not the already-rotated version) so repeated rotations don't compound re-encoding loss — same approach as the original. Remove deletes server-side via `api.deleteMedia` when the media was uploaded but never attached to a post (orphan cleanup), matching `clearMedia()`'s behavior.
+  - New `MediaPreview` component (image/video/audio + rotate/remove buttons). `api.ts`'s `uploadMedia`/`deleteMedia` are now typed to the real handler response (`mediaId`, `mediaUrl`, `thumbnailUrl`, `type`) instead of a placeholder shape.
+  - Draft persistence extended to the full `{text, mediaUrl, mediaType, mediaId}` shape phase 1 already reserved space for — a reload restores the attached media preview too (without a rotate button, since the original `File` object can't survive a reload — matches the original exactly).
+  - **Two real infrastructure bugs found and fixed while verifying this live** (both are now baked into the corrected deploy command in the Hosting section above — read that before deploying anything to this domain again):
+    1. Plain `rsync -a --delete` resets `public_html`'s ownership back to `admin:admin` on every deploy (via `-a`'s implied `-o -g`), silently undoing the PHP-FPM write-permission fix from earlier in this note. Caught because an upload failed with "Could not save the upload on the server" right after a routine frontend redeploy.
+    2. The same `--delete` deploy, with no exclude for `media/`, wipes all uploaded media on the next unrelated frontend deploy (`media/` isn't part of the frontend's own `dist/`, so `--delete` treats it as cruft). Reproduced directly: an uploaded test image 404'd immediately after redeploying.
+  - Also fixed in the same pass: `CreatePostPage` wasn't clearing a stale upload-error message after a later upload succeeded — cosmetic, but confusing (shows a failure message next to a working preview).
+  - **Verified live end to end** against `react.davidfruin.com` (test images generated locally, injected via a `DataTransfer`+`change`-event script since the built-in browser tool can't drive a real OS file picker — legitimate for this kind of automated test, same idea as CDP-based e2e frameworks): upload → rotate → post, then confirmed the rotated image rendered correctly on the post detail page. Test post deleted after verification, no orphaned media left on disk.
 
 ## Decisions
 - **Reuse the learn-react-site scaffold rather than starting clean** — it already had the exact stack (React/Vite/TS/shadcn) this wants, and Dave already made the tooling choices (Base UI over plain Radix, pnpm, Tailwind 4) while learning React with it.
@@ -223,7 +242,7 @@ Recommended order (each unblocks testing the next; auth first since nothing else
 - [x] Backend wired same-origin on `react.davidfruin.com` (sqlite test DB + docroot permissions + isolated JWT secret + `CGIPassAuth On` fix) — 2026-09-29/30, fully verified end-to-end
 - [x] Post detail + comments — verified live 2026-09-30
 - [x] Create Post phase 1: text + mention autocomplete — verified live 2026-09-30
-- [ ] Create Post phase 2: media upload (`Attachment` component, `api.uploadMedia`/`deleteMedia` already exist and are typed)
+- [x] Create Post phase 2: media upload — verified live 2026-09-30
 - [ ] Create Post phase 3: camera/mic capture modal (fully custom `MediaRecorder`/`getUserMedia` — see `simple-social/js/pages/create-post.js` for the full recording/rotation/draft-with-media logic to port)
 - [ ] Profile
 - [ ] Notifications
