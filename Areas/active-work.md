@@ -14,4 +14,4 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
-| Citadel | ssreact | overnight loop: Settings page onward | 2026-09-30T05:09Z |
+| Citadel | ssreact | overnight loop: PWA parity onward | 2026-09-30T05:09Z |
