@@ -13,7 +13,8 @@ Always faster, safer, less code, simpler, cleaner looking, easier to understand.
 
 ## Decisions
 - **Backend split into its own repo, [[ssapi]] (github.com/DavidFruin/ssapi), 2026-09-30.** Dave asked directly, so the backend and frontend can be cloned independently rather than being one repo. **Copied, not moved** — this repo (`simple-social`) keeps its own copy of everything for now, nothing was deleted here; `ssapi` is a fresh git history (no commit-history preservation attempted), seeded from this repo's state as of 2026-09-30.
-  - What moved to `ssapi`: `api.php`, `media.php`, `auth.php`, `logging.php`, `schema.php`, `webpush.php`, `clean-notifications.php`, `migrate-posts.php`, `config.php`, the `src/` handler modules, `composer.json`/`.lock`, `.htaccess` (the Authorization-header passthrough + sensitive-file-blocking rules), `.env.example`, and `tests/backend-tests/`.
+  - What moved to `ssapi`: `api.php`, `media.php`, `auth.php`, `logging.php`, `schema.php`, `webpush.php`, `clean-notifications.php`, `migrate-posts.php`, `config.php`, the `src/` handler modules, `composer.json`/`.lock`, `.htaccess` (the Authorization-header passthrough + sensitive-file-blocking rules), and `.env.example`.
+  - **Tests never belong on the server, so `tests/backend-tests/` didn't stay in `ssapi` either — moved again, same day, into [[sstests]]** (renamed from `simple-social-tests`, which already held the mature Playwright E2E suite). `simple-social`'s own in-repo `tests/front-end-test/` (the old 6-spec suite, already known incompatible with [[ssreact]]) is untouched by any of this and stays here.
   - What deliberately stayed here, not copied: the vanilla-JS frontend (`js/`, `css/`, the static `.html` pages, `manifest.json`/`sw.js`/`pwa-icons/`), `ARCHITECTURE.md` and `notes.md` (both describe the whole system, not just the backend), and `tests/front-end-test/` (the Playwright suite — already known to be incompatible with [[ssreact]], see that note).
   - **No secrets were exposed by this split** — `config.php` reads its JWT secret and other runtime config from a `private/.env` file that lives outside any repo on the server; `.env.example` only documents the shape, never a real value. Checked directly before pushing `ssapi` public.
   - **Deployment target hasn't changed** — `app.davidfruin.com`/`dev.davidfruin.com` still serve PHP from the same docroot as before. Splitting the *source* repo doesn't by itself change where the code runs; that's a separate deploy-pipeline question (see the GitHub Actions planning note in this section and in [[ssreact]] — both currently on hold pending Dave's go-ahead).
@@ -133,4 +134,4 @@ Machine-specific notes (not project facts, just what this session did):
 
 ## Links
 - Live: https://app.davidfruin.com
-- Related: [[simple-social-tui]], [[simple-social-cli]], [[simple-social-cli-interactive]]
+- Related: [[simple-social-tui]], [[simple-social-cli]], [[simple-social-cli-interactive]], [[ssapi]], [[ssreact]], [[sstests]]
