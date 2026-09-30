@@ -14,3 +14,4 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
+| Citadel | ssreact | Create Post page (mentions, media, capture modal) | 2026-09-30T02:32Z |
