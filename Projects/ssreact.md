@@ -127,6 +127,11 @@ rsync -rltz --no-owner --no-group --delete \
   - Download's three interactive bits ported as real React state, not static HTML: Install App via `beforeinstallprompt`, copy-to-clipboard buttons, and an LMDE/Omarchy OS tab toggle.
   - **Verified live**: logged-in nav shows a real unread-notification badge (confirmed against actual test data) that clears correctly after Mark as Seen; logged-out landing page and all 5 static pages render correctly with working internal links (including the API doc's in-page anchors); Roadmap's sort/count logic confirmed correct against the real data; Download's OS toggle switches content correctly; both nav states confirmed to wrap cleanly at 375px mobile width.
   - **Copy-to-clipboard could not be verified** — this session's automated browser has clipboard write blocked (confirmed directly: `NotAllowedError`, same category of sandbox restriction as camera/notifications seen elsewhere in this project). The code's catch block handles that failure without crashing, matching the original's own "still readable in the block, nothing crashes" comment on this exact scenario — but an actual successful copy hasn't been seen firsthand.
+- **Mobile thumb-nav + scroll-to-top button shipped 2026-09-30** — the last item flagged after the Header work. Ported from `renderThumbNav`/`renderScrollTopButton` in `js/header.js`: the bottom-corner bubble menu (shown only on real touch devices via `(hover: none) and (pointer: coarse)`, never a shrunk desktop window) fans the six logged-in nav items out along the same quarter-circle arc math as the original (radius 150, angle step `90/(n-1)`), mirroring into the other corner when the hand preference is "left". The header's own `#main-nav` hides under the same media query so the bubble replaces it rather than doubling up, same as the original.
+  - Notification-count polling was extracted out of `Header.tsx` into a shared `use-unseen-notifications.ts` hook so both the header badge and the bubble's badge use it (each still runs its own 60s interval — sharing one poller wasn't worth the plumbing at this frequency).
+  - `ScrollTopButton` is deliberately **not** touch-gated like `ThumbNav` — shown at any screen size past a 400px scroll threshold, swapping to whichever corner the thumb bubble isn't using.
+  - **Verified live with real touch-device emulation** (Android UA + touch points via the mobile viewport preset, not just a narrow window): bubble renders only in touch mode, opens into the correct fanned arc, tapping an item navigates and closes the menu, toggle icon morphs to an X while open, and switching the hand preference to left re-renders the whole arc mirrored in real time. Scroll-to-top verified separately on desktop: appears past the threshold, scrolls smoothly, disappears after.
+  - **This closes out every flagged frontend gap from the original 9-page build order plus everything added after it** — the only work left on ssreact is the GitHub Actions deploy pipeline and the handful of real-device-only checks (camera/mic capture, push delivery, Delete Account) noted throughout this file.
 
 ## Verification pass (2026-09-30)
 
@@ -283,7 +288,7 @@ Recommended order (each unblocks testing the next; auth first since nothing else
 - **`--primary-hover` unwired** — see Theme system section above.
 - ~~No favicon/PWA icons yet~~ **Shipped** as part of PWA parity 2026-09-30 (`manifest.json` + `pwa-icons/` + `site-icon.png` favicon).
 - **GitHub Actions deploy pipeline** — tracked in [[simple-social]], not this repo; the existing `.github/workflows/deploy.yml` here only builds (leftover from the learn-react-site days), doesn't deploy anywhere yet.
-- **Mobile thumb-nav not built.** `Header.tsx` (shipped 2026-09-30) has the full desktop/plain nav for both logged-in and logged-out states, but not the original's floating corner bubble menu for touch devices (custom radius/angle math per nav item, mirrors to the other corner based on the hand preference already wired up in Settings — see `renderThumbNav` in `js/header.js`). No shadcn equivalent; real custom-component work, not a quick add.
+- ~~Mobile thumb-nav not built~~ **Shipped 2026-09-30** — see the dedicated section near the bottom of this note.
 
 ## Next steps
 - [x] Rename/clone repo
@@ -303,7 +308,7 @@ Recommended order (each unblocks testing the next; auth first since nothing else
 - [x] Verification pass — manual walkthrough done 2026-09-30 (existing Playwright suite is incompatible, see note below); all 9 pages now built
 - [x] Session-expired re-login modal — shipped and verified live 2026-09-30, including actual retry-in-place behavior
 - [x] Landing page (`/`) + static info pages (`/about`, `/api`, `/conduct`, `/roadmap`, `/download`) + real Header nav for both auth states — shipped and verified live 2026-09-30
-- [ ] Mobile thumb-nav (floating corner bubble menu) — see Known gaps
+- [x] Mobile thumb-nav (floating corner bubble menu) + scroll-to-top button — shipped and verified live 2026-09-30 with real touch-device emulation
 
 ## Links
 - Repo: https://github.com/DavidFruin/ssreact
