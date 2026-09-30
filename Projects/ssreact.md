@@ -107,6 +107,13 @@ rsync -rltz --no-owner --no-group --delete \
   - **Verified live**: theme switch (confirmed re-theming + server persistence), hand toggle (confirmed server persistence via a direct DB check), individual session revoke and revoke-all-other-devices both round-tripped against **real session data** — this session's own testing had left 8 real sessions on the test account, which the revoke-all actually cleared down to 1. Confirmation dialogs work correctly.
   - **Delete Account was not exercised end-to-end** — doing so would destroy the only test account (`e2e-test@ssreact.local`) this whole overnight session has been using, which is still needed for the remaining PWA/verification work. Flagged here rather than claimed tested; someone should verify it manually with a disposable account before calling Settings fully done.
   - **Session-expired modal is still a separate open item**, not part of this page — see Known gaps below, unchanged by this work.
+- **PWA parity shipped 2026-09-30.** Read `simple-social/ARCHITECTURE.md`'s PWA section first, per this note's own flag that this was the highest-risk remaining piece — it documents a real, repeated "doesn't work on my phone" incident (three separate reports, one root cause): cache-first serving stale JS after a deploy.
+  - **`sw.js` ports that exact fix directly**: network-first (`cache: 'no-cache'`, so unchanged files still 304 instead of re-downloading) for navigations and same-origin `.js`/`.css`, nothing else touched. Vite's hashed asset filenames independently solve staleness for JS/CSS once built (a content change is always a new URL), but `index.html` itself is unhashed — it's exactly what points at the current hashed bundle, so it's exactly the same failure mode the original incident had. Still needs the same fix.
+  - `manifest.json` + icons ported from `simple-social/pwa-icons` (`start_url` changed to the clean `/feed` path, no `/app.html#/feed` hash). Service worker registers in production builds only — deliberately skipped in `vite dev`, since a dev-mode SW would fight Vite's own module reloading.
+  - **One real cross-app URL mismatch found and fixed — entirely client-side, not in the shared backend**: `api.php`'s `pushNotification()` builds notification URLs for the *original* vanilla-JS app's hash router (`/app.html#/post/123`) — that PHP is shared with the real `app.davidfruin.com` production app and isn't ssreact's to change. Fixed in `sw.js`'s notification-click handler instead: strips everything through `#` so a push click lands on ssreact's own clean-path route instead of falling through to the SPA's catch-all redirect to `/feed`.
+  - **Push subscribe/unsubscribe wired for real** (`src/lib/push.ts`), replacing Settings' earlier "not available yet" placeholder now that a service worker actually exists to back it.
+  - **Verified live**: service worker registers and activates (confirmed via `navigator.serviceWorker.getRegistrations()`), manifest is valid JSON with all 4 icon entries resolving, all 5 icon files serve `200`, the app works normally with the worker active.
+  - **Not verified, flagged honestly**: real push delivery and the native "Add to Home Screen" prompt. This session's automated browser has `Notification.permission` pre-denied (confirmed directly) — the graceful "blocked" fallback message was exercised and works correctly, but an actual subscribe was never exercised. **Needs a real device/browser to confirm push delivery and installability before calling this fully done.**
 
 ## Decisions
 - **Reuse the learn-react-site scaffold rather than starting clean** — it already had the exact stack (React/Vite/TS/shadcn) this wants, and Dave already made the tooling choices (Base UI over plain Radix, pnpm, Tailwind 4) while learning React with it.
@@ -268,7 +275,7 @@ Recommended order (each unblocks testing the next; auth first since nothing else
 - [x] Notifications — verified live 2026-09-30
 - [x] Search — verified live 2026-09-30
 - [x] Settings — verified live 2026-09-30 (push notifications deferred to PWA parity; Delete Account not exercised end-to-end, see note below); session-expired modal still separately open, see Known gaps
-- [ ] PWA parity
+- [x] PWA parity — manifest + service worker shipped and verified live 2026-09-30; real push delivery and native install still need a real device, see note below
 - [ ] Verification pass against the Playwright suite + manual walkthrough
 
 ## Links
