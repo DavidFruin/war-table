@@ -91,6 +91,10 @@ rsync -rltz --no-owner --no-group --delete \
   - New `CaptureModal` component (`src/components/post/CaptureModal.tsx`), ported from the capture-modal markup + `startCapture`/`capturePhoto`/`toggleVideoRecording`/`toggleAudioRecording`/`processRecordedMedia` in `create-post.js`: a chooser (photo/video/audio, each requesting only the devices it needs — audio never switches the camera on), a live camera preview or a 32-bar frequency visualizer for audio, `MediaRecorder`-based recording hard-capped at the same 10s limit as the server (with mp4→webm / mpeg→webm codec fallback), and a canvas-based photo snapshot.
   - **A captured photo skips `renderImageFile`** (the client-side re-encode phase 2 added for picked files) — it's already at the right resolution straight off the live feed, matching the original's `capturePhoto()` exactly. Only a captured *photo* gets an `originalImage` for the rotate button afterward; video/audio don't, same as the original.
   - **Honest verification limit, not silently skipped**: this session's automated browser has no real camera/microphone hardware, so a real photo/recording round-trip could not be tested. What *was* verified: the chooser renders, all three mode buttons correctly call `getUserMedia`, and on the resulting permission failure (the only outcome possible without real hardware) the code takes the exact same friendly-error path a real user's permission denial would hit — confirmed via screenshot and a clean console (no uncaught errors). The upload call a successful capture would make is the same `uploadAndReplace` already proven end-to-end with real files in phase 2. **A real device with a camera/mic still needs to manually verify an actual photo/video/audio capture before this is called fully done** — flagged here, not claimed as tested.
+- **Profile shipped 2026-09-30, verified live.** Own profile (no `/:id`, or `:id` matching the logged-in user — no Follow button) vs. someone else's, reusing `PostCard` for the paginated post list. New `FollowListPopover` (generalized from `LikesPopover`'s pattern) for followers/following counts.
+  - **Two more real `api.ts` bugs found and fixed** (confirmed against the actual PHP handlers, not guessed): `isFollowing`'s response key is `following`, not `isFollowing` as it was typed before — would have silently always read `undefined`/falsy. `getUserInfo`/`getMyFollows`/`getMyFollowers` were untyped placeholders, now typed to their real shapes.
+  - **One deliberate simplification over the original**: `isFollowing` state is read via the dedicated `api.isFollowing()` call instead of fetching the viewer's *entire* follows list and searching it for a match (what `profile.js` does) — same end result, and simpler here since this page has no other reason to hold that full list the way the original happened to.
+  - **Verified live**: own profile (zero state), another user's profile with real posts, Follow → appeared immediately in their followers popover (real data, not a stub), Unfollow → button and state reverted correctly. State left as found.
 
 ## Decisions
 - **Reuse the learn-react-site scaffold rather than starting clean** — it already had the exact stack (React/Vite/TS/shadcn) this wants, and Dave already made the tooling choices (Base UI over plain Radix, pnpm, Tailwind 4) while learning React with it.
@@ -248,7 +252,7 @@ Recommended order (each unblocks testing the next; auth first since nothing else
 - [x] Create Post phase 1: text + mention autocomplete — verified live 2026-09-30
 - [x] Create Post phase 2: media upload — verified live 2026-09-30
 - [x] Create Post phase 3: camera/mic capture modal — shipped 2026-09-30, UI/error-path verified live; **real hardware capture (actual photo/video/audio round-trip) still needs manual verification on a device with a camera/mic**
-- [ ] Profile
+- [x] Profile — verified live 2026-09-30
 - [ ] Notifications
 - [ ] Search
 - [ ] Settings (incl. session-expired modal, push notifications)
