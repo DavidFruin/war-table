@@ -62,6 +62,12 @@ rsync -avz --delete dist/ el1:/home/davidfruin/domains/react.davidfruin.com/publ
   - **Deliberately deferred**: comment composer's mention-autocomplete is a plain `Textarea` for now (the dedicated mention-picker component doesn't exist yet — it's built for Create Post, next in the page order); a hand-typed `@[id]` still works and renders/links correctly, matching the original's own fallback when its `MentionPicker` fails to attach.
   - Added shadcn `textarea` and `popover` components.
   - `api.ts`/`types.ts` gained `getUserEmails`, a properly-typed `getPostLikes` (now includes per-like `timestamp`), and a typed `createComment` response — all ported from `simple-social/src/**/handlers.php`, not guessed.
+- **Create Post shipped 2026-09-30, phase 1 of 3 (text + mentions only)** — per this note's own "build it in that order" recommendation below, stopped after phase 1 to check in with Dave before continuing (his standing preference: ask before starting a new phase of a larger plan, don't chain them unprompted).
+  - New shared `MentionTextarea` component (`src/components/post/MentionTextarea.tsx`), ported from `components/mention-picker.js`: typing `@word` opens a live dropdown from `api.getUsers()`, picking someone inserts their readable email, and `.resolve(text)` (called right before submit, via a ref) converts each still-present inserted span to the `@[id]` token the server expects. Also folds in `restrictTextInput`'s character filtering (main.js) — matches the server's `validateContent()` charset (printable ASCII + Latin-1 supplement, no emojis, no newlines) inline as you type, not just on submit rejection.
+  - **Retrofitted into `PostPage`'s comment composer too**, replacing the plain `Textarea` placeholder left there — this was the exact deferred item noted in that page's own comment ("reuses the mention-autocomplete Textarea built for Create Post").
+  - Draft persistence via `localStorage` (`ss_post_draft`), same key/shape as the original so a draft written by phase 2 (once media fields are added back) won't be silently dropped.
+  - `mediaUrl` hardcoded `null` in the `api.createPost()` call for now — phases 2 (media upload via `Attachment`) and 3 (camera/mic capture modal, fully custom `MediaRecorder`/`getUserMedia`) are still open, see Next steps.
+  - **Verified live** end to end: typing, char counter/limit, `@`-mention dropdown, insertion, and a real post through `react.davidfruin.com` — confirmed server-side the mention resolved to `@[26]` (not the readable email) and rendered back correctly as a profile link on the post page. Test post deleted after verification.
 
 ## Decisions
 - **Reuse the learn-react-site scaffold rather than starting clean** — it already had the exact stack (React/Vite/TS/shadcn) this wants, and Dave already made the tooling choices (Base UI over plain Radix, pnpm, Tailwind 4) while learning React with it.
@@ -216,7 +222,9 @@ Recommended order (each unblocks testing the next; auth first since nothing else
 - [x] Feed + PostCard component — verified live 2026-09-25
 - [x] Backend wired same-origin on `react.davidfruin.com` (sqlite test DB + docroot permissions + isolated JWT secret + `CGIPassAuth On` fix) — 2026-09-29/30, fully verified end-to-end
 - [x] Post detail + comments — verified live 2026-09-30
-- [ ] Create Post (mentions, media upload, capture modal)
+- [x] Create Post phase 1: text + mention autocomplete — verified live 2026-09-30
+- [ ] Create Post phase 2: media upload (`Attachment` component, `api.uploadMedia`/`deleteMedia` already exist and are typed)
+- [ ] Create Post phase 3: camera/mic capture modal (fully custom `MediaRecorder`/`getUserMedia` — see `simple-social/js/pages/create-post.js` for the full recording/rotation/draft-with-media logic to port)
 - [ ] Profile
 - [ ] Notifications
 - [ ] Search
