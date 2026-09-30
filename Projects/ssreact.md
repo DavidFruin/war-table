@@ -134,6 +134,10 @@ The plan once unblocked: a GitHub Actions workflow that runs `pnpm run build` + 
   - `ScrollTopButton` is deliberately **not** touch-gated like `ThumbNav` — shown at any screen size past a 400px scroll threshold, swapping to whichever corner the thumb bubble isn't using.
   - **Verified live with real touch-device emulation** (Android UA + touch points via the mobile viewport preset, not just a narrow window): bubble renders only in touch mode, opens into the correct fanned arc, tapping an item navigates and closes the menu, toggle icon morphs to an X while open, and switching the hand preference to left re-renders the whole arc mirrored in real time. Scroll-to-top verified separately on desktop: appears past the threshold, scrolls smoothly, disappears after.
   - **This closes out every flagged frontend gap from the original 9-page build order plus everything added after it** — the only work left on ssreact is the GitHub Actions deploy pipeline (on hold, see Hosting section — do not start without Dave's go-ahead) and the handful of real-device-only checks (camera/mic capture, push delivery, Delete Account) noted throughout this file.
+- **`postCache` shipped + `--primary-hover` dropped, 2026-09-30** — the two remaining "decide later" items from Known gaps, closed out together.
+  - `postCache` (`src/lib/post-cache.ts`): `PostCard` caches its post prop on every render; `PostPage` checks the cache on mount and skips both the loading skeleton AND the `getPostById` call entirely when it already has the exact post a feed/profile card just handed it via "Expand" — comments still always load fresh. A cache hit is trusted as-is, never revalidated, matching the original exactly. **Verified live via network inspection**: clicking Expand on a real post fired only `getPostComments` afterward, no `getPostById` at all — confirming a genuine cache hit, not just a fast round-trip.
+  - `--primary-hover`: carried over from the original CSS at scaffold time but never wired to anything, flagged as "decide when building Button usage." Now that every page has used `Button` extensively with shadcn's own opacity-based hover and never once needed the original color, the variable was dropped from all 5 theme blocks rather than wired in retroactively for something nothing turned out to be missing.
+  - **With this, every item on the original Known gaps list is now resolved one way or another** (shipped, or decided-and-dropped) except the GitHub Actions hold and the real-device-only checks.
 
 ## Verification pass (2026-09-30)
 
@@ -286,8 +290,8 @@ Recommended order (each unblocks testing the next; auth first since nothing else
 
 ## Known gaps / decisions still open
 - ~~Session-expired modal not built~~ **Shipped 2026-09-30** — see the dedicated section near the bottom of this note.
-- **`postCache` not ported.** `store.js` caches whatever post a card just rendered so clicking into it on the Post page skips a loading flash. Not reproduced yet — if this project ends up using TanStack Query (or similar) for data fetching, its own cache likely provides this for free; if it's plain `fetch`-in-`useEffect`, it needs porting explicitly. Decide when building the Feed/Post pages, not before.
-- **`--primary-hover` unwired** — see Theme system section above.
+- ~~`postCache` not ported~~ **Shipped 2026-09-30** — see the dedicated section near the bottom of this note.
+- ~~`--primary-hover` unwired~~ **Decided and dropped 2026-09-30** — see the same section.
 - ~~No favicon/PWA icons yet~~ **Shipped** as part of PWA parity 2026-09-30 (`manifest.json` + `pwa-icons/` + `site-icon.png` favicon).
 - **GitHub Actions deploy pipeline — decided, but ON HOLD until Dave explicitly says go** (see Hosting section for the full plan/requirements). Don't start this on your own initiative just because it's the only thing left. The existing `.github/workflows/deploy.yml` here only builds (leftover from the learn-react-site days), doesn't deploy anywhere yet.
 - ~~Mobile thumb-nav not built~~ **Shipped 2026-09-30** — see the dedicated section near the bottom of this note.
