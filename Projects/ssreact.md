@@ -98,6 +98,9 @@ rsync -rltz --no-owner --no-group --delete \
 - **Notifications shipped 2026-09-30, verified live.** Grouped Today/Yesterday/Earlier, per-type icon/text/link (matches `getNotificationIcon`/`getNotificationText`/`getNotificationLink` in the original exactly), post-text preview via `api.getPostPreviews`, Mark as Seen.
   - **Test setup for this one is worth noting for future agents**: a notification only exists when *someone else* acts on your account, so testing it needed a second isolated test account (`e2e-test-2@ssreact.local`, same throwaway-bcrypt-hash technique as the first) to follow/like/comment on the first one's post. Real activity, not stubs — all three notification types rendered correctly with the right copy, icon, and post preview; clicking one navigated to the right target; Mark as Seen round-tripped. All test data (post, comment, like, follow) deleted afterward.
   - **No header notification-count badge wired up** — `Header.tsx` is still the original nav placeholder (never in scope for any single page in this build order; someone should pick it up as its own item once the remaining pages are done). `markNotificationsSeen` itself works regardless.
+- **Search shipped 2026-09-30, verified live.** Full user list fetched once (`api.getUsers()`) and filtered client-side — deliberately not a per-keystroke search endpoint, matching the original's own design choice for what's a small, real-app-sized user table. Live dropdown (up to 5 matches) + a paginated full list below (client-side "Load More", just raises how much of the already-fetched list is sliced), each row with a Follow/Following toggle.
+  - **One simplification over the original**: `api.getUsers()` already excludes the current user server-side (`WHERE id != ?`), so the list doesn't re-check "is this me" the way the original's `isOwn` branch does — trusting that guarantee instead.
+  - **Verified live**: dropdown filters correctly while typing, Follow/Following round-trips against the real API and updates in place, list sorted newest-first. State restored after testing.
 
 ## Decisions
 - **Reuse the learn-react-site scaffold rather than starting clean** — it already had the exact stack (React/Vite/TS/shadcn) this wants, and Dave already made the tooling choices (Base UI over plain Radix, pnpm, Tailwind 4) while learning React with it.
@@ -257,7 +260,7 @@ Recommended order (each unblocks testing the next; auth first since nothing else
 - [x] Create Post phase 3: camera/mic capture modal — shipped 2026-09-30, UI/error-path verified live; **real hardware capture (actual photo/video/audio round-trip) still needs manual verification on a device with a camera/mic**
 - [x] Profile — verified live 2026-09-30
 - [x] Notifications — verified live 2026-09-30
-- [ ] Search
+- [x] Search — verified live 2026-09-30
 - [ ] Settings (incl. session-expired modal, push notifications)
 - [ ] PWA parity
 - [ ] Verification pass against the Playwright suite + manual walkthrough
