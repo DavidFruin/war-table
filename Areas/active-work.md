@@ -14,4 +14,3 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
-| Citadel | ssreact | overnight loop: final verification pass | 2026-09-30T05:09Z |
