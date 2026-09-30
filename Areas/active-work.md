@@ -14,4 +14,3 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
-| Citadel | ssreact | reverse-proxy /api.php + /media.php on react.davidfruin.com -> dev.davidfruin.com | 2026-09-29T23:51Z |
