@@ -40,6 +40,10 @@ each other — it's not a record, it's only ever "what's true right now."
   whether it's genuinely still in progress — not as something that blocks
   you outright.
 
+## Machines
+
+- **Citadel**: Dave's repos live under `~/dev` (e.g. `~/dev/ssreact`, `~/dev/simple-social`). Check there before cloning a fresh copy — cloning a duplicate elsewhere risks working from a stale or diverged checkout.
+
 ## Conventions
 
 - One markdown file per project under `Projects/`, named after the project's repo or common name. Projects that hold actual files (configs, code snippets) rather than just notes get their own folder with a `README.md`.
