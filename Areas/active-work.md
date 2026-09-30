@@ -14,3 +14,4 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
+| Citadel | ssreact | postCache + --primary-hover cleanup | 2026-09-30T18:07Z |
