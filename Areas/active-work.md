@@ -14,4 +14,3 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
-| Citadel | ssreact | Post detail + comments page | 2026-09-30T01:55Z |
