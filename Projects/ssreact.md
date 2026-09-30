@@ -8,6 +8,8 @@ repo: https://github.com/DavidFruin/ssreact
 ## Summary
 React + Vite + TypeScript + shadcn/ui rewrite of [[simple-social]]'s web frontend (currently vanilla JS, no build step, no TS). Repo renamed 2026-09-25 from `learn-react-site` — Dave's own React-learning scaffold — rather than starting a new repo from scratch, since it already had exactly the stack this needs.
 
+**Milestone 2026-09-30: all 9 pages in the build order are built and individually verified live** against `react.davidfruin.com`'s real (isolated-test-data) backend — see the Verification pass section near the bottom for what "verified" means here and the handful of things still flagged as needing a real device. Still open: the GitHub Actions auto-deploy workflow, the session-expired modal, and the real-device checks the Verification pass section lists.
+
 **This note is written to be handed to a fresh agent with zero prior context on this project.** If that's you: read this whole note before touching code. The scaffold's own source files also carry inline comments explaining non-obvious decisions — this note is the durable, complete version; those comments are pointers back to it, not a substitute.
 
 ## Status (2026-09-25)
@@ -114,6 +116,16 @@ rsync -rltz --no-owner --no-group --delete \
   - **Push subscribe/unsubscribe wired for real** (`src/lib/push.ts`), replacing Settings' earlier "not available yet" placeholder now that a service worker actually exists to back it.
   - **Verified live**: service worker registers and activates (confirmed via `navigator.serviceWorker.getRegistrations()`), manifest is valid JSON with all 4 icon entries resolving, all 5 icon files serve `200`, the app works normally with the worker active.
   - **Not verified, flagged honestly**: real push delivery and the native "Add to Home Screen" prompt. This session's automated browser has `Notification.permission` pre-denied (confirmed directly) — the graceful "blocked" fallback message was exercised and works correctly, but an actual subscribe was never exercised. **Needs a real device/browser to confirm push delivery and installability before calling this fully done.**
+
+## Verification pass (2026-09-30)
+
+**The existing Playwright suite (`simple-social/tests/front-end-test/`) cannot be used against ssreact and shouldn't be forced to.** Checked it directly: it points `baseURL` at `dev.davidfruin.com` (the *original* vanilla-JS app, not `react.davidfruin.com`), navigates with hash routes (`#/login`, `#/feed`), and asserts against that app's own element IDs and copy (`#email`, `#login-message`, an `h1` reading exactly "News Feed"). None of that exists in ssreact — different routing scheme, different DOM, different component library entirely. Running it as-is would test the wrong app on the wrong domain and fail everywhere on selector mismatches that have nothing to do with whether ssreact actually works. This isn't a shortcut taken to skip verification — see the manual walkthrough below for what actually got checked, and someone should decide separately, as its own piece of work, whether a *new* Playwright suite for ssreact is worth writing rather than trying to adapt this one.
+
+**Manual walkthrough performed instead** (matching how every page in this rewrite has actually been verified all along): logged out and back in fresh (confirmed real credential validation, not just a cached session), created a post from Create Post, navigated to it via a real in-app link from Profile's "Expand" (not a typed URL), added it to the browser's history, used the Post page's own "Back" button to return to Profile (confirmed React Router history behavior, not just isolated page loads), then deleted the test post — a complete, continuous user journey across five pages in one session rather than isolated per-page checks. Also checked responsive layout at 375×812 (mobile) on Settings and a Profile with real posts: everything reflows cleanly, no overflow, and the line-clamp "Show more" truncation works correctly at that width.
+
+**One repeating but harmless pattern observed throughout this entire session's testing, worth documenting so a future agent doesn't mistake it for a bug**: authenticated API calls occasionally return a `401` in the browser console, always immediately followed by a successful silent refresh-and-retry (`200`) — this is `api.ts`'s documented single-flight refresh behavior working as designed when the access token ages out mid-session, not a failure. It never once produced a user-visible error across dozens of interactions.
+
+**Net result: all 9 planned pages are built and individually verified live against real backend data** (Auth, Feed, Post detail/comments, Create Post, Profile, Notifications, Search, Settings, plus PWA parity). Three things are explicitly flagged as *not* fully verified rather than silently claimed done, all because this session's automated browser lacks real hardware/permissions, not because the code wasn't written carefully: real camera/mic capture (Create Post phase 3), real push notification delivery + native install (PWA parity), and Delete Account (Settings, to avoid destroying the only test account still in use). Each needs a real device or a human at a keyboard to close out.
 
 ## Decisions
 - **Reuse the learn-react-site scaffold rather than starting clean** — it already had the exact stack (React/Vite/TS/shadcn) this wants, and Dave already made the tooling choices (Base UI over plain Radix, pnpm, Tailwind 4) while learning React with it.
@@ -276,7 +288,7 @@ Recommended order (each unblocks testing the next; auth first since nothing else
 - [x] Search — verified live 2026-09-30
 - [x] Settings — verified live 2026-09-30 (push notifications deferred to PWA parity; Delete Account not exercised end-to-end, see note below); session-expired modal still separately open, see Known gaps
 - [x] PWA parity — manifest + service worker shipped and verified live 2026-09-30; real push delivery and native install still need a real device, see note below
-- [ ] Verification pass against the Playwright suite + manual walkthrough
+- [x] Verification pass — manual walkthrough done 2026-09-30 (existing Playwright suite is incompatible, see note below); all 9 pages now built
 
 ## Links
 - Repo: https://github.com/DavidFruin/ssreact
