@@ -120,6 +120,13 @@ rsync -rltz --no-owner --no-group --delete \
   - **Ported the waiter-queue design deliberately, not simplified.** A page load fires more than one authenticated request at once (the feed alone fires several in parallel), so an expired session can 401 more than one call at nearly the same moment. The original's own comment documents a real bug from a naive single-slot implementation: the second concurrent caller overwrites the first's, orphaning its promise forever — visible as a page stuck on "Loading..." after re-login. Every waiter gets its own retry, resolved independently and sequentially (one throwing doesn't stop the others).
   - Re-login re-fetches the full user record (`api.getMyInfo()`) rather than trusting the login response's minimal fields — matches the original, and means theme/hand come back correct too.
   - **Verified live, including the actual retry-in-place behavior this exists for, not just "the modal closes"**: corrupted the stored JWT+refresh token to force a real expiry on `/settings`. Confirmed: the modal appears with the correct email while the page freezes mid-request (Devices section stuck on "Loading..."); wrong password shows an inline error and clears the field without closing; **correct password closes the modal AND the frozen Devices section immediately finishes loading** — the original in-flight request actually retried and completed, not just a UI dismissal; Logout drains the waiters and redirects to `/login` cleanly. All three paths (re-login success, wrong password, logout) exercised for real.
+- **Landing page + static info pages + a real Header shipped 2026-09-30.** Net-new scope, not one of the original 9 pages — Dave asked directly, after the loop finished.
+  - New public routes (open regardless of login state, matching the original exactly): `/about`, `/api`, `/conduct`, `/roadmap`, `/download`. `/` itself stays guest-only (existing `RequireGuest` wrapper) — a logged-in visitor goes straight to `/feed` instead of seeing the marketing pitch.
+  - **`Header.tsx` is no longer a placeholder.** Real two-link-set nav ported from `js/header.js`: logged-in (Feed/Post/Search/Notifications-with-badge/Profile/Settings/Log out) vs. logged-out (About/API/Conduct/Roadmap/Download/Register/Login). Notification-count polling every 60s also re-asserts the PWA home-screen badge and feeds the service worker's cached count (`sw.js` already had the `SET_BADGE_COUNT` listener from the PWA parity work — nothing was sending it until now, this closes that loop). **Deliberately not ported: the mobile thumb-nav** (floating corner bubble, custom radius/angle math, hand-preference-aware, no shadcn equivalent) — flagged as still open, not silently dropped. Desktop/plain nav only for now.
+  - **API docs (`api.html`, 40+ documented actions, ~800 lines) injected as raw HTML via a `?raw` import, not transcribed into JSX** — a manual rewrite of that much reference content risks silent transcription errors across dozens of actions nobody would catch. Styled via new scoped `.static-doc` CSS rules in `index.css` (not a JSX/Tailwind class tree, since it's markup this project doesn't control the shape of). The content is static and authored by this project, never user-supplied, so `dangerouslySetInnerHTML` is safe here. About/Conduct/Roadmap/Download were short enough to write as real JSX instead — `roadmap-data.ts` holds the shared Simple Social product roadmap (not ssreact-specific; keep it in sync with the original if that one changes rather than forking the list).
+  - Download's three interactive bits ported as real React state, not static HTML: Install App via `beforeinstallprompt`, copy-to-clipboard buttons, and an LMDE/Omarchy OS tab toggle.
+  - **Verified live**: logged-in nav shows a real unread-notification badge (confirmed against actual test data) that clears correctly after Mark as Seen; logged-out landing page and all 5 static pages render correctly with working internal links (including the API doc's in-page anchors); Roadmap's sort/count logic confirmed correct against the real data; Download's OS toggle switches content correctly; both nav states confirmed to wrap cleanly at 375px mobile width.
+  - **Copy-to-clipboard could not be verified** — this session's automated browser has clipboard write blocked (confirmed directly: `NotAllowedError`, same category of sandbox restriction as camera/notifications seen elsewhere in this project). The code's catch block handles that failure without crashing, matching the original's own "still readable in the block, nothing crashes" comment on this exact scenario — but an actual successful copy hasn't been seen firsthand.
 
 ## Verification pass (2026-09-30)
 
@@ -274,8 +281,9 @@ Recommended order (each unblocks testing the next; auth first since nothing else
 - ~~Session-expired modal not built~~ **Shipped 2026-09-30** — see the dedicated section near the bottom of this note.
 - **`postCache` not ported.** `store.js` caches whatever post a card just rendered so clicking into it on the Post page skips a loading flash. Not reproduced yet — if this project ends up using TanStack Query (or similar) for data fetching, its own cache likely provides this for free; if it's plain `fetch`-in-`useEffect`, it needs porting explicitly. Decide when building the Feed/Post pages, not before.
 - **`--primary-hover` unwired** — see Theme system section above.
-- **No favicon/PWA icons yet** — deferred to the PWA parity phase along with the rest of the manifest/service-worker work, not a scaffold bug.
+- ~~No favicon/PWA icons yet~~ **Shipped** as part of PWA parity 2026-09-30 (`manifest.json` + `pwa-icons/` + `site-icon.png` favicon).
 - **GitHub Actions deploy pipeline** — tracked in [[simple-social]], not this repo; the existing `.github/workflows/deploy.yml` here only builds (leftover from the learn-react-site days), doesn't deploy anywhere yet.
+- **Mobile thumb-nav not built.** `Header.tsx` (shipped 2026-09-30) has the full desktop/plain nav for both logged-in and logged-out states, but not the original's floating corner bubble menu for touch devices (custom radius/angle math per nav item, mirrors to the other corner based on the hand preference already wired up in Settings — see `renderThumbNav` in `js/header.js`). No shadcn equivalent; real custom-component work, not a quick add.
 
 ## Next steps
 - [x] Rename/clone repo
@@ -290,9 +298,12 @@ Recommended order (each unblocks testing the next; auth first since nothing else
 - [x] Profile — verified live 2026-09-30
 - [x] Notifications — verified live 2026-09-30
 - [x] Search — verified live 2026-09-30
-- [x] Settings — verified live 2026-09-30 (push notifications deferred to PWA parity; Delete Account not exercised end-to-end, see note below); session-expired modal still separately open, see Known gaps
+- [x] Settings — verified live 2026-09-30 (push notifications deferred to PWA parity; Delete Account not exercised end-to-end, see note below)
 - [x] PWA parity — manifest + service worker shipped and verified live 2026-09-30; real push delivery and native install still need a real device, see note below
 - [x] Verification pass — manual walkthrough done 2026-09-30 (existing Playwright suite is incompatible, see note below); all 9 pages now built
+- [x] Session-expired re-login modal — shipped and verified live 2026-09-30, including actual retry-in-place behavior
+- [x] Landing page (`/`) + static info pages (`/about`, `/api`, `/conduct`, `/roadmap`, `/download`) + real Header nav for both auth states — shipped and verified live 2026-09-30
+- [ ] Mobile thumb-nav (floating corner bubble menu) — see Known gaps
 
 ## Links
 - Repo: https://github.com/DavidFruin/ssreact
