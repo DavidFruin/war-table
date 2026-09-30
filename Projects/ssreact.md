@@ -95,6 +95,9 @@ rsync -rltz --no-owner --no-group --delete \
   - **Two more real `api.ts` bugs found and fixed** (confirmed against the actual PHP handlers, not guessed): `isFollowing`'s response key is `following`, not `isFollowing` as it was typed before — would have silently always read `undefined`/falsy. `getUserInfo`/`getMyFollows`/`getMyFollowers` were untyped placeholders, now typed to their real shapes.
   - **One deliberate simplification over the original**: `isFollowing` state is read via the dedicated `api.isFollowing()` call instead of fetching the viewer's *entire* follows list and searching it for a match (what `profile.js` does) — same end result, and simpler here since this page has no other reason to hold that full list the way the original happened to.
   - **Verified live**: own profile (zero state), another user's profile with real posts, Follow → appeared immediately in their followers popover (real data, not a stub), Unfollow → button and state reverted correctly. State left as found.
+- **Notifications shipped 2026-09-30, verified live.** Grouped Today/Yesterday/Earlier, per-type icon/text/link (matches `getNotificationIcon`/`getNotificationText`/`getNotificationLink` in the original exactly), post-text preview via `api.getPostPreviews`, Mark as Seen.
+  - **Test setup for this one is worth noting for future agents**: a notification only exists when *someone else* acts on your account, so testing it needed a second isolated test account (`e2e-test-2@ssreact.local`, same throwaway-bcrypt-hash technique as the first) to follow/like/comment on the first one's post. Real activity, not stubs — all three notification types rendered correctly with the right copy, icon, and post preview; clicking one navigated to the right target; Mark as Seen round-tripped. All test data (post, comment, like, follow) deleted afterward.
+  - **No header notification-count badge wired up** — `Header.tsx` is still the original nav placeholder (never in scope for any single page in this build order; someone should pick it up as its own item once the remaining pages are done). `markNotificationsSeen` itself works regardless.
 
 ## Decisions
 - **Reuse the learn-react-site scaffold rather than starting clean** — it already had the exact stack (React/Vite/TS/shadcn) this wants, and Dave already made the tooling choices (Base UI over plain Radix, pnpm, Tailwind 4) while learning React with it.
@@ -253,7 +256,7 @@ Recommended order (each unblocks testing the next; auth first since nothing else
 - [x] Create Post phase 2: media upload — verified live 2026-09-30
 - [x] Create Post phase 3: camera/mic capture modal — shipped 2026-09-30, UI/error-path verified live; **real hardware capture (actual photo/video/audio round-trip) still needs manual verification on a device with a camera/mic**
 - [x] Profile — verified live 2026-09-30
-- [ ] Notifications
+- [x] Notifications — verified live 2026-09-30
 - [ ] Search
 - [ ] Settings (incl. session-expired modal, push notifications)
 - [ ] PWA parity
