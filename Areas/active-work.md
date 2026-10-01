@@ -14,4 +14,3 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
-| citadel (claude-code) | ssreact | Continuing polish/fixes round | 2026-10-01T19:30Z |
