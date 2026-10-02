@@ -11,9 +11,13 @@ A plan for building [[ssreact-native]], the phone app, from [[ssreact]], the Rea
 
 > **Updated 2026-10-02, Dave's decisions:**
 > - **The phone app is the top priority**, ahead of [[sselectron]].
-> - **Step 1 (now): family only.** iPhone and Android, distributed **privately** through **TestFlight internal testing** (iOS) and **Google Play internal testing** (Android). No public store listing, no App Store review, and no Google 14-day closed test. Registration becomes **invite-only with free codes** (`Inbox/access-and-public-launch-plan.md`, Step 1).
-> - **Step 2 (later, GATED): a public, invite-only, paid launch** on both stores. That is Phase 9 below plus that plan's Step 2: moderation, payments, legal.
-> - **Individual** developer accounts. **Expo push is approved.**
+> - **Step 1 (now): family only.**
+>   - **Android:** an **APK file** family install directly. No Play Store.
+>   - **iPhone:** an **Unlisted App Store** listing (Apple's official route for limited audiences), with **TestFlight internal testing** in the meantime.
+>   - Registration is **invite-only with free codes** (`Inbox/access-and-public-launch-plan.md` Step 1).
+>   - Unlisted apps get full App Store review, so that plan's **Step 1B** (report/block/terms/privacy) comes before Phase 9.
+> - **Step 2 (later, GATED): a public, invite-only, paid launch** on the App Store + Google Play (Phase 10 + the access plan's Step 2).
+> - **Individual** Apple Developer account. **Expo push is approved.**
 >
 > Phase 8 (family release) depends on prod running ssapi with the invite and Expo push additions, because the family builds talk to `app.davidfruin.com`.
 ---
@@ -77,8 +81,8 @@ A plan for building [[ssreact-native]], the phone app, from [[ssreact]], the Rea
 | N2 | **Share logic only**, through a `src/core/` folder extracted inside ssreact and **copied** into ssreact-native by a sync script pinned to an ssreact commit | Fits "RN is a bridge". A shared npm package or monorepo costs setup time for an app that will be replaced. The sync script plus a drift check (§4, step 2.2) stops the copy from silently going stale. Upgrade to a shared package later only if drift actually hurts. |
 | N3 | **Plain `StyleSheet` + a theme-token object** ported from `index.css`, with no NativeWind or Tamagui | Keeps all six themes with zero dependencies. A UI kit would be thrown away when native arrives. |
 | N4 | **Tokens in `expo-secure-store`**, not AsyncStorage | Keychain/Keystore is the platform-correct place for a 30-day refresh token. |
-| N5 | **iOS and Android together** (decided 2026-10-02) | Family members use both. Every phase is checked on both platforms, using an Android emulator plus a real Android phone, and iOS through EAS builds on TestFlight. No Mac is needed: EAS builds and submits iOS in the cloud. |
-| N7 | **Individual** Apple Developer ($99/yr) and Google Play Console ($25 once) accounts (decided 2026-10-02) | Step 1 uses only private testing tracks (TestFlight internal, Play internal testing), which need these accounts but no public listing or store review. Step 2 revisits individual vs. organization before charging money (access plan §2.3). |
+| N5 | **iOS and Android together** (decided 2026-10-02) | Family members use both. Android ships as an APK and iPhone as an Unlisted App Store app (TestFlight first). Every phase is checked on both platforms, using an Android emulator plus a real Android phone, and iOS through EAS builds on TestFlight. No Mac is needed: EAS builds and submits iOS in the cloud. |
+| N7 | **Individual** Apple Developer account ($99/yr); no Google Play account for Step 1 (decided 2026-10-02) | iPhone needs the Apple account for TestFlight and the Unlisted listing. Android uses a sideloaded APK; a Play account only comes in at Step 2, unless Android developer verification needs one (Phase 8.1). Step 2 revisits individual vs. organization before charging money (access plan §2.3). |
 | N6 | **Leave out the marketing and static pages** (Landing, About, API docs, Conduct, Roadmap, Download). Settings links out to the website for them. | Nobody reads API docs in a phone app, and keeping the content in one place avoids drift. |
 
 ---
@@ -324,21 +328,25 @@ Web Push (VAPID) doesn't exist in React Native. Native push needs FCM (Android) 
 - **Toasts:** one host component subscribed to `core/toast`, with solid colours (the lesson from the Red-theme toast bug in the [[ssreact]] note).
 - **Empty, loading and error states** on every screen.
 - **Accessibility:** `accessibilityLabel` on icon-only buttons, and Dynamic Type / font scaling left enabled.
-- **Later, Step 2 only:** report and block UI, blocked-users list, terms gate, paywall and Restore Purchases. Spec is in access plan §2.2/§2.4. **Don't build these now.**
+- **Not in Phase 7:**
+  - the report/block UI, blocked-users list and terms gate come in **Phase 9.0** (needed for the Unlisted App Store review);
+  - the paywall and Restore Purchases are **Step 2 only** (access plan §2.2).
 
-### Phase 8: private family release (TestFlight internal + Play internal testing)
+### Phase 8: family release: Android APK + iPhone via TestFlight (interim)
 Steps marked **Dave** need his accounts or credentials. The agent prepares everything else, never committing secrets.
 
 **8.1 Accounts (Dave, week 1):**
-- **Apple Developer Program, individual:** $99/yr; identity verification can take a day or two.
-- **Google Play Console, personal:** $25 once, plus identity verification.
-- These lead times are why to sign up early.
+- **Apple Developer Program, individual:** $99/yr; identity verification can take a day or two. Needed for TestFlight now and the Unlisted App Store listing (Phase 9).
+- **No Google Play account is needed.** Android ships as an APK file.
+- **Check one thing early:** Google has announced **developer verification for sideloaded apps on certified Android devices**, rolling out by country from 2026.
+  - If it applies where the family lives, Dave must register as a verified Android developer and register the package name, or Android will block the install.
+  - Check Google's current Android developer-verification page before the first release. It may need a small fee or the Play Console account after all.
 
 **8.2 App identity and config (agent):**
 - In `app.config.ts`:
   - `name: 'Simple Social'`
-  - `ios.bundleIdentifier` / `android.package`: `com.davidfruin.simplesocial`. **DECISION:** Dave confirms; it is permanent after the first upload, and Step 2 reuses it.
-  - auto-incremented build numbers (`eas.json` `autoIncrement`)
+  - `ios.bundleIdentifier` / `android.package`: `com.davidfruin.simplesocial`. **DECISION:** Dave confirms; it is permanent, and the App Store listing and every APK update reuse it.
+  - auto-incremented build numbers / `versionCode`
   - `ios.config.usesNonExemptEncryption: false`
 - **Permission strings** (camera, microphone, photo library), written in plain language.
 - **Icons:** a 1024×1024 iOS icon (no transparency) and an Android adaptive icon, from the black-and-white heart in `ssreact/public/pwa-icons/`.
@@ -346,106 +354,121 @@ Steps marked **Dave** need his accounts or credentials. The agent prepares every
 **8.3 Build profiles (`eas.json`):**
 - `development`: dev client, dev backend.
 - `preview`: dev or react backend, for Dave's own testing.
-- `family`: **the `app.davidfruin.com` backend**, store-signed (`distribution: store`), used for TestFlight and Play internal testing.
+- `family`: **the `app.davidfruin.com` backend**.
+  - Android: `"android": { "buildType": "apk" }`, `distribution: internal`.
+  - iOS: `distribution: store`, for TestFlight and later the App Store.
 - The `family` profile needs prod running ssapi with the invite system (access plan §1.6) and Expo push (Phase 6). **That's the release blocker.**
 
-**8.4 iPhone: TestFlight internal testing:**
-- `eas build -p ios --profile family`, then `eas submit -p ios`. The build appears in App Store Connect → TestFlight.
-- **Dave:** add each family member in **App Store Connect → Users and Access** with the **most limited role available**, and restrict their app access to Simple Social only. Then add them to an **internal testing group**.
-  - Internal groups allow up to 100 people with **no Beta App Review**.
-  - Each person needs an Apple ID email, accepts the invite, and installs the **TestFlight** app, then Simple Social from it.
-  - (External TestFlight groups invite by email without the team-role step, but each new version goes through a lighter Beta App Review. That's an alternative if adding family to the team feels wrong. **DECISION.**)
-- **Builds expire 90 days after upload.** A new build must go up **before** that. Rebuild at least every ~75 days, even without changes. Testers' TestFlight updates automatically. Put the date in the [[ssreact-native]] note after each upload.
-- EAS Update (over-the-air JS updates) is optional. It allows quick fixes between builds but **doesn't** reset the 90-day expiry. **DECISION.**
+**8.4 Android: APK file:**
+- Build with `eas build -p android --profile family`. The result is a signed `.apk`.
+- **Signing key, critical:**
+  - EAS creates and stores the Android keystore.
+  - **Dave downloads a backup right away** with `eas credentials` → Android → download keystore, and keeps it somewhere safe, outside every repo and outside this vault.
+  - Every update **must** be signed with the same key. If it's lost, every family member has to uninstall (losing nothing server-side, but it's a hassle) and reinstall.
+- **Hosting:** put the APK at a stable URL Dave controls, e.g. `https://app.davidfruin.com/downloads/simple-social.apk`.
+  - Serve it with `Content-Type: application/vnd.android.package-archive`.
+  - Put a SHA-256 checksum next to it.
+  - The app is useless without an invite code, so a public URL is acceptable. A secret-path URL works too.
+- **Install (per family member):**
+  1. Open the link in Chrome on the phone.
+  2. Allow "Install unknown apps" for Chrome when Android asks.
+  3. Install. Google Play Protect may show an "unrecognised developer" warning; tap "Install anyway". Developer verification (8.1) is what removes that warning over time.
+  4. Register with the invite code and turn on notifications in Settings. Push works on any phone with Google Play services, through FCM.
+- **Updates (sideloaded apps don't update themselves):**
+  - **Recommended: EAS Update** (over-the-air JS updates) for normal changes. The app downloads new JS on launch, with no reinstall. Changes to native modules or permissions still need a new APK.
+  - For those, add a small **"New version available"** check:
+    - The app fetches `https://app.davidfruin.com/downloads/android-version.json` (`{versionCode, url, sha256, notes}`) on launch.
+    - If `versionCode` is higher than its own, it shows a banner that opens the APK URL. Android installs it over the old one, because the signing key is the same.
+  - The same mechanism lets Dave require an update if a security fix ever needs it (`minVersionCode`).
 
-**8.5 Android: Play internal testing:**
-- **Dave:** create the app in Play Console. Internal testing may still ask for a few app-content declarations, such as the data-safety form and target audience; fill them in honestly and minimally.
-- `eas build -p android --profile family` (AAB), then `eas submit -p android --track internal`.
-- **Dave:** add testers by email (up to 100 Google accounts) and send them the opt-in link. They install from the normal Play Store through that link, and updates arrive automatically.
-- Internal testing has no review delay and **no 12-tester/14-day rule**; that rule only applies to getting production access, which is Step 2.
-- There's no expiry on Android builds.
+**8.5 iPhone, interim: TestFlight internal testing:**
+This gets family onto iPhones quickly while Phase 9 (the Unlisted App Store listing) is prepared.
+- `eas build -p ios --profile family`, then `eas submit -p ios`.
+- **Dave:** add each family member in **App Store Connect → Users and Access** with the **most limited role**, restrict their app access to Simple Social, and add them to an **internal testing group**. They install the TestFlight app, then Simple Social from it. There's no review.
+- **Builds expire after 90 days.** Upload a new one before then. That stops mattering once Phase 9 is live; family members then move to the App Store version through the unlisted link, after which TestFlight can be stopped.
 
 **8.6 Onboarding a family member:**
 1. Dave creates an invite code on the web `/admin/invites` page (access plan §1.3).
-2. He sends them the TestFlight invite or the Play opt-in link, plus their code.
-3. They install, register with the code, and turn on notifications in Settings.
+2. He sends the APK link (Android) or the TestFlight invite (iPhone; the unlisted App Store link after Phase 9), plus their code.
+3. They register with the code and turn on notifications.
 
 **8.7 Verify (on real phones, because this is the release):**
-- On one iPhone and one Android phone, using family builds against prod:
-  - register with a fresh invite code (then delete that test account afterwards);
-  - log in, feed, post with a photo and a capture;
+- One Android phone (APK) and one iPhone (TestFlight), with family builds against prod:
+  - register with a fresh invite code (then delete that test account);
+  - feed, post with a photo and a capture;
   - push arrives and opens the post;
-  - badge clears on mark-as-seen;
+  - badge clears;
   - logout stops pushes.
-- The TestFlight build shows the right expiry date. Record the date and the results in the [[ssreact-native]] note.
+- **Android update path:**
+  - Publish an EAS Update (a visible text change) → it appears after a relaunch.
+  - Build a second APK with a higher `versionCode` and update `android-version.json` → the banner appears and the update installs over the old version, keeping you logged in.
+- Record the results, the iOS build's expiry date and where the keystore backup lives (*where*, not the key) in the [[ssreact-native]] note.
 
-### Phase 9 (LATER, Step 2 only, GATED): public store release (App Store + Google Play)
-Only after Dave's go on the access plan's Step 2. The moderation UI, the terms gate and the subscription paywall must exist first (access plan §2.2 and §2.4).
+### Phase 9: iPhone: Unlisted App Store distribution (after the family release)
+**Unlisted App Distribution** is Apple's official route for apps meant for a limited audience. The app is on the real App Store but **doesn't appear in search, charts or categories**; only people with the direct link can find it. It **goes through full App Store review**, so the content rules apply.
 
-Steps marked **Dave** need his accounts or credentials. The agent prepares everything else and writes it into the repo, except secrets.
+**9.0 Prerequisite: access plan Step 1B** (report, block, admin actions, terms gate, Terms and Privacy pages, contact email) must be built and **deployed to prod**. Apple's guideline 1.2 applies to unlisted apps that have user posts too. The phone UI for it is:
+- a "…" action sheet on posts and comments → **Report** (reason + optional details);
+- profile header "…" → **Report user** / **Block user**;
+- reported or blocked content disappears straight away;
+- Settings → **Blocked users** with Unblock;
+- Settings links to **Terms**, **Privacy Policy** and the contact email;
+- a **Terms gate** after login (and on register) when `termsVersionAccepted < termsVersionCurrent`; it can't be dismissed and Back is ignored;
+- a suspended-account login shows the server's message as it is.
 
-**9.1 Accounts (Dave):**
-- The accounts from 8.1 already exist. **Before charging money**, decide whether to move to **organization** accounts through an LLC (access plan §2.3), so Dave's legal name and address aren't shown publicly as the seller.
-- Start Google's **12-tester / 14-day closed test** (personal accounts only) as soon as the Step 2 build is ready (9.5). The family testers from Phase 8 can be part of it.
+**Verify the prerequisite:** access plan Step 1B's A5 scenarios, run through the iPhone and Android apps against the bench or dev. Then ship the moderation UI to Android too: through EAS Update, or a new APK if native code changed.
 
-**9.2 App identity and config (agent):**
-- In `app.config.ts`:
-  - `name: 'Simple Social'`
-  - `ios.bundleIdentifier` and `android.package`: `com.davidfruin.simplesocial` (**DECISION:** Dave confirms; it can never change after the first upload)
-  - `version` plus auto-incremented build numbers (`eas.json` `autoIncrement`)
-  - `ios.config.usesNonExemptEncryption: false` (the app only uses HTTPS, so no export-compliance paperwork)
-- **Permission strings** (iOS `infoPlist`, Android `permissions`), written in plain language:
-  - Camera: "Take photos and videos to post."
-  - Microphone: "Record audio and video to post."
-  - Photo library: "Choose photos and videos to post."
-  - Notifications are requested at runtime from Settings only.
-  - Remove any permission a plugin adds that the app doesn't use (check the merged `AndroidManifest`).
-- **iOS privacy manifest:** declare the required-reason APIs used through Expo modules in `ios.privacyManifests`. Run the build and fix any warnings App Store Connect reports.
-- **Icons and splash:**
-  - A 1024×1024 iOS icon with no transparency.
-  - An Android adaptive icon (foreground + background).
-  - Build them from the black-and-white heart in `ssreact/public/pwa-icons/`.
+**9.1 Config additions (agent):**
+- **iOS privacy manifest:** declare the required-reason APIs used through Expo modules in `ios.privacyManifests`. Fix any warnings App Store Connect reports on upload.
+- Keep the permission strings clear (Apple reviews them).
 
-**9.3 Build profiles (`eas.json`):**
-- `development`: dev client, dev backend.
-- `preview`: internal distribution, dev or react backend, for family testing.
-- `production`: **the `app.davidfruin.com` backend**, store distribution.
-- Production builds point at prod, so **they need the access plan's Step 2 deployed to prod first**: prod running ssapi with the moderation, terms and Expo push additions.
-
-**9.4 Store listing content (agent drafts in `store/` in the repo, Dave approves):**
-- `store/listing.md`: name, subtitle/short description (80 chars for Play), full description, keywords (iOS), category (Social Networking), support URL, marketing URL.
-- Screenshots: on a simulator or emulator with **test data only, no real users' emails**, in the required sizes (iPhone 6.9" and 6.5", Android phone). Take them with seeded demo accounts on dev.
-- **Apple privacy "nutrition label"** answers and **Google Data Safety form** answers, worked out from the Privacy Policy:
-  - collected: email, user content (posts, comments, photos, video, audio), identifiers (user ID), diagnostics (server logs);
+**9.2 App Store Connect content (agent drafts in `store/` in the repo, Dave approves and enters it):**
+- `store/listing.md`: name, subtitle, description (say plainly that it's **invite-only**), keywords, category (Social Networking), support URL, privacy policy URL.
+- Screenshots: simulator, **test data only, no real users' emails**, sizes 6.9" and 6.5". Even unlisted apps need a product page.
+- **App Privacy ("nutrition label")** answers, worked out from the Privacy Policy:
+  - collected: email, user content, user ID, diagnostics (server logs);
   - not used for tracking;
-  - not sold;
-  - account deletion available in the app.
-- **Age rating:** Apple's questionnaire and Google's IARC questionnaire. Answer honestly that users can interact and share unmoderated content in real time, with reporting and blocking in place. That usually leads to a **12+ or 17+** rating on iOS; let the questionnaire decide.
+  - not sold.
+- **Age rating questionnaire:** answer honestly (user-generated content, with reporting and blocking). Expect 12+ or 17+.
 - **Review notes:**
-  - How moderation works (report → email → admin action, usually within 24h).
-  - Where to find Report and Block.
-  - That account deletion is in Settings.
-  - **The reviewer demo account's credentials are typed into App Store Connect / Play Console only, never committed.**
+  - that it's an invite-only family app requested as unlisted;
+  - how moderation works (report → email → admin action, usually within 24h);
+  - where Report and Block are;
+  - that account deletion is in Settings.
+- **Reviewer access:** a demo account on prod. Its credentials go **only** into App Store Connect's review fields, never into a repo or this vault. Also enter a spare invite code there, so the reviewer can test registration.
 
-**9.5 Testing tracks:**
-- **iOS:** `eas build -p ios --profile production` → `eas submit -p ios` → **TestFlight**. Internal testers (Dave + family) need no review; external testers need a short beta review.
-- **Android:** `eas build -p android --profile production` (AAB) → `eas submit -p android` to the **closed testing** track. Invite **12 or more testers**, through a Google Group or an email list of family and friends. They must **stay opted in for 14 consecutive days**. Dave applies for production access afterwards (Play asks a few questions about the test).
-- Testers use the real prod backend with their real accounts, so this doubles as the live verification of push, capture and moderation.
-
-**9.6 Submit for review:**
-- **Apple:** submit once TestFlight is clean. Common first-time rejection reasons to check beforehand:
-  - **1.2 (UGC):** report, block, terms and contact must all be there and work.
+**9.3 Submit and request Unlisted:**
+- `eas build -p ios --profile family` → `eas submit -p ios` → submit the version for **App Review** with **manual release** selected.
+- **Dave:** fill in Apple's **Unlisted App Distribution request form** (linked from Apple's developer documentation on unlisted apps) for the app. Explain that it's a private, invite-only app for his family. Apple approves the unlisted request separately from App Review. Ask for it **before** releasing, so the app never appears publicly.
+- Check beforehand for the common first-time rejection reasons:
+  - **1.2 (UGC):** report, block, terms and contact must all be there and working.
   - **2.1:** crashes or broken links; every Settings link must open.
-  - **5.1.1:** account deletion must be in the app (it is).
+  - **5.1.1:** account deletion must be in the app.
   - Permission prompts must have clear purpose strings.
-  - Login must work with the demo account.
-- If rejected: fix, bump the build number, resubmit. Record the reason in the [[ssreact-native]] note so it doesn't happen twice.
-- **Google:** after the 14-day test and production approval, promote the build to production. Use a staged rollout (e.g. 20% → 100%).
+  - The demo login must work.
+- If rejected: fix, bump the build number, resubmit. Record the reason in the [[ssreact-native]] note.
+- Once it's approved and unlisted, release it. Dave shares the **unlisted App Store link** with family. Updates go through review like any App Store app, and there's **no 90-day expiry**. Retire the TestFlight group.
 
-**9.7 After launch:**
-- Update the website download pages (ssreact `DownloadPage` "Phone" section, simple-social's `download.html`) with the official App Store and Google Play badges and links.
-- Updates: either ship new binaries through EAS each time, or add **EAS Update** (over-the-air JS) for faster fixes. **DECISION:** Dave picks OTA or binary-only. Store rules allow OTA JS updates that don't change the app's purpose.
-- Moderation duty: report emails go to Dave. Apple expects reports to be handled promptly.
+### Phase 10 (LATER, Step 2 only, GATED): public launch on the App Store + Google Play
+Only after Dave's go on the access plan's Step 2: invite-only, **paid**.
+
+**10.1 Prerequisites:**
+- The paywall, Restore Purchases and the subscription disclosures (access plan §2.2).
+- The organization-account decision (§2.3).
+
+**10.2 iOS:**
+- Ask Apple to make the app **public** instead of unlisted. A new submission states the change; the same listing, privacy answers and age rating are updated for payments.
+- In-app subscriptions are set up in App Store Connect; RevenueCat is recommended (§2.2).
+
+**10.3 Android:** move from the sideloaded APK to **Google Play**.
+- Create a Play Console account: personal $25, or organization.
+- **Upload the APK signing key to Play App Signing**, so Play builds can update sideloaded installs. Otherwise family members must uninstall and reinstall once.
+- Complete the listing, Data Safety form and IARC rating.
+- **Personal accounts:** run a closed test with **at least 12 testers for 14 consecutive days** before production access. Check the current rule; family can be part of it.
+- Then production, with a staged rollout.
+- Retire the APK update banner once everyone has moved to Play.
+
+**10.4 After launch:** add store badges on ssreact's `DownloadPage` and simple-social's `download.html`. Moderation duty scales with users (§2.6).
 
 ---
 
@@ -473,36 +496,42 @@ Steps marked **Dave** need his accounts or credentials. The agent prepares every
 ---
 
 ## 6. Website follow-ups
-- Step 1: none required. Optionally add "Phone app: invite-only, ask Dave" to the Download page.
-- Step 2: store badges on ssreact's `DownloadPage` and simple-social's `download.html` after public launch. `/terms` and `/privacy` must be live before submitting.
+- Phase 8: an APK download page or link at a stable URL (`/downloads/simple-social.apk` + `android-version.json` + checksum). The ssreact `DownloadPage` can say "Phone app: invite-only, ask Dave for a link."
+- Phase 9: `/terms` and `/privacy` live at public URLs (access plan Step 1B).
+- Phase 10: store badges after the public launch.
 
 ---
 
 ## 7. Open decisions for Dave
 1. **N2:** confirm "share logic only, copied core + sync script". Then record it in the [[ssreact-native]] note's Decisions.
-2. **Bundle ID / package name** (`com.davidfruin.simplesocial` proposed). It is permanent after the first upload.
+2. **Bundle ID / package name** (`com.davidfruin.simplesocial` proposed). It is permanent.
 3. **How ssapi reaches prod** (ssapi plan D6). **The family release can't ship without it.**
-4. TestFlight **internal** (family added to the developer team with a minimal role) or **external** (email invites, light Beta App Review per version).
-5. **OTA updates** (EAS Update) or binary-only. Either way, rebuild for iOS at least every ~75 days.
-6. Already decided 2026-10-02: family-only now via private testing tracks; invite-only registration; public paid launch later (Step 2, gated); individual accounts; Expo push approved.
+4. Where the APK is hosted, and whether the link is public or a secret path.
+5. Whether Android developer verification applies in the family's country (8.1). Check before the first release.
+6. A contact email, plus approval of the Terms and Privacy texts (needed for Phase 9).
+7. Already decided 2026-10-02:
+   - Android = APK sideload; iPhone = Unlisted App Store, with TestFlight in the meantime;
+   - invite-only registration;
+   - public paid launch later (Step 2, gated);
+   - individual Apple account;
+   - Expo push approved;
+   - EAS Update recommended for Android updates.
 
 ---
 
-## 8. Suggested order, stopping points and timeline (Step 1: family release)
+## 8. Suggested order, stopping points and timeline
 
 | Week | Agent work | Dave |
 |---|---|---|
-| 1 | Phase 1 (ssreact core), Phase 2 (scaffold); access plan Step 1 backend + web in parallel | Sign up for the Apple and Google accounts; confirm the bundle ID; decide how ssapi gets to prod |
-| 2 | Phases 3–4 (auth with invite field, shell, read screens) on both platforms | Install the preview builds on his own iPhone and Android phone |
-| 3 | Phase 5 (media + capture), Phase 6 (Expo push, ssapi additions) | Firebase and APNs setup; real-device capture and push checks |
-| 4 | Phase 7; family builds; TestFlight + Play internal upload | Deploy ssapi (with invites + push) to prod; create invite codes; add family as testers |
-| ~4–5 | Fixes from family feedback | Family installs and uses it |
+| 1 | Phase 1 (ssreact core), Phase 2 (scaffold); access plan Step 1 (invites) backend + web | Apple account sign-up; confirm the bundle ID; check Android developer verification; decide how ssapi gets to prod |
+| 2 | Phases 3–4 (auth with invite field, shell, read screens) | Install the preview builds on his own phones |
+| 3 | Phases 5–6 (media, capture, Expo push + ssapi additions) | Firebase and APNs setup; real-device capture and push checks |
+| 4 | Phase 7; APK + update check; TestFlight upload; access plan Step 1B (moderation) starts | Deploy ssapi to prod; host the APK; create invite codes; **family is using it** |
+| 5 | Step 1B backend + web + phone moderation UI | Approve the Terms and Privacy; choose a contact email |
+| 6 | Phase 9 listing drafts; submit to App Review | Deploy Step 1B to prod; fill in the Unlisted request form; reviewer demo account |
+| ~6–7 | Fixes if review asks for any | Unlisted link goes to the iPhone family members; retire TestFlight |
 
-**About 4–5 weeks to family members' phones.** Stop after each phase, as before.
-
-**The biggest risks:**
-- the ssapi → prod decision;
-- how quickly real-device testing happens;
-- remembering the iOS 90-day rebuild.
-
-Step 2 (public, paid) is a separate 5–8 week project after Dave's go; see the access plan.
+- **Family on Android (APK) and iPhone (TestFlight): about 4–5 weeks.**
+- **iPhone on the Unlisted App Store: about 6–7 weeks.** The App Review and Unlisted approval times are Apple's, usually days. A rejection adds roughly a week.
+- Stop after each phase, as before.
+- Step 2 (public, paid) is a separate project after Dave's go; see the access plan.
