@@ -14,9 +14,9 @@ replaces: Inbox/store-readiness-plan.md (its moderation spec is now Step 2 below
   - iPhone gets an **Unlisted App Store** listing, with TestFlight in the meantime.
   - Registration becomes **invite-only with free codes** that Dave hands out.
 - **Step 1B, right after:** **report, block, admin moderation, terms and a privacy policy.** Apple's full App Store review applies to Unlisted apps too, and its guideline 1.2 requires these for apps with user posts. It's also good practice for family use.
-- **Step 2, later:** open Simple Social to the public as an **invite-only, paid** social network on the App Store and Google Play.
+- **Step 2, the end goal:** a **normal public app on both the App Store and Google Play**, as an **invite-only, paid** social network.
 
-Steps 1 and 1B are needed for the family release. Step 2 is a separate, larger project. **Don't start any part of Step 2 without Dave's explicit go.**
+Steps 1 and 1B come first, for the family release. **Step 2 is the planned final stage, not optional.** It starts once the iPhone Unlisted listing is live and stable. Only its money, legal and business choices (§2.7) need Dave's decision before the agent builds the related parts.
 
 How these fit with the other plans:
 - `Inbox/ssapi-improvement-plan.md` comes first.
@@ -424,9 +424,9 @@ See the phone plan's Phase 9. Because Phase B1 puts the API methods in `src/core
 
 ---
 
-# STEP 2 (later, GATED): public launch as an invite-only, paid social network
+# STEP 2 (the end goal): public launch on both stores as an invite-only, paid social network
 
-**Nothing here starts without Dave's explicit go.** It's a substantial project. Rough agent effort is **4–7 weeks**, plus Dave's time on accounts, legal, money and moderation.
+**This is the planned final stage.** It starts after the iPhone Unlisted listing (phone plan, Phase 9) is live and stable. Items that depend on Dave's §2.7 decisions (price, LLC/organization accounts, payments stack, usernames) wait for those decisions; everything else can proceed. It's a substantial project. Rough agent effort is **4–7 weeks**, plus Dave's time on accounts, legal, money and moderation.
 
 ## 2.1 What "public, invite-only, paid" means (proposed model, to agree with Dave)
 - **Invites stay free, and payment is a subscription.** Members get a small, real number of invite codes, for example 3 per month, issued by the server. New members pay a monthly or yearly subscription after registering.

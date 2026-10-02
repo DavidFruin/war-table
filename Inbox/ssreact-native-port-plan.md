@@ -16,7 +16,7 @@ A plan for building [[ssreact-native]], the phone app, from [[ssreact]], the Rea
 >   - **iPhone:** an **Unlisted App Store** listing (Apple's official route for limited audiences), with **TestFlight internal testing** in the meantime.
 >   - Registration is **invite-only with free codes** (`Inbox/access-and-public-launch-plan.md` Step 1).
 >   - Unlisted apps get full App Store review, so that plan's **Step 1B** (report/block/terms/privacy) comes before Phase 9.
-> - **Step 2 (later, GATED): a public, invite-only, paid launch** on the App Store + Google Play (Phase 10 + the access plan's Step 2).
+> - **End goal (Step 2): a normal public app on both the App Store and Google Play**, invite-only and paid (Phase 10 + the access plan's Step 2). It's the planned final stage after the Unlisted listing; only its money and legal choices wait on Dave.
 > - **Individual** Apple Developer account. **Expo push is approved.**
 >
 > Phase 8 (family release) depends on prod running ssapi with the invite and Expo push additions, because the family builds talk to `app.davidfruin.com`.
@@ -449,8 +449,13 @@ This gets family onto iPhones quickly while Phase 9 (the Unlisted App Store list
 - If rejected: fix, bump the build number, resubmit. Record the reason in the [[ssreact-native]] note.
 - Once it's approved and unlisted, release it. Dave shares the **unlisted App Store link** with family. Updates go through review like any App Store app, and there's **no 90-day expiry**. Retire the TestFlight group.
 
-### Phase 10 (LATER, Step 2 only, GATED): public launch on the App Store + Google Play
-Only after Dave's go on the access plan's Step 2: invite-only, **paid**.
+### Phase 10 (end goal): public launch on the App Store + Google Play
+The planned final stage, after Phase 9 is live and stable: invite-only, **paid** (access plan Step 2). Parts that depend on Dave's money and legal decisions (price, organization accounts, payments stack) wait for those decisions.
+
+**Avoid rework along the way (applies to Phases 8–9 too):**
+- Keep the same bundle ID / package name.
+- Keep the Android signing key backed up; it moves to Play App Signing in 10.3.
+- Keep every App Store answer accurate, so going public is a listing change rather than a new app.
 
 **10.1 Prerequisites:**
 - The paywall, Restore Purchases and the subscription disclosures (access plan §2.2).
@@ -534,4 +539,4 @@ Only after Dave's go on the access plan's Step 2: invite-only, **paid**.
 - **Family on Android (APK) and iPhone (TestFlight): about 4–5 weeks.**
 - **iPhone on the Unlisted App Store: about 6–7 weeks.** The App Review and Unlisted approval times are Apple's, usually days. A rejection adds roughly a week.
 - Stop after each phase, as before.
-- Step 2 (public, paid) is a separate project after Dave's go; see the access plan.
+- **Then the end goal, Step 2 / Phase 10 (public on both stores, paid): about 4–6 more weeks** after the Unlisted listing. Most of the waiting is Dave's decisions and Google's 14-day test.
