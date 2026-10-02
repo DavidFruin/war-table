@@ -232,6 +232,10 @@ Two more small consistency fixes:
 - **Every Settings section is a `Card` now** (Appearance, Notifications, Devices, Info, Log Out, Delete Account) — were plain `<section>`s with no visual boundary at all.
 - **Search result rows are `Card`s now too** — same plain-bordered-div-with-no-background pattern as Settings' sections and the old Profile header, now consistent with every other list row in the app.
 
+## Ninth polish round (2026-10-01, same day)
+
+- **Pressing Enter or pasting a newline into the post/comment composer now shows an explanatory toast.** `MentionTextarea`'s existing character filter was already silently stripping newlines (matches the server's charset validation) — Dave noticed pressing Enter just looked like nothing happened, with zero feedback. Added `onKeyDown` (blocks Enter before it's ever inserted, so the cursor never jumps) and `onPaste` (catches a newline smuggled in via paste, which never fires a keydown) handlers, both showing "Returns aren't allowed here -- posts and comments are a single line." via the existing toast system. Shared component, so this covers both Create Post and the comment field automatically. Verified live on `react.davidfruin.com`: typed "testing return<Enter>more text" and the toast appeared, text landed as a single line ("testing returnmore text"), no newline inserted.
+
 ## Decisions
 - **Reuse the learn-react-site scaffold rather than starting clean** — it already had the exact stack (React/Vite/TS/shadcn) this wants, and Dave already made the tooling choices (Base UI over plain Radix, pnpm, Tailwind 4) while learning React with it.
 - **No need to preserve the current retro-BBS visual identity** (decided in [[simple-social]]'s Planning section) — that look is covered by the terminal clients ([[simple-social-tui]] etc.) instead. shadcn's own design language is fine to adopt as-is.
