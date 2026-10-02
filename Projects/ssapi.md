@@ -74,12 +74,30 @@ needed, and no agent has el1 access. The *shared* `ssreact/public/.htaccess`
 frontend exists) got the full allowlist + CSP + long-cache treatment,
 verified for real against a locally-installed Apache instance.
 
-**Dave-on-el1 checklist, carried over from the plan, nothing done yet** —
+**Dave-on-el1 checklist, carried over from the plan** —
 full runnable version with exact commands in `Inbox/ssapi-el1-verification-checklist.md`,
-written for whichever agent next has `el1` access to pick up directly:
-1. Run `sqlite3 <dev private dir>/userdata.db '.schema users' '.schema pending_users'` and share the output — this session used a from-source reconstruction instead (confirmed correct against `api.php`'s own `ALTER TABLE`/`INSERT`, but never checked against the real dev DB).
-2. Before `ssapi/.htaccess` can get the strict PHP allowlist: `ls *.php` in the app/dev docroots.
-3. `SELECT LOWER(email), COUNT(*) FROM users GROUP BY 1 HAVING COUNT(*) > 1` on real dev/prod data, before the new unique email index matters there (the migration skips itself safely if duplicates exist, but worth knowing).
+written for whichever agent next has `el1` access to pick up directly. **Items 1–3 done 2026-10-02 (Citadel, an agent with `el1` SSH access):**
+1. **Done.** Real `users`/`pending_users` schema pulled from `dev.davidfruin.com/private/userdata.db`. Matches the from-source reconstruction closely, with a few real differences worth recording: `users` already has a **case-sensitive** `UNIQUE(email)` constraint (not the case-insensitive one S14's migration adds — so S14 is additive, not redundant); there's also a legacy `jwt` column and a `unique_id` constraint on `id` neither plan nor reconstruction mentioned; `follows`/`followers` are declared `Numeric` but actually hold JSON (harmless — SQLite column types are only hints, never enforced). Full schema:
+   ```sql
+   CREATE TABLE IF NOT EXISTS "users"(
+       "id"        Integer PRIMARY KEY AUTOINCREMENT,
+       "email"     Text NOT NULL,
+       "password"  Text NOT NULL,
+       "posts"     Text,
+       "follows"   Numeric,
+       "followers" Numeric,
+       "jwt"       Text, created_at TEXT, reset_otp TEXT, reset_expires INTEGER DEFAULT 0, is_admin INTEGER DEFAULT 0, last_notifications_seen_at TEXT, theme TEXT NOT NULL DEFAULT 'light', hand TEXT NOT NULL DEFAULT 'right',
+   CONSTRAINT "unique_email" UNIQUE ( email ),
+   CONSTRAINT "unique_id" UNIQUE ( id ) );
+   CREATE TABLE pending_users (
+       email TEXT,
+       password TEXT,
+       otp TEXT,
+       dateCreated INTEGER
+   );
+   ```
+2. **Half done.** `ls *.php` on `dev.davidfruin.com`'s docroot: `api.php, auth.php, clean-notifications.php, config.php, logging.php, media.php, migrate-posts.php, schema.php, webpush.php` — all expected backend files, nothing extra, so the strict allowlist is safe to add **as far as dev shows**. **Could not check `app.davidfruin.com` (prod)** — this session's sandbox hard-blocks all reads against prod, including a plain read-only `ls`, at the tool-permission layer (not a judgment call, a classifier denial with no override available from in-session). Someone with a permission mode that allows prod reads needs to run `ls *.php` on `app.davidfruin.com`'s docroot before the allowlist conversion ships, in case prod has a PHP entry point dev doesn't.
+3. **Half done**, same blocker. No duplicate emails (case-insensitive) on dev: `SELECT LOWER(email), COUNT(*) FROM users GROUP BY 1 HAVING COUNT(*) > 1` returned zero rows. **Could not run the same query against prod** — same classifier denial as #2. Needs a session that can read prod.
 4. After deploying the S2/S12/P7 `.htaccess` changes to react.davidfruin.com: rerun the plan's curl checks for real (403s, cache headers, gzip), and separately confirm `fastcgi_finish_request()` actually releases the client early under its real PHP-FPM setup — this session's bench (`php -S`, no FastCGI pool) couldn't demonstrate that for the deferred-push change.
 5. Click through every ssreact page with DevTools open once the CSP is live, watching for Report-Only violations, before renaming the header to enforce it.
 6. Decide the two live DECISION items this session skipped: S9 (drop vs. dedupe unlike/unfollow notifications) and the much bigger D-series questions (D6 especially: how/when ssapi replaces simple-social's backend copy on app/dev — prod gets none of this session's fixes until that happens).
