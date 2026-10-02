@@ -74,7 +74,9 @@ needed, and no agent has el1 access. The *shared* `ssreact/public/.htaccess`
 frontend exists) got the full allowlist + CSP + long-cache treatment,
 verified for real against a locally-installed Apache instance.
 
-**Dave-on-el1 checklist, carried over from the plan, nothing done yet:**
+**Dave-on-el1 checklist, carried over from the plan, nothing done yet** —
+full runnable version with exact commands in `Inbox/ssapi-el1-verification-checklist.md`,
+written for whichever agent next has `el1` access to pick up directly:
 1. Run `sqlite3 <dev private dir>/userdata.db '.schema users' '.schema pending_users'` and share the output — this session used a from-source reconstruction instead (confirmed correct against `api.php`'s own `ALTER TABLE`/`INSERT`, but never checked against the real dev DB).
 2. Before `ssapi/.htaccess` can get the strict PHP allowlist: `ls *.php` in the app/dev docroots.
 3. `SELECT LOWER(email), COUNT(*) FROM users GROUP BY 1 HAVING COUNT(*) > 1` on real dev/prod data, before the new unique email index matters there (the migration skips itself safely if duplicates exist, but worth knowing).
