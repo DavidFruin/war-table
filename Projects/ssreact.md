@@ -29,6 +29,7 @@ React + Vite + TypeScript + shadcn/ui (Base UI, Tailwind 4, pnpm) rewrite of [[s
 - **Later:** the invite-code field, admin pages, and report/block/terms UI (`Inbox/access-and-public-launch-plan.md`).
 
 ## Hosting / deployment
+- **Changing soon (decided 2026-10-02):** the build will deploy to `public_html/app/` with a plain `rsync --delete`, and the root `.htaccess` will come from ssapi's `deploy/`, so ssreact will ship no `.htaccess` (task L4, merged on migration day). See [[deploy-layout-plan]]. Until react is migrated, the command below is still the correct one.
 - **Target:** `react.davidfruin.com` → `/home/davidfruin/domains/react.davidfruin.com/public_html` on `el1`.
   - It's a **static build**: only the *contents* of `dist/` go in `public_html`.
   - `public/.htaccess` does the SPA rewrite. If `/feed` 404s on refresh, check that this file was deployed first.

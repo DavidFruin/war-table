@@ -1192,7 +1192,7 @@ This is roughly one query fewer on every authenticated request, and two fewer on
   - The access token lives only in memory in ssreact.
   - The CLI/TUI keep the body-parameter flow unchanged.
   - **Affects:** ssreact, the vanilla web app (only if it opts in), and ssreact-native (later).
-- **D5. Move non-entry PHP, `vendor/` and logs out of the docroot.** The docroot keeps only `api.php`, `media.php`, `index.maintenance.php` and the frontend, and those `require` `../app/…`. This is a deploy-layout change on el1, and it makes S2's deny rules a second line of defence instead of the only one.
+- **D5. DECIDED 2026-10-02, superseded by `Inbox/deploy-layout-plan.md`** (backend in `<domain>/ssapi/`, frontend in `public_html/app/`, one root `.htaccess` from `ssapi/deploy/`). Original text: **Move non-entry PHP, `vendor/` and logs out of the docroot.** The docroot keeps only `api.php`, `media.php`, `index.maintenance.php` and the frontend, and those `require` `../app/…`. This is a deploy-layout change on el1, and it makes S2's deny rules a second line of defence instead of the only one.
 - **D6. The duplicate backend in simple-social.** Prod gets **none** of these fixes until either:
   - (a) ssapi is deployed to app and dev in place of simple-social's copy, or
   - (b) the fixes are mirrored there.
