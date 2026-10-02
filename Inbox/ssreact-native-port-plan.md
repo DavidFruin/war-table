@@ -11,12 +11,11 @@ A plan for building [[ssreact-native]], the phone app, from [[ssreact]], the Rea
 
 > **Updated 2026-10-02, Dave's decisions:**
 > - **The phone app is the top priority**, ahead of [[sselectron]].
-> - **iPhone is required:** ship to **both the Apple App Store and Google Play**, with iOS and Android built together, not one after the other.
-> - **Individual** developer accounts, not organization accounts.
-> - **Expo push is approved** (Phase 6 is no longer gated).
+> - **Step 1 (now): family only.** iPhone and Android, distributed **privately** through **TestFlight internal testing** (iOS) and **Google Play internal testing** (Android). No public store listing, no App Store review, and no Google 14-day closed test. Registration becomes **invite-only with free codes** (`Inbox/access-and-public-launch-plan.md`, Step 1).
+> - **Step 2 (later, GATED): a public, invite-only, paid launch** on both stores. That is Phase 9 below plus that plan's Step 2: moderation, payments, legal.
+> - **Individual** developer accounts. **Expo push is approved.**
 >
-> Store submission also depends on `Inbox/store-readiness-plan.md`: report, block, terms and privacy, which both stores require for apps where users post content. It also depends on prod running ssapi (that plan's Phase D).
-
+> Phase 8 (family release) depends on prod running ssapi with the invite and Expo push additions, because the family builds talk to `app.davidfruin.com`.
 ---
 
 ## 0. Read this first: rules for the implementing agent
@@ -78,8 +77,8 @@ A plan for building [[ssreact-native]], the phone app, from [[ssreact]], the Rea
 | N2 | **Share logic only**, through a `src/core/` folder extracted inside ssreact and **copied** into ssreact-native by a sync script pinned to an ssreact commit | Fits "RN is a bridge". A shared npm package or monorepo costs setup time for an app that will be replaced. The sync script plus a drift check (§4, step 2.2) stops the copy from silently going stale. Upgrade to a shared package later only if drift actually hurts. |
 | N3 | **Plain `StyleSheet` + a theme-token object** ported from `index.css`, with no NativeWind or Tamagui | Keeps all six themes with zero dependencies. A UI kit would be thrown away when native arrives. |
 | N4 | **Tokens in `expo-secure-store`**, not AsyncStorage | Keychain/Keystore is the platform-correct place for a 30-day refresh token. |
-| N5 | **iOS and Android together** (decided 2026-10-02) | Both stores are required. Every phase is checked on both platforms, using an Android emulator plus a real Android phone, and iOS through EAS builds on TestFlight. No Mac is needed: EAS builds and submits iOS in the cloud. |
-| N7 | **Individual** Apple Developer ($99/yr) and Google Play Console ($25 once) accounts (decided 2026-10-02) | Dave's legal name shows as the developer on both stores. On Google Play, new **personal** accounts must run a **closed test with at least 12 testers for 14 consecutive days** before production access. Check the current rule in Play Console, because it has changed before. Start that clock as early as possible (Phase 8). |
+| N5 | **iOS and Android together** (decided 2026-10-02) | Family members use both. Every phase is checked on both platforms, using an Android emulator plus a real Android phone, and iOS through EAS builds on TestFlight. No Mac is needed: EAS builds and submits iOS in the cloud. |
+| N7 | **Individual** Apple Developer ($99/yr) and Google Play Console ($25 once) accounts (decided 2026-10-02) | Step 1 uses only private testing tracks (TestFlight internal, Play internal testing), which need these accounts but no public listing or store review. Step 2 revisits individual vs. organization before charging money (access plan §2.3). |
 | N6 | **Leave out the marketing and static pages** (Landing, About, API docs, Conduct, Roadmap, Download). Settings links out to the website for them. | Nobody reads API docs in a phone app, and keeping the content in one place avoids drift. |
 
 ---
@@ -199,7 +198,7 @@ Add a `check:core` script that compares `src/core/.synced-from` with ssreact's l
 - `npx tsc --noEmit` is clean. `pnpm check:core` reports "in sync".
 
 ### Phase 3: auth and app shell
-- **3.1 Screens:** Login, Register and Reset Password. Port `OtpAuthFlow`'s three steps exactly, in the same order as `simple-social-tui`'s `auth.c` (noted in [[ssreact]]).
+- **3.1 Screens:** Login, Register and Reset Password. Register's first step has an **Invite code** field (access plan §1.3/1.4: case-insensitive, sent as `inviteCode` with `sendRegisterOTP`, with the hint "Simple Social is invite-only. Ask the person who invited you for a code."). Port `OtpAuthFlow`'s three steps exactly, in the same order as `simple-social-tui`'s `auth.c` (noted in [[ssreact]]).
   - Use `TextInput` with `secureTextEntry`, `autoComplete="email"` / `"password"` / `"one-time-code"`, and `textContentType` for iOS autofill.
 - **3.2 Navigation:**
   - `RequireAuth` / `RequireGuest` become redirect logic in the `(auth)` and `(tabs)` layouts, based on `user`.
@@ -315,37 +314,81 @@ Web Push (VAPID) doesn't exist in React Native. Native push needs FCM (Android) 
 - ssapi bench: insert an Expo token row and trigger a like; the deferred send runs. The real delivery check is on a device.
 - Real device: like a test post from a second account → the notification arrives, the tap opens the post, the badge count is right, and mark-as-seen clears it. Logout → no further pushes.
 
-### Phase 7: settings, moderation UI, remaining parity
+### Phase 7: settings and remaining parity
 - **Settings:**
   - Theme picker, hand preference (stored, mostly unused on native; see 3.2), push toggle.
   - Devices list with revoke and revoke-all, using `Alert.alert` confirms.
   - Log out.
-  - Delete Account (password + double confirm): **in-app account deletion is required by both app stores.**
-  - **Blocked users** list with Unblock.
-  - Links that open the website: **Terms**, **Privacy Policy**, About, Conduct, Roadmap, API, plus the contact email.
-- **Moderation UI** (store-readiness plan, Phase C; the API methods arrive through `sync-core` from that plan's B1):
-  - A "…" action sheet on posts and comments → **Report** (reason list + optional details).
-  - Profile header "…" → **Report user** / **Block user**.
-  - Reported or blocked content disappears from the current list straight away.
-- **Terms gate:**
-  - After login, and on launch with a stored user, if `termsVersionAccepted < termsVersionCurrent`, show a full-screen screen with Terms and Privacy links, a checkbox and Agree. It can't be dismissed; Back is ignored.
-  - Registration shows the same checkbox on its final step.
-- **Suspended accounts:** a login 403 shows the server's message as it is (it includes the contact address).
+  - Delete Account (password + double confirm).
+  - Links that open the website: About, Conduct, Roadmap, API.
 - **Toasts:** one host component subscribed to `core/toast`, with solid colours (the lesson from the Red-theme toast bug in the [[ssreact]] note).
 - **Empty, loading and error states** on every screen.
 - **Accessibility:** `accessibilityLabel` on icon-only buttons, and Dynamic Type / font scaling left enabled.
+- **Later, Step 2 only:** report and block UI, blocked-users list, terms gate, paywall and Restore Purchases. Spec is in access plan §2.2/§2.4. **Don't build these now.**
 
-**Verify:** the store-readiness plan's A5 scenarios, run through the phone app on both platforms against the bench or dev.
+### Phase 8: private family release (TestFlight internal + Play internal testing)
+Steps marked **Dave** need his accounts or credentials. The agent prepares everything else, never committing secrets.
 
-### Phase 8: store release (App Store + Google Play)
-Steps marked **Dave** need his accounts or credentials. The agent prepares everything else and writes it into the repo, except secrets.
-
-**8.1 Accounts (Dave, start in week 1, because these have lead times):**
-- **Apple Developer Program, individual:** $99/yr, identity verification can take a day or two, and his legal name is shown as the seller.
+**8.1 Accounts (Dave, week 1):**
+- **Apple Developer Program, individual:** $99/yr; identity verification can take a day or two.
 - **Google Play Console, personal:** $25 once, plus identity verification.
-- In Play Console, create the app as soon as there's a first Android build, so the **12-tester / 14-day closed test** can start early (8.5).
+- These lead times are why to sign up early.
 
 **8.2 App identity and config (agent):**
+- In `app.config.ts`:
+  - `name: 'Simple Social'`
+  - `ios.bundleIdentifier` / `android.package`: `com.davidfruin.simplesocial`. **DECISION:** Dave confirms; it is permanent after the first upload, and Step 2 reuses it.
+  - auto-incremented build numbers (`eas.json` `autoIncrement`)
+  - `ios.config.usesNonExemptEncryption: false`
+- **Permission strings** (camera, microphone, photo library), written in plain language.
+- **Icons:** a 1024×1024 iOS icon (no transparency) and an Android adaptive icon, from the black-and-white heart in `ssreact/public/pwa-icons/`.
+
+**8.3 Build profiles (`eas.json`):**
+- `development`: dev client, dev backend.
+- `preview`: dev or react backend, for Dave's own testing.
+- `family`: **the `app.davidfruin.com` backend**, store-signed (`distribution: store`), used for TestFlight and Play internal testing.
+- The `family` profile needs prod running ssapi with the invite system (access plan §1.6) and Expo push (Phase 6). **That's the release blocker.**
+
+**8.4 iPhone: TestFlight internal testing:**
+- `eas build -p ios --profile family`, then `eas submit -p ios`. The build appears in App Store Connect → TestFlight.
+- **Dave:** add each family member in **App Store Connect → Users and Access** with the **most limited role available**, and restrict their app access to Simple Social only. Then add them to an **internal testing group**.
+  - Internal groups allow up to 100 people with **no Beta App Review**.
+  - Each person needs an Apple ID email, accepts the invite, and installs the **TestFlight** app, then Simple Social from it.
+  - (External TestFlight groups invite by email without the team-role step, but each new version goes through a lighter Beta App Review. That's an alternative if adding family to the team feels wrong. **DECISION.**)
+- **Builds expire 90 days after upload.** A new build must go up **before** that. Rebuild at least every ~75 days, even without changes. Testers' TestFlight updates automatically. Put the date in the [[ssreact-native]] note after each upload.
+- EAS Update (over-the-air JS updates) is optional. It allows quick fixes between builds but **doesn't** reset the 90-day expiry. **DECISION.**
+
+**8.5 Android: Play internal testing:**
+- **Dave:** create the app in Play Console. Internal testing may still ask for a few app-content declarations, such as the data-safety form and target audience; fill them in honestly and minimally.
+- `eas build -p android --profile family` (AAB), then `eas submit -p android --track internal`.
+- **Dave:** add testers by email (up to 100 Google accounts) and send them the opt-in link. They install from the normal Play Store through that link, and updates arrive automatically.
+- Internal testing has no review delay and **no 12-tester/14-day rule**; that rule only applies to getting production access, which is Step 2.
+- There's no expiry on Android builds.
+
+**8.6 Onboarding a family member:**
+1. Dave creates an invite code on the web `/admin/invites` page (access plan §1.3).
+2. He sends them the TestFlight invite or the Play opt-in link, plus their code.
+3. They install, register with the code, and turn on notifications in Settings.
+
+**8.7 Verify (on real phones, because this is the release):**
+- On one iPhone and one Android phone, using family builds against prod:
+  - register with a fresh invite code (then delete that test account afterwards);
+  - log in, feed, post with a photo and a capture;
+  - push arrives and opens the post;
+  - badge clears on mark-as-seen;
+  - logout stops pushes.
+- The TestFlight build shows the right expiry date. Record the date and the results in the [[ssreact-native]] note.
+
+### Phase 9 (LATER, Step 2 only, GATED): public store release (App Store + Google Play)
+Only after Dave's go on the access plan's Step 2. The moderation UI, the terms gate and the subscription paywall must exist first (access plan §2.2 and §2.4).
+
+Steps marked **Dave** need his accounts or credentials. The agent prepares everything else and writes it into the repo, except secrets.
+
+**9.1 Accounts (Dave):**
+- The accounts from 8.1 already exist. **Before charging money**, decide whether to move to **organization** accounts through an LLC (access plan §2.3), so Dave's legal name and address aren't shown publicly as the seller.
+- Start Google's **12-tester / 14-day closed test** (personal accounts only) as soon as the Step 2 build is ready (9.5). The family testers from Phase 8 can be part of it.
+
+**9.2 App identity and config (agent):**
 - In `app.config.ts`:
   - `name: 'Simple Social'`
   - `ios.bundleIdentifier` and `android.package`: `com.davidfruin.simplesocial` (**DECISION:** Dave confirms; it can never change after the first upload)
@@ -363,13 +406,13 @@ Steps marked **Dave** need his accounts or credentials. The agent prepares every
   - An Android adaptive icon (foreground + background).
   - Build them from the black-and-white heart in `ssreact/public/pwa-icons/`.
 
-**8.3 Build profiles (`eas.json`):**
+**9.3 Build profiles (`eas.json`):**
 - `development`: dev client, dev backend.
 - `preview`: internal distribution, dev or react backend, for family testing.
 - `production`: **the `app.davidfruin.com` backend**, store distribution.
-- Production builds point at prod, so **they need the store-readiness plan's Phase D done first**: prod running ssapi with the moderation, terms and Expo push additions.
+- Production builds point at prod, so **they need the access plan's Step 2 deployed to prod first**: prod running ssapi with the moderation, terms and Expo push additions.
 
-**8.4 Store listing content (agent drafts in `store/` in the repo, Dave approves):**
+**9.4 Store listing content (agent drafts in `store/` in the repo, Dave approves):**
 - `store/listing.md`: name, subtitle/short description (80 chars for Play), full description, keywords (iOS), category (Social Networking), support URL, marketing URL.
 - Screenshots: on a simulator or emulator with **test data only, no real users' emails**, in the required sizes (iPhone 6.9" and 6.5", Android phone). Take them with seeded demo accounts on dev.
 - **Apple privacy "nutrition label"** answers and **Google Data Safety form** answers, worked out from the Privacy Policy:
@@ -384,12 +427,12 @@ Steps marked **Dave** need his accounts or credentials. The agent prepares every
   - That account deletion is in Settings.
   - **The reviewer demo account's credentials are typed into App Store Connect / Play Console only, never committed.**
 
-**8.5 Testing tracks:**
+**9.5 Testing tracks:**
 - **iOS:** `eas build -p ios --profile production` → `eas submit -p ios` → **TestFlight**. Internal testers (Dave + family) need no review; external testers need a short beta review.
 - **Android:** `eas build -p android --profile production` (AAB) → `eas submit -p android` to the **closed testing** track. Invite **12 or more testers**, through a Google Group or an email list of family and friends. They must **stay opted in for 14 consecutive days**. Dave applies for production access afterwards (Play asks a few questions about the test).
 - Testers use the real prod backend with their real accounts, so this doubles as the live verification of push, capture and moderation.
 
-**8.6 Submit for review:**
+**9.6 Submit for review:**
 - **Apple:** submit once TestFlight is clean. Common first-time rejection reasons to check beforehand:
   - **1.2 (UGC):** report, block, terms and contact must all be there and work.
   - **2.1:** crashes or broken links; every Settings link must open.
@@ -399,7 +442,7 @@ Steps marked **Dave** need his accounts or credentials. The agent prepares every
 - If rejected: fix, bump the build number, resubmit. Record the reason in the [[ssreact-native]] note so it doesn't happen twice.
 - **Google:** after the 14-day test and production approval, promote the build to production. Use a staged rollout (e.g. 20% → 100%).
 
-**8.7 After launch:**
+**9.7 After launch:**
 - Update the website download pages (ssreact `DownloadPage` "Phone" section, simple-social's `download.html`) with the official App Store and Google Play badges and links.
 - Updates: either ship new binaries through EAS each time, or add **EAS Update** (over-the-air JS) for faster fixes. **DECISION:** Dave picks OTA or binary-only. Store rules allow OTA JS updates that don't change the app's purpose.
 - Moderation duty: report emails go to Dave. Apple expects reports to be handled promptly.
@@ -430,38 +473,36 @@ Steps marked **Dave** need his accounts or credentials. The agent prepares every
 ---
 
 ## 6. Website follow-ups
-- After launch (8.7): App Store and Google Play badges on ssreact's `DownloadPage` and simple-social's `download.html`.
-- Before submission: `/terms` and `/privacy` must be live at public URLs (store-readiness plan, B5 and D4).
+- Step 1: none required. Optionally add "Phone app: invite-only, ask Dave" to the Download page.
+- Step 2: store badges on ssreact's `DownloadPage` and simple-social's `download.html` after public launch. `/terms` and `/privacy` must be live before submitting.
 
 ---
 
 ## 7. Open decisions for Dave
 1. **N2:** confirm "share logic only, copied core + sync script". Then record it in the [[ssreact-native]] note's Decisions.
 2. **Bundle ID / package name** (`com.davidfruin.simplesocial` proposed). It is permanent after the first upload.
-3. **How ssapi reaches prod** (store-readiness plan Phase D / ssapi plan D6). **Production builds can't ship without it.**
-4. **Contact email** and **approval of the Terms and Privacy texts** (store-readiness plan).
-5. **OTA updates** (EAS Update) or binary-only.
-6. **The 12+ testers** for Google's closed test: who, and a Google Group or an email list.
-7. Already decided 2026-10-02: iOS + Android both in the stores; individual accounts; Expo push approved.
+3. **How ssapi reaches prod** (ssapi plan D6). **The family release can't ship without it.**
+4. TestFlight **internal** (family added to the developer team with a minimal role) or **external** (email invites, light Beta App Review per version).
+5. **OTA updates** (EAS Update) or binary-only. Either way, rebuild for iOS at least every ~75 days.
+6. Already decided 2026-10-02: family-only now via private testing tracks; invite-only registration; public paid launch later (Step 2, gated); individual accounts; Expo push approved.
 
 ---
 
-## 8. Suggested order, stopping points and timeline
+## 8. Suggested order, stopping points and timeline (Step 1: family release)
 
 | Week | Agent work | Dave |
 |---|---|---|
-| 1 | Phase 1 (ssreact core), Phase 2 (scaffold); store-readiness Phase A starts in parallel | Sign up for the Apple and Google accounts; choose a contact email; confirm the bundle ID |
-| 2 | Phases 3–4 (auth, shell, read screens) on both platforms; store-readiness Phase B | Test the preview builds on a real iPhone (TestFlight internal) and an Android phone |
+| 1 | Phase 1 (ssreact core), Phase 2 (scaffold); access plan Step 1 backend + web in parallel | Sign up for the Apple and Google accounts; confirm the bundle ID; decide how ssapi gets to prod |
+| 2 | Phases 3–4 (auth with invite field, shell, read screens) on both platforms | Install the preview builds on his own iPhone and Android phone |
 | 3 | Phase 5 (media + capture), Phase 6 (Expo push, ssapi additions) | Firebase and APNs setup; real-device capture and push checks |
-| 4 | Phase 7 (settings, moderation UI, terms gate); store listing drafts (8.4) | Decide on ssapi → prod (Phase D); approve the legal texts |
-| 5 | Production builds; TestFlight; Play closed test **starts** | Recruit the 12+ testers; reviewer demo account on prod |
-| 6–7 | Fixes from testers | Play's 14-day clock runs; Apple submission (usually 1–3 days per review round) |
-| ~7–8 | | Google production access, then both apps live |
+| 4 | Phase 7; family builds; TestFlight + Play internal upload | Deploy ssapi (with invites + push) to prod; create invite codes; add family as testers |
+| ~4–5 | Fixes from family feedback | Family installs and uses it |
 
-The order stays the same: stop after each phase. Phases 1→7 are sequential. The store-readiness plan runs alongside them. Phase 8 starts once Phase 7 and the store-readiness Phase D are done.
+**About 4–5 weeks to family members' phones.** Stop after each phase, as before.
 
-**The biggest timeline risks:**
+**The biggest risks:**
 - the ssapi → prod decision;
 - how quickly real-device testing happens;
-- a first-time Apple rejection (adds about a week);
-- Google's 14-day closed test, which can't be shortened, so start it as early as there's a usable build.
+- remembering the iOS 90-day rebuild.
+
+Step 2 (public, paid) is a separate 5–8 week project after Dave's go; see the access plan.
