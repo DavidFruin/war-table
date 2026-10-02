@@ -22,8 +22,9 @@ React + Vite + TypeScript + shadcn/ui (Base UI, Tailwind 4, pnpm) rewrite of [[s
   - the fullscreen video layout fix.
 
   Camera and mic capture *has* been used on Dave's real phone.
-- **In progress elsewhere:** the ssreact tasks in `Inbox/ssapi-improvement-plan.md` (P1, P5, P6, P7, P8, S2/S12 `.htaccess`, S15, C6).
-  - **Correction to an earlier claim:** the "harmless 401, then silent refresh" pattern seen after every reload was recorded as expected behaviour. It's actually bug **P1**: `api.ts` never loads the stored JWT. It also meant logout after a reload didn't end the session on the server.
+- **Done 2026-10-02: every ssreact task in `Inbox/ssapi-improvement-plan.md`** (P1, P5, P6, P7, P8, S2/S12/P7 combined `.htaccess` pass, S15, C6) — 8 commits, all local-bench/Apache-verified, pushed. `.htaccess` is now the canonical, enforced shared-docroot file for react.davidfruin.com (full PHP allowlist, security headers, Report-Only CSP, long-cache for hashed assets). Main bundle ~27% smaller (lazy-loaded rare routes). Full writeup in [[ssapi]]'s note (most of the plan was backend work).
+  - **Fixed P1, the bug behind an earlier wrong claim:** the "harmless 401, then silent refresh" pattern seen after every reload was recorded as expected behaviour — it was actually `api.ts` never loading the stored JWT on startup. Also meant logout after a reload didn't end the session on the server. Both fixed.
+  - **Not verified in a real browser (none was available that session):** the CSP's live effect on every page (Report-Only, so nothing breaks either way) and that each lazy-loaded page actually renders post-chunk-load. Click through once deployed, before enforcing the CSP.
 - **Next:** the phone app ([[ssreact-native]]). Its Phase 1 moves ssreact's browser-free logic from `src/lib` into `src/core` (`Inbox/ssreact-native-port-plan.md`).
 - **Later:** the invite-code field, admin pages, and report/block/terms UI (`Inbox/access-and-public-launch-plan.md`).
 
