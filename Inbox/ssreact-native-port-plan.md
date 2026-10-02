@@ -9,6 +9,14 @@ repos: ssreact @ eb9ac21 (source), ssreact-native (target, empty), ssapi (small 
 
 A plan for building [[ssreact-native]], the phone app, from [[ssreact]], the React web app. It is written to be carried out phase by phase by an agent. Each step names the files and the approach, and says how to check it.
 
+> **Updated 2026-10-02, Dave's decisions:**
+> - **The phone app is the top priority**, ahead of [[sselectron]].
+> - **iPhone is required:** ship to **both the Apple App Store and Google Play**, with iOS and Android built together, not one after the other.
+> - **Individual** developer accounts, not organization accounts.
+> - **Expo push is approved** (Phase 6 is no longer gated).
+>
+> Store submission also depends on `Inbox/store-readiness-plan.md`: report, block, terms and privacy, which both stores require for apps where users post content. It also depends on prod running ssapi (that plan's Phase D).
+
 ---
 
 ## 0. Read this first: rules for the implementing agent
@@ -70,7 +78,8 @@ A plan for building [[ssreact-native]], the phone app, from [[ssreact]], the Rea
 | N2 | **Share logic only**, through a `src/core/` folder extracted inside ssreact and **copied** into ssreact-native by a sync script pinned to an ssreact commit | Fits "RN is a bridge". A shared npm package or monorepo costs setup time for an app that will be replaced. The sync script plus a drift check (§4, step 2.2) stops the copy from silently going stale. Upgrade to a shared package later only if drift actually hurts. |
 | N3 | **Plain `StyleSheet` + a theme-token object** ported from `index.css`, with no NativeWind or Tamagui | Keeps all six themes with zero dependencies. A UI kit would be thrown away when native arrives. |
 | N4 | **Tokens in `expo-secure-store`**, not AsyncStorage | Keychain/Keystore is the platform-correct place for a 30-day refresh token. |
-| N5 | **Android first**, iOS second | Android needs no paid account for sideloaded or internal builds. iOS needs an Apple Developer account ($99/yr) even for TestFlight. **DECISION:** Dave confirms the order and whether an Apple account is wanted. |
+| N5 | **iOS and Android together** (decided 2026-10-02) | Both stores are required. Every phase is checked on both platforms, using an Android emulator plus a real Android phone, and iOS through EAS builds on TestFlight. No Mac is needed: EAS builds and submits iOS in the cloud. |
+| N7 | **Individual** Apple Developer ($99/yr) and Google Play Console ($25 once) accounts (decided 2026-10-02) | Dave's legal name shows as the developer on both stores. On Google Play, new **personal** accounts must run a **closed test with at least 12 testers for 14 consecutive days** before production access. Check the current rule in Play Console, because it has changed before. Start that clock as early as possible (Phase 8). |
 | N6 | **Leave out the marketing and static pages** (Landing, About, API docs, Conduct, Roadmap, Download). Settings links out to the website for them. | Nobody reads API docs in a phone app, and keeping the content in one place avoids drift. |
 
 ---
@@ -271,13 +280,13 @@ Add a `check:core` script that compares `src/core/.synced-from` with ssreact's l
 - Delete the test posts and confirm no orphan media is left.
 - If no device is available, say so in the hand-off.
 
-### Phase 6: notifications, badge, deep links (backend work, GATED on Dave)
+### Phase 6: notifications, badge, deep links (backend work, approved 2026-10-02)
 Web Push (VAPID) doesn't exist in React Native. Native push needs FCM (Android) and APNs (iOS). The simplest correct route for an Expo app is the **Expo Push Service**:
 - The app gets an `ExponentPushToken[...]` from `expo-notifications`.
 - The server POSTs JSON to Expo's push API.
 - Expo forwards the message to FCM/APNs.
 
-**[ssapi] changes (additive, GATED: they add a new outbound service and a new table column):**
+**[ssapi] changes (additive, approved; they add a new outbound service and a new table column):**
 1. Add a migration (through ssapi plan P3's mechanism): `ALTER TABLE push_subscriptions ADD COLUMN kind TEXT NOT NULL DEFAULT 'webpush'`. Expo rows use `kind='expo'`, `endpoint = <ExponentPushToken>`, and empty `p256dh`/`auth`.
 2. Add `handle_saveExpoPushToken` / `handle_deleteExpoPushToken`:
    - validate the token with the regex `^ExponentPushToken\[[A-Za-z0-9_-]+\]$`;
@@ -298,37 +307,102 @@ Web Push (VAPID) doesn't exist in React Native. Native push needs FCM (Android) 
 - Badge: `Notifications.setBadgeCountAsync(count)` from the unseen-count poller. Run the poller only while the app is foregrounded (`AppState`). Mark-as-seen clears the badge immediately.
 
 **Platform setup (Dave, not the agent, because it involves credentials):**
-- A Firebase project with `google-services.json` for Android FCM, uploaded to EAS.
-- An Apple Developer account with an APNs key for iOS, uploaded to EAS.
+- A Firebase project with `google-services.json` for Android FCM, plus the FCM V1 service-account key uploaded to EAS (`eas credentials`).
+- The Apple Developer account (individual) and an APNs key. EAS can create and store the key itself during `eas credentials` / the first iOS build when Dave signs in.
 - None of these files are committed: `.gitignore` them and use EAS secrets.
 
 **Verify:**
 - ssapi bench: insert an Expo token row and trigger a like; the deferred send runs. The real delivery check is on a device.
 - Real device: like a test post from a second account → the notification arrives, the tap opens the post, the badge count is right, and mark-as-seen clears it. Logout → no further pushes.
 
-### Phase 7: settings and remaining parity
+### Phase 7: settings, moderation UI, remaining parity
 - **Settings:**
   - Theme picker, hand preference (stored, mostly unused on native; see 3.2), push toggle.
   - Devices list with revoke and revoke-all, using `Alert.alert` confirms.
   - Log out.
   - Delete Account (password + double confirm): **in-app account deletion is required by both app stores.**
-  - Links that open the website: About, Conduct, Roadmap, API.
+  - **Blocked users** list with Unblock.
+  - Links that open the website: **Terms**, **Privacy Policy**, About, Conduct, Roadmap, API, plus the contact email.
+- **Moderation UI** (store-readiness plan, Phase C; the API methods arrive through `sync-core` from that plan's B1):
+  - A "…" action sheet on posts and comments → **Report** (reason list + optional details).
+  - Profile header "…" → **Report user** / **Block user**.
+  - Reported or blocked content disappears from the current list straight away.
+- **Terms gate:**
+  - After login, and on launch with a stored user, if `termsVersionAccepted < termsVersionCurrent`, show a full-screen screen with Terms and Privacy links, a checkbox and Agree. It can't be dismissed; Back is ignored.
+  - Registration shows the same checkbox on its final step.
+- **Suspended accounts:** a login 403 shows the server's message as it is (it includes the contact address).
 - **Toasts:** one host component subscribed to `core/toast`, with solid colours (the lesson from the Red-theme toast bug in the [[ssreact]] note).
 - **Empty, loading and error states** on every screen.
 - **Accessibility:** `accessibilityLabel` on icon-only buttons, and Dynamic Type / font scaling left enabled.
 
-### Phase 8: builds and distribution (GATED on N5)
-- Run `eas build -p android --profile preview` to get an internal APK for Dave and family. Only `eas build -p ios` once there is an Apple account.
-- Use `eas.json` profiles:
-  - `development`: points at dev;
-  - `preview`: points at dev or react;
-  - `production`: points at app, **built only on Dave's explicit go**.
-- **Store submission blockers to raise with Dave before any public listing (DECISION):**
-  - Apple's App Review guideline 1.2 requires apps with user-generated content to offer **reporting content, blocking users, and a way to act on reports**, plus published terms. Simple Social has none of these. "Admin panel" and "report a person" are only "future ideas" in [[simple-social]].
-  - Google Play has a similar UGC policy.
-  - So: internal or sideloaded distribution is fine now; store listings need report/block first, which is backend and UI work across every client.
-  - A privacy policy URL is required by both stores.
-- **Updates:** EAS Update (over-the-air JS updates) is optional. **DECISION:** Dave decides whether OTA updates are wanted, and which channel goes to which backend.
+**Verify:** the store-readiness plan's A5 scenarios, run through the phone app on both platforms against the bench or dev.
+
+### Phase 8: store release (App Store + Google Play)
+Steps marked **Dave** need his accounts or credentials. The agent prepares everything else and writes it into the repo, except secrets.
+
+**8.1 Accounts (Dave, start in week 1, because these have lead times):**
+- **Apple Developer Program, individual:** $99/yr, identity verification can take a day or two, and his legal name is shown as the seller.
+- **Google Play Console, personal:** $25 once, plus identity verification.
+- In Play Console, create the app as soon as there's a first Android build, so the **12-tester / 14-day closed test** can start early (8.5).
+
+**8.2 App identity and config (agent):**
+- In `app.config.ts`:
+  - `name: 'Simple Social'`
+  - `ios.bundleIdentifier` and `android.package`: `com.davidfruin.simplesocial` (**DECISION:** Dave confirms; it can never change after the first upload)
+  - `version` plus auto-incremented build numbers (`eas.json` `autoIncrement`)
+  - `ios.config.usesNonExemptEncryption: false` (the app only uses HTTPS, so no export-compliance paperwork)
+- **Permission strings** (iOS `infoPlist`, Android `permissions`), written in plain language:
+  - Camera: "Take photos and videos to post."
+  - Microphone: "Record audio and video to post."
+  - Photo library: "Choose photos and videos to post."
+  - Notifications are requested at runtime from Settings only.
+  - Remove any permission a plugin adds that the app doesn't use (check the merged `AndroidManifest`).
+- **iOS privacy manifest:** declare the required-reason APIs used through Expo modules in `ios.privacyManifests`. Run the build and fix any warnings App Store Connect reports.
+- **Icons and splash:**
+  - A 1024×1024 iOS icon with no transparency.
+  - An Android adaptive icon (foreground + background).
+  - Build them from the black-and-white heart in `ssreact/public/pwa-icons/`.
+
+**8.3 Build profiles (`eas.json`):**
+- `development`: dev client, dev backend.
+- `preview`: internal distribution, dev or react backend, for family testing.
+- `production`: **the `app.davidfruin.com` backend**, store distribution.
+- Production builds point at prod, so **they need the store-readiness plan's Phase D done first**: prod running ssapi with the moderation, terms and Expo push additions.
+
+**8.4 Store listing content (agent drafts in `store/` in the repo, Dave approves):**
+- `store/listing.md`: name, subtitle/short description (80 chars for Play), full description, keywords (iOS), category (Social Networking), support URL, marketing URL.
+- Screenshots: on a simulator or emulator with **test data only, no real users' emails**, in the required sizes (iPhone 6.9" and 6.5", Android phone). Take them with seeded demo accounts on dev.
+- **Apple privacy "nutrition label"** answers and **Google Data Safety form** answers, worked out from the Privacy Policy:
+  - collected: email, user content (posts, comments, photos, video, audio), identifiers (user ID), diagnostics (server logs);
+  - not used for tracking;
+  - not sold;
+  - account deletion available in the app.
+- **Age rating:** Apple's questionnaire and Google's IARC questionnaire. Answer honestly that users can interact and share unmoderated content in real time, with reporting and blocking in place. That usually leads to a **12+ or 17+** rating on iOS; let the questionnaire decide.
+- **Review notes:**
+  - How moderation works (report → email → admin action, usually within 24h).
+  - Where to find Report and Block.
+  - That account deletion is in Settings.
+  - **The reviewer demo account's credentials are typed into App Store Connect / Play Console only, never committed.**
+
+**8.5 Testing tracks:**
+- **iOS:** `eas build -p ios --profile production` → `eas submit -p ios` → **TestFlight**. Internal testers (Dave + family) need no review; external testers need a short beta review.
+- **Android:** `eas build -p android --profile production` (AAB) → `eas submit -p android` to the **closed testing** track. Invite **12 or more testers**, through a Google Group or an email list of family and friends. They must **stay opted in for 14 consecutive days**. Dave applies for production access afterwards (Play asks a few questions about the test).
+- Testers use the real prod backend with their real accounts, so this doubles as the live verification of push, capture and moderation.
+
+**8.6 Submit for review:**
+- **Apple:** submit once TestFlight is clean. Common first-time rejection reasons to check beforehand:
+  - **1.2 (UGC):** report, block, terms and contact must all be there and work.
+  - **2.1:** crashes or broken links; every Settings link must open.
+  - **5.1.1:** account deletion must be in the app (it is).
+  - Permission prompts must have clear purpose strings.
+  - Login must work with the demo account.
+- If rejected: fix, bump the build number, resubmit. Record the reason in the [[ssreact-native]] note so it doesn't happen twice.
+- **Google:** after the 14-day test and production approval, promote the build to production. Use a staged rollout (e.g. 20% → 100%).
+
+**8.7 After launch:**
+- Update the website download pages (ssreact `DownloadPage` "Phone" section, simple-social's `download.html`) with the official App Store and Google Play badges and links.
+- Updates: either ship new binaries through EAS each time, or add **EAS Update** (over-the-air JS) for faster fixes. **DECISION:** Dave picks OTA or binary-only. Store rules allow OTA JS updates that don't change the app's purpose.
+- Moderation duty: report emails go to Dave. Apple expects reports to be handled promptly.
 
 ---
 
@@ -352,18 +426,42 @@ Web Push (VAPID) doesn't exist in React Native. Native push needs FCM (Android) 
 
 ---
 
-## 6. Website follow-ups (small, after Phase 8)
-- **[ssreact]** `DownloadPage` and simple-social's `download.html`: add a "Phone" section once there is something to download. Before that it is an APK link or "ask Dave"; there are no store badges until N5/Phase 8.
+
+---
+
+## 6. Website follow-ups
+- After launch (8.7): App Store and Google Play badges on ssreact's `DownloadPage` and simple-social's `download.html`.
+- Before submission: `/terms` and `/privacy` must be live at public URLs (store-readiness plan, B5 and D4).
 
 ---
 
 ## 7. Open decisions for Dave
 1. **N2:** confirm "share logic only, copied core + sync script". Then record it in the [[ssreact-native]] note's Decisions.
-2. **N5:** Android first? Get an Apple Developer account for iOS?
-3. **Phase 6:** approve the Expo Push path, including the ssapi additions and the new outbound host `exp.host`. Firebase and APNs setup is Dave's.
-4. **Phase 8:** whether a store listing is a goal. If yes, report/block/terms become required project-wide first.
-5. Whether EAS Update (OTA) is wanted.
-6. Which backend each build profile targets. The rule "never prod without a deliberate go" stands.
+2. **Bundle ID / package name** (`com.davidfruin.simplesocial` proposed). It is permanent after the first upload.
+3. **How ssapi reaches prod** (store-readiness plan Phase D / ssapi plan D6). **Production builds can't ship without it.**
+4. **Contact email** and **approval of the Terms and Privacy texts** (store-readiness plan).
+5. **OTA updates** (EAS Update) or binary-only.
+6. **The 12+ testers** for Google's closed test: who, and a Google Group or an email list.
+7. Already decided 2026-10-02: iOS + Android both in the stores; individual accounts; Expo push approved.
 
-## 8. Suggested order and stopping points
-Phase 1 (ssreact core) → stop → Phase 2 → stop → Phase 3 → stop → Phase 4 → stop → Phase 5 → stop. Then Phases 6–8 as Dave gates them. Phase 7 can run before Phase 6 if push is still waiting on approval.
+---
+
+## 8. Suggested order, stopping points and timeline
+
+| Week | Agent work | Dave |
+|---|---|---|
+| 1 | Phase 1 (ssreact core), Phase 2 (scaffold); store-readiness Phase A starts in parallel | Sign up for the Apple and Google accounts; choose a contact email; confirm the bundle ID |
+| 2 | Phases 3–4 (auth, shell, read screens) on both platforms; store-readiness Phase B | Test the preview builds on a real iPhone (TestFlight internal) and an Android phone |
+| 3 | Phase 5 (media + capture), Phase 6 (Expo push, ssapi additions) | Firebase and APNs setup; real-device capture and push checks |
+| 4 | Phase 7 (settings, moderation UI, terms gate); store listing drafts (8.4) | Decide on ssapi → prod (Phase D); approve the legal texts |
+| 5 | Production builds; TestFlight; Play closed test **starts** | Recruit the 12+ testers; reviewer demo account on prod |
+| 6–7 | Fixes from testers | Play's 14-day clock runs; Apple submission (usually 1–3 days per review round) |
+| ~7–8 | | Google production access, then both apps live |
+
+The order stays the same: stop after each phase. Phases 1→7 are sequential. The store-readiness plan runs alongside them. Phase 8 starts once Phase 7 and the store-readiness Phase D are done.
+
+**The biggest timeline risks:**
+- the ssapi → prod decision;
+- how quickly real-device testing happens;
+- a first-time Apple rejection (adds about a week);
+- Google's 14-day closed test, which can't be shortened, so start it as early as there's a usable build.

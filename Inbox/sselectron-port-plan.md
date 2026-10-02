@@ -9,6 +9,8 @@ repos: ssreact @ eb9ac21 (source, bundled), sselectron (target, empty), ssapi (o
 
 A plan for building [[sselectron]], the Electron desktop app for [[simple-social]], **by packaging [[ssreact]]'s existing web build** rather than writing a second UI. It is written to be carried out phase by phase by an agent.
 
+> **Deprioritized 2026-10-02 (Dave):** the phone apps (`Inbox/ssreact-native-port-plan.md`, App Store + Google Play) come first. Start this plan only after the phone app is submitted, or when Dave says so. It gets the store-readiness report/block/terms UI for free, because it bundles ssreact.
+
 ---
 
 ## 0. Read this first: rules for the implementing agent

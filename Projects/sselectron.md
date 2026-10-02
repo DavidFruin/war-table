@@ -13,7 +13,7 @@ Electron desktop app for [[simple-social]]. Repo created 2026-09-25, not started
 - `simple-social/download.html` already has a "Desktop" section with "Installation instructions are coming soon" as a placeholder for this.
 
 ## Decisions
-- None yet — nothing about scope (wraps [[ssreact]]'s web build vs. a separate build, which OS targets, auto-update strategy, etc.) has been decided. Don't assume any of that; work it out when this actually starts.
+- **2026-10-02 (Dave): deprioritized behind the phone apps** ([[ssreact-native]]). A plan exists, [[sselectron-port-plan]]: it proposes bundling ssreact's build and proxying the API (not yet confirmed). Its OS targets, signing and auto-update choices are still open.
 
 ## Next steps
 - [ ] Not started
