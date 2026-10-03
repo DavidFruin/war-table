@@ -14,4 +14,3 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
-| Citadel | ssapi / ssreact | Overnight loop: deploy-layout-plan implementation + dev.davidfruin.com migration | 2026-10-02T20:30:00Z |
