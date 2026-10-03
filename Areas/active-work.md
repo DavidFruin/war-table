@@ -14,4 +14,3 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
-| Citadel | repos (ssreact-native, sselectron) | repo consolidation Step 1: archive READMEs + archive | 2026-10-03 07:16 |
