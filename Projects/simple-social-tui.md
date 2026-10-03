@@ -5,6 +5,8 @@ repo: https://github.com/DavidFruin/simple-social-tui
 
 # simple-social-tui
 
+> **2026-10-03 (Dave):** being merged into the new **ssterminal** repo (`tui/`, full history kept) with the CLI and the wizard, then archived. See [[repo-consolidation-plan]].
+
 ## Summary
 Full-screen ncurses terminal UI for [[simple-social]]. Third terminal front end on the same C library as [[simple-social-cli]] and [[simple-social-cli-interactive]]; all three share the `~/.simple-social-cli/` session state.
 

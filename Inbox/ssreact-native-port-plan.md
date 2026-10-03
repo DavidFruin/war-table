@@ -2,12 +2,14 @@
 status: proposal
 written: 2026-10-02
 for: Sonnet 5 (medium effort), implementing agent
-repos: ssreact @ eb9ac21 (source), ssreact-native (target, empty), ssapi (small additive changes)
+repos: ssreact (workspace after Inbox/repo-consolidation-plan.md Step 2: web/ = source, mobile/ = target, packages/core/ = shared), ssapi (small additive changes)
 ---
 
-# Port plan: ssreact → ssreact-native
+# Port plan: ssreact web → phone app (`ssreact/mobile/`)
 
-A plan for building [[ssreact-native]], the phone app, from [[ssreact]], the React web app. It is written to be carried out phase by phase by an agent. Each step names the files and the approach, and says how to check it.
+A plan for building the phone app in [[ssreact]]'s `mobile/` folder, from the React web app in `web/`.
+
+> **Updated 2026-10-03 (repo consolidation):** the phone app no longer has its own repo. `ssreact` is a pnpm workspace (`web/`, `mobile/`, `desktop/`, `packages/core/`), per `Inbox/repo-consolidation-plan.md`. Shared logic is the workspace package `@ss/core` in `packages/core/`, imported directly by web and mobile. There's **no copy/sync script**. **Prerequisite:** that plan's Step 2 is done. It is written to be carried out phase by phase by an agent. Each step names the files and the approach, and says how to check it.
 
 > **Updated 2026-10-02, Dave's decisions:**
 > - **The phone app is the top priority**, ahead of [[sselectron]].
@@ -25,16 +27,16 @@ A plan for building [[ssreact-native]], the phone app, from [[ssreact]], the Rea
 ## 0. Read this first: rules for the implementing agent
 
 1. **Sequencing:**
-   - Don't start until the ssreact tasks in [[ssapi]]'s improvement plan (`Inbox/ssapi-improvement-plan.md`: P1, P5, P6, P8, S15, C6) have landed.
-   - Phase 1 below refactors the same `src/lib/api.ts` those tasks change.
+   - Don't start until `Inbox/repo-consolidation-plan.md` **Step 2** (ssreact becomes a workspace) has landed. The ssapi improvement plan's ssreact tasks have already landed (2026-10-02).
    - Check `Areas/active-work.md` and `git log` in ssreact before you begin.
-2. **This app is a bridge, not the end state.** That was decided in [[simple-social]]'s Planning section: React Native leads toward true native (Swift/Kotlin) later. Don't pay for anything permanent: no cross-platform UI kit and no design system. **Share logic, not UI.** This settles the open "code-sharing approach" question in the [[ssreact-native]] note (see §2). Record it there when Dave confirms.
+2. **This app is a bridge, not the end state.** That was decided in [[simple-social]]'s Planning section: React Native leads toward true native (Swift/Kotlin) later. Don't pay for anything permanent: no cross-platform UI kit and no design system. **Share logic, not UI.** This settles the open "code-sharing approach" question (see §2, N2). Record it in the [[ssreact]] note.
 3. **Backends:**
-   - Development and testing point at `dev.davidfruin.com`, or at `react.davidfruin.com`'s isolated test copy.
+   - Development and testing point at `dev.davidfruin.com` (react.davidfruin.com is retired) or at the ssapi local bench.
    - **Never point at `app.davidfruin.com` (prod)** except in a deliberate, Dave-confirmed release test. Same rule as everywhere else in this project.
 4. **Pause between phases.** Make one commit per step, and stop and report to Dave after each phase. Items marked **DECISION** or **GATED** wait for Dave.
-5. **Repos:**
-   - ssreact changes are limited to Phase 1 (the core extraction).
+5. **Where code goes:**
+   - The phone app lives in `ssreact/mobile/` and shared logic in `ssreact/packages/core/`.
+   - Changes in `ssreact/web/` are limited to Phase 1 (moving logic into `packages/core` and importing it from there). The web app must behave identically afterwards.
    - ssapi changes are limited to the small, additive items marked **[ssapi]**. Never deploy ssapi; Dave does that.
 6. **Verify on a real device or emulator, not just "it compiles".** That bar is set in the [[ssreact]] note. When something can't be checked from where you are (camera, push, store install), say so explicitly in the hand-off; don't claim it.
 7. **Public repo:** this vault is public. Never paste keys, signing credentials, Expo tokens or `google-services.json` contents into it.
@@ -78,7 +80,7 @@ A plan for building [[ssreact-native]], the phone app, from [[ssreact]], the Rea
 | # | Decision | Why |
 |---|---|---|
 | N1 | **Expo** (managed workflow, current SDK) with **expo-router** | No Xcode or Android Studio needed on Dave's Linux machines. EAS Build does iOS builds in the cloud. File-based routes map 1:1 to ssreact's route table. |
-| N2 | **Share logic only**, through a `src/core/` folder extracted inside ssreact and **copied** into ssreact-native by a sync script pinned to an ssreact commit | Fits "RN is a bridge". A shared npm package or monorepo costs setup time for an app that will be replaced. The sync script plus a drift check (§4, step 2.2) stops the copy from silently going stale. Upgrade to a shared package later only if drift actually hurts. |
+| N2 | **Share logic only**, through the workspace package **`@ss/core`** (`ssreact/packages/core/`), imported by `web/` and `mobile/` (and later `desktop/`) | Fits "RN is a bridge": no UI kit, only plain TypeScript logic. The repo consolidation (2026-10-03) makes the shared package free, so there's no copying, sync script or drift check. A lint rule keeps the package free of browser APIs (Phase 1). |
 | N3 | **Plain `StyleSheet` + a theme-token object** ported from `index.css`, with no NativeWind or Tamagui | Keeps all six themes with zero dependencies. A UI kit would be thrown away when native arrives. |
 | N4 | **Tokens in `expo-secure-store`**, not AsyncStorage | Keychain/Keystore is the platform-correct place for a 30-day refresh token. |
 | N5 | **iOS and Android together** (decided 2026-10-02) | Family members use both. Android ships as an APK and iPhone as an Unlisted App Store app (TestFlight first). Every phase is checked on both platforms, using an Android emulator plus a real Android phone, and iOS through EAS builds on TestFlight. No Mac is needed: EAS builds and submits iOS in the cloud. |
@@ -87,42 +89,55 @@ A plan for building [[ssreact-native]], the phone app, from [[ssreact]], the Rea
 
 ---
 
-## 3. Target structure (ssreact-native)
+## 3. Target structure (inside the ssreact workspace)
 
 ```
-app/                      expo-router routes (mirror ssreact's App.tsx)
-  _layout.tsx             providers: Theme, Auth, Toast; stack
-  (auth)/login.tsx  register.tsx  reset-password.tsx
-  (tabs)/_layout.tsx      bottom tabs: Feed, Post, Search, Notifications(badge), Profile
-  (tabs)/feed.tsx  create-post.tsx  search.tsx  notifications.tsx  profile.tsx
-  profile/[id].tsx  post/[id].tsx  settings.tsx
-src/
-  core/                   COPIED from ssreact/src/core by scripts/sync-core.sh -- never edit here
-  platform/               native adapters: secure-store token store, config (API base), push, badge, upload
-  theme/                  tokens.ts (6 themes ported from index.css), ThemeProvider
-  components/             PostCard, CommentItem, MentionInput, MediaView, VideoPlayer, AudioPlayer, Capture, ...
-scripts/sync-core.sh
-app.config.ts             reads EXPO_PUBLIC_API_BASE (default: https://dev.davidfruin.com)
+ssreact/
+  packages/core/            @ss/core: api-client, types, format, toast, caches, media-limits, post-text-tokens,
+    package.json            session-expiry, media-url. NO browser or React Native APIs (lint:core enforces it)
+    src/index.ts
+  web/                      the existing web app; now imports @ss/core
+  mobile/
+    app/                    expo-router routes (mirror web's App.tsx)
+      _layout.tsx           providers: Theme, Auth, Toast; stack
+      (auth)/login.tsx  register.tsx  reset-password.tsx
+      (tabs)/_layout.tsx    bottom tabs: Feed, Post, Search, Notifications(badge), Profile
+      (tabs)/feed.tsx  create-post.tsx  search.tsx  notifications.tsx  profile.tsx
+      profile/[id].tsx  post/[id].tsx  settings.tsx
+    src/
+      platform/             native adapters: secure-store token store, config (API base), push, badge, upload
+      theme/                tokens.ts (6 themes ported from web/src/index.css), ThemeProvider
+      components/           PostCard, CommentItem, MentionInput, MediaView, VideoPlayer, AudioPlayer, Capture, ...
+    app.config.ts           reads EXPO_PUBLIC_API_BASE (default: https://dev.davidfruin.com)
+    metro.config.js         Expo's monorepo config (see 2.1)
+  desktop/                  later (desktop plan)
 ```
 
 ---
 
 ## 4. Phases
 
-### Phase 1: extract a platform-free core inside ssreact (the only ssreact work)
-The goal is that ssreact behaves **identically** afterwards. This is pure refactoring.
+### Phase 1: create `packages/core` and move the platform-free logic into it (the only `web/` work)
+The goal is that the web app behaves **identically** afterwards. This is pure refactoring.
 
-**1.1 Create `ssreact/src/core/` and move in the pure modules:**
+**1.0 Create the package:** `packages/core/package.json` with:
+- `"name": "@ss/core"`, `"private": true`;
+- `"type": "module"`;
+- `"main"` and `"types"` pointing at `src/index.ts`. It's consumed as TypeScript source, with no build step: Vite and Metro both compile it.
+
+Also add a `tsconfig.json` that extends the workspace's base settings with `"lib": ["ES2022"]` and **no `"DOM"`**, so browser globals don't type-check in core. Add `"@ss/core": "workspace:*"` to `web/package.json` and run `pnpm install`.
+
+**1.1 Move the pure modules** from `web/src/lib/` to `packages/core/src/`:
 - `types.ts`, `format.ts`, `toast.ts`, `post-cache.ts`, `feed-cache.ts`
-- `media-limits.ts` (the `getMediaLimits` + fallback part only; `getMediaDuration` stays in `src/lib`)
+- `media-limits.ts` (the `getMediaLimits` + fallback part only; `getMediaDuration` stays in `web/src/lib`)
 
-Leave re-export shims at the old `src/lib/*` paths, or update the imports. Prefer updating the imports and deleting the shims in the same commit.
+Re-export them from `src/index.ts`, and update web's imports to `import { … } from '@ss/core'`. Don't leave shims at the old paths.
 
 **1.2 Split the post-text renderer** into:
-- `core/post-text-tokens.ts`: a pure `tokenizePostText(text, mentions): Token[]`, where a token is `{kind:'text',value} | {kind:'url',href,trail} | {kind:'mention',id,email|null}`. Move `TOKEN_RE` and `splitTrailingPunctuation` here unchanged.
-- `lib/post-text.tsx` keeps rendering tokens into `<a>`/`<Link>`/`<span>`.
+- `packages/core/src/post-text-tokens.ts`: a pure `tokenizePostText(text, mentions): Token[]`, where a token is `{kind:'text',value} | {kind:'url',href,trail} | {kind:'mention',id,email|null}`. Move `TOKEN_RE` and `splitTrailingPunctuation` here unchanged.
+- `web/src/lib/post-text.tsx` keeps rendering tokens into `<a>`/`<Link>`/`<span>`.
 
-**1.3 Make the API client injectable.** Turn `ApiClient` into `core/api-client.ts`:
+**1.3 Make the API client injectable.** Turn `ApiClient` into `packages/core/src/api-client.ts`:
 ```ts
 export interface TokenStore {            // synchronous on purpose: RN hydrates it once at boot
   get(key: string): string | null;
@@ -133,73 +148,66 @@ export interface ApiConfig {
   apiUrl: string;          // '/api.php' on web, `${base}/api.php` on native
   mediaUrl: string;        // '/media.php' or `${base}/media.php`
   store: TokenStore;
-  extraHeaders?: Record<string, string>;   // native sends X-Client: ssreact-native/<version> (see 3.3)
+  extraHeaders?: Record<string, string>;   // mobile sends X-Client: ssreact-mobile/<version> (see 3.3)
 }
 export function createApiClient(config: ApiConfig) { return new ApiClient(config); }
 ```
 - Replace every `localStorage.*` call with `this.store.get/set`, and every `BASE_URL`/`MEDIA_URL` with `this.config.*`. Change `uploadMedia(file: File)` to `uploadMedia(file: UploadFile)`; `FormData.append('file', file as Blob)` works on both platforms.
-- `ssreact/src/lib/api.ts` becomes:
+- `web/src/lib/api.ts` becomes:
   ```ts
   export const api = createApiClient({ apiUrl: '/api.php', mediaUrl: '/media.php', store: localStorageStore });
   ```
   where `localStorageStore` wraps `localStorage` in try/catch.
 
-**1.4 Extract the session-expiry waiter queue** from `auth-context.tsx` into `core/session-expiry.ts`:
+**1.4 Extract the session-expiry waiter queue** from `web/src/lib/auth-context.tsx` into `packages/core/src/session-expiry.ts`:
 ```ts
 createSessionExpiryQueue({ onShow, onHide })
 ```
 It returns `{ handler, relogin(retryAll), logout() }`. Move the `waitersRef`/`showingRef` logic and its comments over unchanged; that design is deliberate (see the [[ssreact]] note). `auth-context.tsx` then consumes it.
 
-**1.5 Add a media URL helper:** `core/media-url.ts` with `resolveMediaUrl(base, path)`. Web passes `''`; native passes the API base. Every place that renders `post.mediaUrl` or a `thumbnailUrl` goes through it.
+**1.5 Add a media URL helper:** `packages/core/src/media-url.ts` with `resolveMediaUrl(base, path)`. Web passes `''`; native passes the API base. Every place that renders `post.mediaUrl` or a `thumbnailUrl` goes through it.
 
 **Verify Phase 1:**
-- `pnpm lint && pnpm build` are clean.
-- `grep -rnE "localStorage|document\.|window\.|navigator\." src/core` returns **nothing**. That grep is the rule that keeps the core portable; add it as a `lint:core` script in `package.json`.
+- `pnpm lint && pnpm build` (workspace root) are clean.
+- `grep -rnE "localStorage|document\.|window\.|navigator\." packages/core/src` returns **nothing**, and `pnpm --filter @ss/core exec tsc --noEmit` passes with no DOM lib. Add both as a `lint:core` script in the root `package.json`, and run it from `pnpm lint`.
 - Run a manual pass against the dev proxy: login, reload (no 401 burst, which is P1), feed, like, comment with a mention, upload an image, session-expired modal (corrupt `ss_jwt` in DevTools to trigger it), logout.
 
 **Commits:** one per step: `refactor(core): …`.
 
-### Phase 2: scaffold ssreact-native
-**2.1 Create the app:**
-- `npx create-expo-app@latest` with the TypeScript template.
+### Phase 2: scaffold `mobile/`
+**2.1 Create the app inside the workspace:**
+- From the ssreact root: `pnpm create expo-app mobile --template` (TypeScript, expo-router template). Set `"name": "@ss/mobile"` in `mobile/package.json`, and add `"@ss/core": "workspace:*"`.
 - Add `expo-router`, `expo-secure-store`, `@react-native-async-storage/async-storage`, `expo-image`, and `react-native-safe-area-context` (Expo includes it).
-- Set the package manager to pnpm, to match ssreact.
+- **Monorepo setup:**
+  - Follow Expo's current "Work with monorepos" guide. Recent Expo SDKs configure Metro for workspaces automatically, so `mobile/metro.config.js` usually only needs `getDefaultConfig(__dirname)`.
+  - Confirm that Metro resolves `@ss/core` from `packages/core` and picks up edits to it live.
+  - The root `.npmrc` already has `node-linker=hoisted` (consolidation Step 2.2). Keep it; React Native's tooling expects it with pnpm.
+- Root scripts: add `"mobile": "pnpm --filter @ss/mobile start"`.
 
-**2.2 Add `scripts/sync-core.sh`:**
-```bash
-#!/usr/bin/env bash
-# Copies ssreact/src/core into src/core at a pinned commit. Never edit src/core by hand.
-set -euo pipefail
-REF="${1:?usage: sync-core.sh <ssreact-commit>}"
-SRC="${SSREACT_DIR:-../ssreact}"
-git -C "$SRC" diff --quiet "$REF" -- src/core || { echo "ssreact src/core has uncommitted or different changes vs $REF"; exit 1; }
-rm -rf src/core && git -C "$SRC" archive "$REF" src/core | tar -x --strip-components=1 -C src
-echo "$REF" > src/core/.synced-from
-```
-Add a `check:core` script that compares `src/core/.synced-from` with ssreact's latest commit touching `src/core` and warns when they differ.
+**2.2** (Removed 2026-10-03: there's no sync script any more. `@ss/core` is imported directly.)
 
 **2.3 Add `app.config.ts`:**
 - `extra.apiBase = process.env.EXPO_PUBLIC_API_BASE ?? 'https://dev.davidfruin.com'`.
 - `scheme: 'simplesocial'` for deep links.
 - App name "Simple Social".
-- Icon and adaptive icon from `ssreact/public/pwa-icons/` (the black-and-white heart).
+- Icon and adaptive icon from `web/public/pwa-icons/` (the black-and-white heart).
 
-**2.4 Platform adapters (`src/platform/`):**
+**2.4 Platform adapters (`mobile/src/platform/`):**
 - `tokenStore.ts`: an in-memory `Map` that implements `TokenStore`. `hydrate()` calls `SecureStore.getItemAsync` for `ss_jwt`, `ss_refresh` and `ss_user` once, before the first render. `set()` updates the map and calls `SecureStore.setItemAsync`/`deleteItemAsync` without awaiting.
 - `api.ts`:
   ```ts
   createApiClient({ apiUrl: `${base}/api.php`, mediaUrl: `${base}/media.php`, store: tokenStore,
-    extraHeaders: { 'X-Client': `ssreact-native/${version} (${Platform.OS})` } })
+    extraHeaders: { 'X-Client': `ssreact-mobile/${version} (${Platform.OS})` } })
   ```
 
 **2.5 Root layout:**
 - Hydrate the token store and then render, using `expo-splash-screen` to hold the splash until then.
-- Add providers: Theme, Auth (using `core/session-expiry`), and a Toast host.
+- Add providers: Theme, Auth (using `@ss/core`'s session-expiry queue), and a Toast host.
 
 **Verify Phase 2:**
 - `npx expo start`, open in Expo Go or an Android emulator.
 - A temporary debug screen calls `api.getMediaLimits()` after a hard-coded test login against **dev** and shows the JSON.
-- `npx tsc --noEmit` is clean. `pnpm check:core` reports "in sync".
+- `pnpm --filter @ss/mobile exec tsc --noEmit` and `pnpm lint` (including `lint:core`) are clean. Editing a file in `packages/core` hot-reloads both `pnpm dev` (web) and the running Expo app.
 
 ### Phase 3: auth and app shell
 - **3.1 Screens:** Login, Register and Reset Password. Register's first step has an **Invite code** field (access plan §1.3/1.4: case-insensitive, sent as `inviteCode` with `sendRegisterOTP`, with the hint "Simple Social is invite-only. Ask the person who invited you for a code."). Port `OtpAuthFlow`'s three steps exactly, in the same order as `simple-social-tui`'s `auth.c` (noted in [[ssreact]]).
@@ -210,9 +218,9 @@ Add a `check:core` script that compares `src/core/.synced-from` with ssreact's l
   - This **replaces** ThumbNav and Header. The hand preference only mirrors a floating "new post" button if one is added later; otherwise it is ignored on native. Note that in the hand-off.
 - **3.3 [ssapi], additive:** in `auth.php` → `deviceNameFromUserAgent()`, recognise the native client so the Devices list shows a sensible name.
   - RN's default UA looks like `okhttp/…` or `CFNetwork…`.
-  - Prefer the `X-Client` header when present: `$_SERVER['HTTP_X_CLIENT']`. Map `ssreact-native/<v> (android)` → "Simple Social app (Android)" and `(ios)` → "… (iOS)".
+  - Prefer the `X-Client` header when present: `$_SERVER['HTTP_X_CLIENT']`. Map `ssreact-mobile/<v> (android)` → "Simple Social app (Android)" and `(ios)` → "… (iOS)".
   - Pass it in from `sessionCreate()`.
-  - Verify on the ssapi local bench (see the ssapi plan's Phase 0): `curl -H 'X-Client: ssreact-native/1.0 (android)' … login`, then `getSessions` shows the new name.
+  - Verify on the ssapi local bench (see the ssapi plan's Phase 0): `curl -H 'X-Client: ssreact-mobile/1.0 (android)' … login`, then `getSessions` shows the new name.
 - **3.4 Session-expired modal:** a non-dismissible RN `Modal` driven by the core queue. Back press is ignored (`onRequestClose={() => {}}`).
 - **3.5 Theme:**
   - Port the six `.theme-*` blocks in `index.css` to `theme/tokens.ts` as `{ background, foreground, card, primary, primaryForeground, muted, mutedForeground, border, destructive, success, warning }` per theme.
@@ -232,11 +240,11 @@ Add a `check:core` script that compares `src/core/.synced-from` with ssreact's l
   - Pull-to-refresh reloads offset 0.
   - Use the embedded `commentCount` from ssapi P5, falling back to `getPostCommentCounts`.
 - **PostCard:**
-  - Render text from `core/post-text-tokens`. URLs open with `Linking.openURL` (http/https only, which the tokenizer already guarantees). Mentions use `router.push('/profile/'+id)`. Deleted mentions show italic "@deleted user".
+  - Render text from `@ss/core`'s post-text tokens. URLs open with `Linking.openURL` (http/https only, which the tokenizer already guarantees). Mentions use `router.push('/profile/'+id)`. Deleted mentions show italic "@deleted user".
   - Like toggle, likes list in a bottom-sheet `Modal`, owner delete through `Alert.alert` confirm.
-  - Timestamps go through `core/format`.
+  - Timestamps go through `@ss/core`'s format helpers.
 - **Post detail:**
-  - Use `core/post-cache` the same way ssreact does (skip `getPostById` on a cache hit).
+  - Use `@ss/core`'s post cache the same way the web app does (skip `getPostById` on a cache hit).
   - Comments are paginated. Comment delete uses `Alert.alert`.
 - **Profile:** own profile and someone else's, follow/unfollow, followers/following sheets.
 - **Notifications:** Today / Yesterday / Earlier grouping, and copy and link targets **exactly** as ssreact's `NotificationsPage` (which itself matches the original). Mark as seen refreshes the badge (Phase 6).
@@ -271,8 +279,8 @@ Add a `check:core` script that compares `src/core/.synced-from` with ssreact's l
   - `expo-video` with native controls (fullscreen included) and `expo-audio` for audio.
   - Only one item plays at a time: port `active-media.ts`'s idea as `core`-free platform code.
 - **5.5 Known cross-platform media risk (flag it, don't work around it silently):**
-  - Recordings made in browsers are WebM. **iOS can't play WebM.** Prod and dev transcode to MP4/MP3 because ffmpeg exists there. **react.davidfruin.com can't** (ffmpeg is missing from its chroot), so WebM originals from web users are kept as uploaded on that host and won't play on iOS.
-  - Test iOS playback against dev, not react.
+  - Recordings made in browsers are WebM. **iOS can't play WebM.** Prod and dev transcode to MP4/MP3 because ffmpeg exists there, but any server **without** ffmpeg (e.g. the retired react.davidfruin.com chroot) keeps WebM originals as uploaded, and those won't play on iOS.
+  - Test iOS playback against dev, and check that ffmpeg works on any new host before pointing the phone app at it.
   - Native recordings come out as MP4/M4A, which is fine everywhere. Check that the server accepts `audio/mp4`/`audio/m4a`: ssapi's `ALLOWED_AUDIO_TYPES` currently lacks them. **[ssapi], additive:** add `audio/mp4`, `audio/x-m4a` and `audio/aac` to the allowed audio types, and add the `ftyp` M4A case to S3's `sniffMedia` (it already maps `ftyp` to the `av` family, which the audio check accepts). Verify on the ssapi bench with a real `.m4a` file.
 
 **Verify Phase 5 (a real device is required for capture):**
@@ -325,7 +333,7 @@ Web Push (VAPID) doesn't exist in React Native. Native push needs FCM (Android) 
   - Log out.
   - Delete Account (password + double confirm).
   - Links that open the website: About, Conduct, Roadmap, API.
-- **Toasts:** one host component subscribed to `core/toast`, with solid colours (the lesson from the Red-theme toast bug in the [[ssreact]] note).
+- **Toasts:** one host component subscribed to `@ss/core`'s toast store, with solid colours (the lesson from the Red-theme toast bug in the [[ssreact]] note).
 - **Empty, loading and error states** on every screen.
 - **Accessibility:** `accessibilityLabel` on icon-only buttons, and Dynamic Type / font scaling left enabled.
 - **Not in Phase 7:**
@@ -402,7 +410,7 @@ This gets family onto iPhones quickly while Phase 9 (the Unlisted App Store list
 - **Android update path:**
   - Publish an EAS Update (a visible text change) → it appears after a relaunch.
   - Build a second APK with a higher `versionCode` and update `android-version.json` → the banner appears and the update installs over the old version, keeping you logged in.
-- Record the results, the iOS build's expiry date and where the keystore backup lives (*where*, not the key) in the [[ssreact-native]] note.
+- Record the results, the iOS build's expiry date and where the keystore backup lives (*where*, not the key) in the [[ssreact]] note.
 
 ### Phase 9: iPhone: Unlisted App Store distribution (after the family release)
 **Unlisted App Distribution** is Apple's official route for apps meant for a limited audience. The app is on the real App Store but **doesn't appear in search, charts or categories**; only people with the direct link can find it. It **goes through full App Store review**, so the content rules apply.
@@ -446,7 +454,7 @@ This gets family onto iPhones quickly while Phase 9 (the Unlisted App Store list
   - **5.1.1:** account deletion must be in the app.
   - Permission prompts must have clear purpose strings.
   - The demo login must work.
-- If rejected: fix, bump the build number, resubmit. Record the reason in the [[ssreact-native]] note.
+- If rejected: fix, bump the build number, resubmit. Record the reason in the [[ssreact]] note.
 - Once it's approved and unlisted, release it. Dave shares the **unlisted App Store link** with family. Updates go through review like any App Store app, and there's **no 90-day expiry**. Retire the TestFlight group.
 
 ### Phase 10 (end goal): public launch on the App Store + Google Play
@@ -479,7 +487,7 @@ The planned final stage, after Phase 9 is live and stable: invite-only, **paid**
 
 ## 5. Screen and component map
 
-| ssreact | ssreact-native | Notes |
+| web (`web/`) | mobile (`mobile/`) | Notes |
 |---|---|---|
 | `LoginPage`, `RegisterPage`/`ResetPasswordPage` (`OtpAuthFlow`) | `(auth)/login`, `register`, `reset-password` | Same OTP step order |
 | `FeedPage` | `(tabs)/feed` | FlatList, pull-to-refresh, load more, feed-cache keeps the scroll position |
@@ -508,7 +516,7 @@ The planned final stage, after Phase 9 is live and stable: invite-only, **paid**
 ---
 
 ## 7. Open decisions for Dave
-1. **N2:** confirm "share logic only, copied core + sync script". Then record it in the [[ssreact-native]] note's Decisions.
+1. **N2:** confirm "share logic only, through the `@ss/core` workspace package". Then record it in the [[ssreact]] note's Decisions.
 2. **Bundle ID / package name** (`com.davidfruin.simplesocial` proposed). It is permanent.
 3. **How ssapi reaches prod** (ssapi plan D6). **The family release can't ship without it.**
 4. Where the APK is hosted, and whether the link is public or a secret path.
@@ -528,7 +536,7 @@ The planned final stage, after Phase 9 is live and stable: invite-only, **paid**
 
 | Week | Agent work | Dave |
 |---|---|---|
-| 1 | Phase 1 (ssreact core), Phase 2 (scaffold); access plan Step 1 (invites) backend + web | Apple account sign-up; confirm the bundle ID; check Android developer verification; decide how ssapi gets to prod |
+| 1 | Repo consolidation Step 2 (if not done), Phase 1 (`@ss/core`), Phase 2 (scaffold `mobile/`); access plan Step 1 (invites) backend + web | Apple account sign-up; confirm the bundle ID; check Android developer verification; decide how ssapi gets to prod |
 | 2 | Phases 3–4 (auth with invite field, shell, read screens) | Install the preview builds on his own phones |
 | 3 | Phases 5–6 (media, capture, Expo push + ssapi additions) | Firebase and APNs setup; real-device capture and push checks |
 | 4 | Phase 7; APK + update check; TestFlight upload; access plan Step 1B (moderation) starts | Deploy ssapi to prod; host the APK; create invite codes; **family is using it** |

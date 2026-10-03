@@ -8,6 +8,14 @@ supersedes: ssapi-improvement-plan D5 (now decided), and the "shared docroot .ht
 
 # Deploy layout plan: backend, frontend, private data and media in separate folders
 
+> **Status 2026-10-03:**
+> - **Code tasks L1–L3 are done** (ssapi `372bc87`, `236a338`).
+> - **L4** is on ssreact branch `deploy-layout`, to be merged by `Inbox/repo-consolidation-plan.md` Step 2.0.
+> - **dev.davidfruin.com has been migrated and verified** (it serves the vanilla frontend from `public_html/app/`). See the [[ssapi]] note.
+> - **react.davidfruin.com is retired** (Dave is deleting the vhost), so its runbook steps below are moot.
+> - **app.davidfruin.com: not migrated**; only on Dave's go.
+> - After the repo consolidation, ssreact's build output is `web/dist/` (commands below updated).
+
 **Decided by Dave, 2026-10-02.** Each domain gets this layout:
 
 ```
@@ -211,7 +219,7 @@ Update `README.md`'s "Deploying" section to show the layout and point to this pl
 - The service worker stays at `/sw.js` (the rewrite keeps that URL).
 - `api.ts` URLs stay as they are.
 
-### L4 (ssreact, deploy on migration day only). Remove `public/.htaccess`
+### L4 (ssreact, deploy on migration day only). Remove `public/.htaccess` (`web/public/.htaccess` after the consolidation)
 - The root `.htaccess` now handles the SPA fallback and every header.
 - An `app/.htaccess` would run its own `RewriteBase /` rules **again** inside `app/` and could loop. So ssreact must ship **no** `.htaccess`.
 - Make this commit on a branch named `deploy-layout`. **Dave merges it on the day react.davidfruin.com is migrated (§4)**, not before.
@@ -235,7 +243,7 @@ rsync -rltz --no-owner --no-group ssapi/deploy/public/ el1:$D/public_html/
 rsync -tz ssapi/deploy/root.htaccess el1:$D/public_html/.htaccess
 
 # Frontend (ssreact)
-pnpm run build && rsync -rltz --no-owner --no-group --delete dist/ el1:$D/public_html/app/
+pnpm --filter @ss/web build && rsync -rltz --no-owner --no-group --delete web/dist/ el1:$D/public_html/app/   # from the ssreact workspace root
 ```
 - `--no-owner --no-group` still matters, for the same group/setgid reason as before.
 - The long exclude list and the `media/` exclude are gone; neither deploy can reach those folders now.

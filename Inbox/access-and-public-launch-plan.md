@@ -2,7 +2,7 @@
 status: proposal
 written: 2026-10-02
 for: Sonnet 5 (medium effort), implementing agent
-repos: ssapi (backend), ssreact (web), ssreact-native (phone)
+repos: ssapi (backend), ssreact workspace (web/ = web app, mobile/ = phone app, packages/core/ = shared @ss/core)
 replaces: Inbox/store-readiness-plan.md (its moderation spec is now Step 2 below, unchanged in substance)
 ---
 
@@ -152,14 +152,14 @@ function checkInviteCode($pdo, $raw) {
 - **Registration** (`OtpAuthFlow`, register mode): when `registrationMode` is `invite`, add an "Invite code" field to step 1 next to the email field. Before `getMyInfo` is available (logged out), always show the field, and treat it as optional only if the server says `open`.
   - Simplest option: always show the field, with the hint "Simple Social is invite-only. Ask the person who invited you for a code."
   - Send `inviteCode` with `sendRegisterOTP`.
-  - **Clients:** the API method is in `api.ts`, or in `src/core/api-client.ts` once the phone plan's Phase 1 has landed.
+  - **Clients:** the API method goes in `ssreact/packages/core/src/api-client.ts` (`@ss/core`) once the phone plan's Phase 1 has landed; before that, in `web/src/lib/api.ts`. Web and phone share it either way after Phase 1.
 - **Landing / Register copy:** "Simple Social is invite-only." That is a true statement.
 - **Admin, `/admin/invites`** (route guarded on `user.isAdmin`; link from Settings for admins):
   - A form: count, max uses, expiry days, note → shows the new codes with a copy button.
   - A table of existing codes, with who used each one and a Revoke button.
 - **Verify** with `pnpm dev` against the bench: register with a code end to end (read the OTP from `mail.log`). The admin page creates, lists and revokes codes, and non-admins can't see the page. Run `pnpm lint && pnpm build`.
 
-## 1.4 Phone (ssreact-native)
+## 1.4 Phone (`ssreact/mobile/`)
 The same invite field on Register (phone plan, Phase 3.1). There is no admin UI on the phone; Dave uses the web `/admin/invites` page.
 
 ## 1.5 Other clients
@@ -364,7 +364,7 @@ Seed users alice, bob and carol, and make alice an admin (`UPDATE users SET is_a
 
 ## 1B.3 Phase B: web (ssreact)
 
-- **B1. API client:** add the new methods, plus the `getMyInfo` fields in `types.ts`. If ssreact-native's Phase 1 core extraction has landed, this goes in `src/core/api-client.ts`, so the phone app gets it through sync-core.
+- **B1. API client:** add the new methods, plus the `getMyInfo` fields in `types.ts`. After the phone plan's Phase 1, this goes in `packages/core/src/api-client.ts` (`@ss/core`), so web and phone share it directly.
 - **B2. Report UI:**
   - A "…" menu on `PostCard`, `CommentItem` and the profile header with "Report".
   - It opens a dialog with the reason radio list, an optional details field and a confirmation toast ("Thanks, we'll review this").
@@ -398,7 +398,7 @@ Seed users alice, bob and carol, and make alice an admin (`UPDATE users SET is_a
 
 ---
 
-## 1B.4 Phase C: phone (ssreact-native), its Phase 9.0
+## 1B.4 Phase C: phone (`ssreact/mobile/`), its Phase 9.0
 The same features in native form:
 - Long-press or a "…" action sheet on posts and comments → Report.
 - Profile header → Report / Block.
@@ -406,7 +406,7 @@ The same features in native form:
 - Terms gate screen after login and on register.
 - Settings links to `/terms` and `/privacy` on the website.
 
-See the phone plan's Phase 9. Because Phase B1 puts the API methods in `src/core`, the phone app gets them through `sync-core`.
+See the phone plan's Phase 9. Because Phase B1 puts the API methods in `@ss/core` (`packages/core`), the phone app gets them directly through the shared workspace package.
 
 ---
 

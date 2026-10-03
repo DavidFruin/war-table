@@ -126,6 +126,7 @@ React + Vite + TypeScript + shadcn/ui (Base UI, Tailwind 4, pnpm) rewrite of [[s
 - **Layout:** Header (desktop nav + badge), ThumbNav (touch devices only, mirrors for the left-hand setting), ScrollTopButton, Toast.
 
 ## Next steps
+- [ ] Restructure into a pnpm workspace (`web/`, `mobile/`, `desktop/`, `packages/core/`) and merge the `deploy-layout` branch first: [[repo-consolidation-plan]] Step 2. **This must happen before the phone port starts.**
 - [ ] ssreact tasks from `Inbox/ssapi-improvement-plan.md` (in progress)
 - [ ] `src/core` extraction for the phone app ([[ssreact-native]] plan, Phase 1)
 - [ ] Real-device checks: push delivery, install prompt, Delete Account with a disposable account, clipboard, fullscreen
