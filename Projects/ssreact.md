@@ -30,6 +30,7 @@ React + Vite + TypeScript + shadcn/ui (Base UI, Tailwind 4, pnpm) rewrite of [[s
 - **Later:** the invite-code field, admin pages, and report/block/terms UI (`Inbox/access-and-public-launch-plan.md`).
 
 ## Hosting / deployment
+- **Deployed to dev.davidfruin.com 2026-10-06** (`466367f`), replacing the vanilla frontend in `public_html/app/` (Dave: vanilla is no longer needed; ssapi + ssreact replace it). Plain `rsync --delete` of `dist/` into `app/`, no exclude list. The old vanilla `app/` is backed up at `~/domains/dev.davidfruin.com/app.vanilla.bak-2026-10-06` (outside the web root); delete after a few days. react.davidfruin.com is retired, so dev is now the test host.
 - **Changing soon (decided 2026-10-02):** the build will deploy to `public_html/app/` with a plain `rsync --delete`, and the root `.htaccess` will come from ssapi's `deploy/`, so ssreact will ship no `.htaccess` (task L4, merged on migration day). See [[deploy-layout-plan]]. Until react is migrated, the command below is still the correct one.
 - **Target:** `react.davidfruin.com` → `/home/davidfruin/domains/react.davidfruin.com/public_html` on `el1`.
   - It's a **static build**: only the *contents* of `dist/` go in `public_html`.
