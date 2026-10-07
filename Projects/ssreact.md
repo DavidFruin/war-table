@@ -119,6 +119,15 @@ React + Vite + TypeScript + shadcn/ui (Base UI, Tailwind 4, pnpm) rewrite of [[s
 - Use `npx expo install <pkg>` in `mobile/` for Expo packages. `expo lint` auto-installed ESLint 9 + eslint-config-expo into `mobile/` on first run.
 - Verified by the agent: typecheck, lint (core, web, mobile), 23 core tests, web build, and Android and iOS JS bundles export cleanly (Metro resolves `@ss/core`). **Dave confirmed in Expo Go (2026-10-07):** the app opens, and the debug login against dev returns the media limits. Not yet checked: live reload when editing core, and relaunch behaviour of the stored login. To run it: `cd mobile && npx expo start --tunnel` (needs `@expo/ngrok`, installed globally with npm, no sudo), then open the `exp://` address in Expo Go.
 
+## Phone app, Phase 3 built, waiting on Dave's phone check (2026-10-07)
+- **Screens:** Login, Register (with an invite-code field; `sendRegisterOTP` now takes an optional `inviteCode`, ignored by a server without the invite system) and Reset Password (shared `OtpAuthFlow`, same three steps and wording as web). `app/(auth)` redirects logged-in users to the feed; `app/(tabs)` redirects logged-out users to login.
+- **Shell:** bottom tabs Feed, Post, Search, Notifications, Profile (placeholders until Phase 4+), plus a hidden Settings tab reached from Profile. Settings is minimal for now: theme picker, Log Out and (dev builds only) an "Expire my session" button. The rest of Settings is Phase 7.
+- **Themes:** all six in `mobile/src/theme/tokens.ts`, generated from `web/src/index.css` (the status colours a theme doesn't override inherit from light, as in the CSS). The theme is the logged-in user's saved choice, saved with `api.updateTheme`; logged out is always light; the status bar follows the theme.
+- **Session expiry:** a non-dismissible Modal driven by the shared `@ss/core` queue (`SessionExpiredHost` sits inside the ThemeProvider so it's themed).
+- **[ssapi] deployed to dev only (2026-10-07):** `deviceNameFromUserAgent($ua, $client)` recognises `X-Client: ssreact-mobile/<v> (android|ios)` and names the session "Simple Social app (Android|iOS)"; anything else falls back to the User-Agent. Checked on a local bench (valid android, valid ios, malformed header, no header). Prod doesn't have it.
+- `typedRoutes` is off in `app.config.ts` (the generated types got stale as routes were added).
+- Verified by the agent: typecheck, lint, 23 core tests, web build, Android bundle export. **Needs Dave's phone:** see the Phase 3 checks in the port plan.
+
 ## Next steps
 - [x] ~~Restructure into a pnpm workspace~~ done 2026-10-07 (`web/` now; `mobile/`, `desktop/`, `packages/core/` to come): [[repo-consolidation-plan]] Step 2. **This must happen before the phone port starts.**
 - [x] ~~ssreact tasks from `Inbox/ssapi-improvement-plan.md`~~: done 2026-10-02

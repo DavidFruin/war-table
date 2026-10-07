@@ -247,6 +247,8 @@ It returns `{ handler, relogin(retryAll), logout() }`. Move the `waitersRef`/`sh
 - `pnpm --filter @ss/mobile exec tsc --noEmit` and `pnpm lint` (including `lint:core`) are clean. Editing a file in `packages/core` hot-reloads both `pnpm dev` (web) and the running Expo app.
 
 ### Phase 3: auth and app shell
+> **Built 2026-10-07** (ssreact `0c02eda`, `d74cc57`; ssapi `auth.php` change on dev only). Phone check pending; see the [[ssreact]] note.
+
 - **3.1 Screens:** Login, Register and Reset Password. Register's first step has an **Invite code** field (access plan §1.3/1.4: case-insensitive, sent as `inviteCode` with `sendRegisterOTP`, with the hint "Simple Social is invite-only. Ask the person who invited you for a code."). Until the backend invite system (access plan Step 1) is deployed, the server simply ignores the extra field, so build it now anyway. Port `OtpAuthFlow`'s three steps exactly, in the same order as `simple-social-tui`'s `auth.c` (noted in [[ssreact]]).
   - Use `TextInput` with `secureTextEntry`, `autoComplete="email"` / `"password"` / `"one-time-code"`, and `textContentType` for iOS autofill.
 - **3.2 Navigation:**
