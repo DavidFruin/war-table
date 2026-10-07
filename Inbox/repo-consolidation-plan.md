@@ -13,7 +13,8 @@ repos: ssreact @ 865ff6f (+ branch deploy-layout @ 466367f), simple-social-cli @
 > - **Step 2.6 done** (2026-10-06): ssreact deployed to dev's `public_html/app/`, replacing the vanilla frontend.
 > - **Prod switched on 2026-10-06:** app.davidfruin.com runs ssapi + ssreact in the new layout, release **2.0.0 "Elia"** (tag `v2.0.0` in ssapi `236a338` and ssreact `466367f`). The vanilla frontend is retired everywhere. **So Step 5 (archive `simple-social`) can happen now**, and Step 3.6 no longer touches `download.html`.
 > - **Since then:** ssreact `0379b5b` (version display + `/history` page, 2026-10-07) is on `master`; it's not recorded whether it's deployed to prod yet.
-> - **Steps 2.1–2.5, 3, 4 and 6 are not started.**
+> - **Step 2 done 2026-10-07** (2.1–2.5 and 2.7): ssreact is a pnpm workspace with the app in `web/`, `scripts/deploy-web.sh` added and run once against dev. Dave chose to start without the prod real-use checks. Deviation from 2.2: the lockfile was **kept and migrated**, not deleted, because regenerating it upgraded dependencies (the main bundle came out 28% smaller, a different build). The restored lockfile reproduces the old build file for file.
+> - **Steps 3, 4 and 6 are not started.**
 
 **Decided by Dave, 2026-10-03.** Simple Social ends up in **four repos**:
 

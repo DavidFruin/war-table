@@ -30,28 +30,13 @@ React + Vite + TypeScript + shadcn/ui (Base UI, Tailwind 4, pnpm) rewrite of [[s
 - **Later:** the invite-code field, admin pages, and report/block/terms UI (`Inbox/access-and-public-launch-plan.md`).
 
 ## Hosting / deployment
-*(Rewritten 2026-10-07; the old react.davidfruin.com details are in [[ssreact-history]].)*
-- **Live on prod and dev since 2026-10-06**, release **2.0.0 "Elia"**: `app.davidfruin.com` and `dev.davidfruin.com` both serve this build from `public_html/app/`, with [[ssapi]] as the backend, in the split layout ([[deploy-layout-plan]]). The vanilla frontend is retired. **react.davidfruin.com is retired**; Dave is deleting that vhost.
-- **Layout per domain:**
-  - `private/` (`.env`, DB, logs);
-  - `ssapi/` (backend code, outside the web root);
-  - `public_html/`: the `api.php`/`media.php` stubs, one root `.htaccess` from `ssapi/deploy/root.htaccess`, `app/` (this build), `media/`, `downloads/`.
-
-  ssreact ships **no** `.htaccess`. The root file does the SPA fallback, security headers and caching.
-- **Deploy the frontend (current, before the workspace restructure):**
-  ```
-  pnpm run build
-  rsync -rltz --no-owner --no-group --delete dist/ el1:/home/davidfruin/domains/<dev|app>.davidfruin.com/public_html/app/
-  ```
-  - Prod only on Dave's explicit go.
-  - `--no-owner --no-group` still matters: `-a` resets group ownership that PHP needs.
-  - Never rsync `--delete` from an empty or wrong folder.
-  - **After the workspace restructure** ([[repo-consolidation-plan]] Step 2), the output is `web/dist/`; use `scripts/deploy-web.sh dev|app` (Step 2.7) instead of this command.
-- **Rollback anchor:** tag `v2.0.0` (ssreact `466367f`, ssapi `236a338`). On `master` since then: `0379b5b` (version display + `/history`), not recorded as deployed.
-- **Backups from the 2026-10-06 switch:** dev `app.vanilla.bak-2026-10-06`; prod `public_html.bak-2026-10-06` and `private/userdata.db.pre-ssapi-migration-20261006`. All are outside the web root. Delete them after a few days of clean running.
-- **Not yet checked on prod with real use:** a browser login, a post with a photo, push delivery, and an old home-screen icon (`/app.html#/feed` should land on `/feed`).
-- **Hosts:** app and dev run PHP through mod_fcgid, and have ffmpeg (thumbnails and transcoding work). The PHP-FPM `CGIPassAuth` and chroot-without-ffmpeg quirks were react-only.
-- **GitHub Actions deploy: decided, but ON HOLD until Dave says go.**
+- **Repo layout (2026-10-07):** a pnpm workspace. The web app is in `web/`; `mobile/`, `desktop/` and `packages/core/` come later. Run commands from the repo root.
+- **Live:** app.davidfruin.com (prod) and dev.davidfruin.com, both on the split layout ([[deploy-layout-plan]]): the build goes into `public_html/app/`, the backend is in `ssapi/`, one root `.htaccess` from ssapi's `deploy/`. ssreact ships no `.htaccess`. react.davidfruin.com is retired.
+- **Frontend deploy:** `scripts/deploy-web.sh dev|app`. It builds `web/`, checks `web/dist/index.html` exists, and runs `rsync --delete` into `public_html/app/`. Prod asks for a typed "prod". Never run the old `dist/` command.
+- **Backend deploy:** see [[ssapi]] and [[deploy-layout-plan]] section 2.
+- **Rollback anchor:** tag `v2.0.0` in ssreact and ssapi. Prod's pre-migration backups are listed in [[ssapi]].
+- **Host quirks:** files copied from this machine land owned by root; `chown -R davidfruin:davidfruin` the `app/` folder afterward. PHP runs under mod_fcgid on dev and prod.
+- **GitHub Actions deploy: still on hold** until Dave says go. The existing workflow only builds.
 
 ## Testing
 - **Test accounts:** test on **dev** (react.davidfruin.com and its test DB are retired). Create a throwaway account in dev's DB with `password_hash()` + `INSERT`, or register with an invite once invites exist.
@@ -120,7 +105,7 @@ React + Vite + TypeScript + shadcn/ui (Base UI, Tailwind 4, pnpm) rewrite of [[s
 - **Layout:** Header (desktop nav + badge), ThumbNav (touch devices only, mirrors for the left-hand setting), ScrollTopButton, Toast.
 
 ## Next steps
-- [ ] Restructure into a pnpm workspace (`web/`, `mobile/`, `desktop/`, `packages/core/`). The `deploy-layout` branch is already merged (2026-10-06, `466367f`; ssreact ships no `.htaccess` now): [[repo-consolidation-plan]] Step 2. **This must happen before the phone port starts.**
+- [x] ~~Restructure into a pnpm workspace~~ done 2026-10-07 (`web/` now; `mobile/`, `desktop/`, `packages/core/` to come): [[repo-consolidation-plan]] Step 2. **This must happen before the phone port starts.**
 - [x] ~~ssreact tasks from `Inbox/ssapi-improvement-plan.md`~~: done 2026-10-02
 - [ ] `packages/core` (`@ss/core`) for the phone app ([[ssreact-native-port-plan]] Phase 1, after the workspace restructure)
 - [ ] **Prod real-use check after the 2.0.0 switch** (login, photo post, push, old home-screen icon)

@@ -14,4 +14,3 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
-| admin machine (Claude) | ssreact | repo consolidation Step 2: pnpm workspace restructure (web/) | 2026-10-07 04:40 |
