@@ -161,7 +161,7 @@ React + Vite + TypeScript + shadcn/ui (Base UI, Tailwind 4, pnpm) rewrite of [[s
 
 ## Thumb bubble follow-up (2026-10-07)
 - Dave: take Settings out of the thumb bubble (a button on the Profile page instead), on the web too, and make the labels fan out like rays of sunlight so they don't overlap. **Done:** both bubbles now have five entries (Feed, Post, Search, Notifications, Profile). Settings is a button on your own profile (phone and web); the web's desktop top menu still has its Settings link, since the bubble only exists on touch devices. On the phone each label now lies along the ray from the bubble through its dot (turned `90 - angle` degrees, mirrored for the left hand: upright above the bubble, level at the far end), which is what the web's CSS already did.
-- Not yet checked on a phone: label clearance and tap targets on the rotated labels.
+- **Follow-up, phone app only:** Dave found the full ray fan too steep and asked for just enough to avoid overlap. Labels now turn `0.45 x (90 - angle)` degrees (about 40 at the top item, none at the last). Worked out from the label boxes for both hands: below about 0.4 the top label runs into the next dot. The web bubble keeps its CSS rays. Not yet checked on a phone: label clearance and tap targets on the tilted labels.
 
 ## Next steps
 - [x] ~~Restructure into a pnpm workspace~~ done 2026-10-07 (`web/` now; `mobile/`, `desktop/`, `packages/core/` to come): [[repo-consolidation-plan]] Step 2. **This must happen before the phone port starts.**
