@@ -14,4 +14,3 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
-| admin machine (Claude) | ssapi | phone Phase 5 part B next (capture, playback); ssapi media change done on dev | 2026-10-07 07:53 |

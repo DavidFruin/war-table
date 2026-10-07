@@ -304,6 +304,8 @@ It returns `{ handler, relogin(retryAll), logout() }`. Move the `waitersRef`/`sh
 - Leave the data as you found it.
 
 ### Phase 5: write paths and media
+> **Built 2026-10-07** (ssreact `78460f5`..`46245eb`). Part A confirmed on Dave's phone; playback and capture await his check. See the [[ssreact]] note.
+
 - **5.1 Create Post, text only first:**
   - `MentionInput`: `TextInput` + `onSelectionChange` + an `@word` trigger, a suggestion list from `getUsers()`, and the same `resolve(text)` → `@[id]` conversion before submit as ssreact's `MentionTextarea`.
   - Port its character filter (printable ASCII + Latin-1, no newlines) and the "Returns aren't allowed" toast.
