@@ -14,3 +14,4 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
+| admin machine (Claude) | ssreact | phone app Phase 2: scaffold mobile/ (Expo) | 2026-10-07 06:30 |
