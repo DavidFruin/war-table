@@ -5,6 +5,8 @@ repo: https://github.com/DavidFruin/simple-social
 
 # simple-social
 
+> **Repo archived 2026-10-07.** The GitHub repo `simple-social` is read-only. This note stays as the product-level note (see the consolidation plan, Step 6).
+
 ## Versions
 - **1.0.0 "Alpha Simple"**: simple-social `28d378f` (2026-09-18, tag `v1.0.0`). The prod launch announced in Dave's 2026-09-18 post.
 - **2.0.0 "Elia"**: ssapi `236a338` + ssreact `466367f` (2026-10-06, tag `v2.0.0` in both repos). The React frontend, ssapi backend and the new server layout, live on prod and dev.
