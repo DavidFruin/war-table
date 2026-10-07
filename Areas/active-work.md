@@ -15,3 +15,4 @@ you start; remove it when you stop, whatever the reason.
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
 | admin machine (Claude) | ssapi+ssreact | media plan + launch Step 1B | 2026-10-07 21:03 |
+| admin machine (Claude) | ssreact | thumb bubble: remove Settings, ray-style labels, web too | 2026-10-07 21:06 |
