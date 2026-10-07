@@ -208,7 +208,7 @@ It returns `{ handler, relogin(retryAll), logout() }`. Move the `waitersRef`/`sh
 **Commits:** one per step: `refactor(core): …`.
 
 ### Phase 2: scaffold `mobile/`
-> **Code done 2026-10-07** (ssreact `f1e839e`, `814e718`); the Expo Go check on Dave's phone is still open. See the [[ssreact]] note.
+> **Code done 2026-10-07** (ssreact `f1e839e`, `814e718`); Dave confirmed in Expo Go that login and getMediaLimits work against dev. See the [[ssreact]] note.
 
 **2.1 Create the app inside the workspace:**
 - From the ssreact root: `pnpm create expo-app mobile --template` (TypeScript, expo-router template). Set `"name": "@ss/mobile"` in `mobile/package.json`, and add `"@ss/core": "workspace:*"`.
