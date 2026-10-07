@@ -14,4 +14,3 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
-| admin machine (Claude) | ssreact | add version block, history page (settings, landing, top menu) | 2026-10-07 04:26 |
