@@ -9,7 +9,16 @@ repos: ssreact (workspace after Inbox/repo-consolidation-plan.md Step 2: web/ = 
 
 A plan for building the phone app in [[ssreact]]'s `mobile/` folder, from the React web app in `web/`.
 
-> **Updated 2026-10-03 (repo consolidation):** the phone app no longer has its own repo. `ssreact` is a pnpm workspace (`web/`, `mobile/`, `desktop/`, `packages/core/`), per `Inbox/repo-consolidation-plan.md`. Shared logic is the workspace package `@ss/core` in `packages/core/`, imported directly by web and mobile. There's **no copy/sync script**. **Prerequisite:** that plan's Step 2 is done. It is written to be carried out phase by phase by an agent. Each step names the files and the approach, and says how to check it.
+> **Updated 2026-10-03 (repo consolidation):** the phone app no longer has its own repo. `ssreact` is a pnpm workspace (`web/`, `mobile/`, `desktop/`, `packages/core/`), per `Inbox/repo-consolidation-plan.md`. Shared logic is the workspace package `@ss/core` in `packages/core/`, imported directly by web and mobile. There's **no copy/sync script**. **Prerequisite:** that plan's Step 2 is done (it is, as of `f974931`, 2026-10-07).
+
+It is written to be carried out phase by phase by an agent. Each step names the files and the approach, and says how to check it.
+
+> **Reviewed 2026-10-07 for Sonnet 5 (medium).** Fixes:
+> - Phase 1.0: the type-checking setup for `@ss/core`. "No DOM lib" would have broken `fetch`/`FormData` types; it's now an ESLint restricted-globals rule.
+> - Phase 2: React version isolation in the monorepo.
+> - A new **§4a: how to verify without a Mac or an emulator**.
+> - Paths updated to `web/…`; stale react.davidfruin.com/simple-social references removed.
+> - The app version shown in Settings.
 
 > **Updated 2026-10-02, Dave's decisions:**
 > - **The phone app is the top priority**, ahead of [[sselectron]].
@@ -21,7 +30,8 @@ A plan for building the phone app in [[ssreact]]'s `mobile/` folder, from the Re
 > - **End goal (Step 2): a normal public app on both the App Store and Google Play**, invite-only and paid (Phase 10 + the access plan's Step 2). It's the planned final stage after the Unlisted listing; only its money and legal choices wait on Dave.
 > - **Individual** Apple Developer account. **Expo push is approved.**
 >
-> Phase 8 (family release) depends on prod running ssapi with the invite and Expo push additions, because the family builds talk to `app.davidfruin.com`.
+> Phase 8 (family release) depends on prod (which has run ssapi since 2026-10-06) also having the invite system and the Expo push additions deployed, because the family builds talk to `app.davidfruin.com`.
+
 ---
 
 ## 0. Read this first: rules for the implementing agent
@@ -29,7 +39,7 @@ A plan for building the phone app in [[ssreact]]'s `mobile/` folder, from the Re
 1. **Sequencing:**
    - Don't start until `Inbox/repo-consolidation-plan.md` **Step 2** (ssreact becomes a workspace) has landed. The ssapi improvement plan's ssreact tasks have already landed (2026-10-02).
    - Check `Areas/active-work.md` and `git log` in ssreact before you begin.
-2. **This app is a bridge, not the end state.** That was decided in [[simple-social]]'s Planning section: React Native leads toward true native (Swift/Kotlin) later. Don't pay for anything permanent: no cross-platform UI kit and no design system. **Share logic, not UI.** This settles the open "code-sharing approach" question (see §2, N2). Record it in the [[ssreact]] note.
+2. **This app is a bridge, not the end state.** That was decided in [[simple-social]]'s Planning section: React Native leads toward true native (Swift/Kotlin) later. Don't pay for anything permanent: no cross-platform UI kit and no design system. **Share logic, not UI.** Dave confirmed this on 2026-10-07 (N2, N2b); it's recorded in the [[ssreact]] note.
 3. **Backends:**
    - Development and testing point at `dev.davidfruin.com` (react.davidfruin.com is retired) or at the ssapi local bench.
    - **Never point at `app.davidfruin.com` (prod)** except in a deliberate, Dave-confirmed release test. Same rule as everywhere else in this project.
@@ -45,10 +55,11 @@ A plan for building the phone app in [[ssreact]]'s `mobile/` folder, from the Re
 
 ## 1. What exists today (inputs)
 
-- **ssreact:** about 7.4k lines of TS/TSX.
-  - 22 routes in `src/App.tsx`.
-  - Logic lives in `src/lib/*`.
-  - UI is shadcn/Base UI plus Tailwind 4 with six themes (the `.theme-*` blocks in `src/index.css`).
+- **ssreact `web/`** (the workspace's web app, `@ss/web`): about 7.5k lines of TS/TSX.
+  - Routes in `web/src/App.tsx`, including the public `/history` page (release list in `web/src/lib/versions.ts`).
+  - Logic lives in `web/src/lib/*`.
+  - UI is shadcn/Base UI plus Tailwind 4 with six themes (the `.theme-*` blocks in `web/src/index.css`).
+  - All paths below that start `lib/`, `components/` or `pages/` are under `web/src/`.
 - **Browser-only code, which can't move over as-is:**
 
 | ssreact file | Browser dependency | Native replacement |
@@ -69,7 +80,7 @@ A plan for building the phone app in [[ssreact]]'s `mobile/` folder, from the Re
 - **Pure logic that moves over unchanged:**
   - `lib/types.ts`, `lib/format.ts`, `lib/toast.ts` (pub-sub store)
   - `lib/post-cache.ts`, `lib/feed-cache.ts`
-  - `lib/roadmap-data.ts` (only if Roadmap is ported, which it isn't; see §5)
+  - `lib/roadmap-data.ts` and `lib/versions.ts` stay in `web/` (Roadmap and History aren't ported; see §5). The phone app shows its **own** version in Settings, plus a link to the website's `/history` (Phase 7).
   - the tokenizing half of `lib/post-text.tsx`
   - the waiter-queue logic inside `auth-context.tsx`
 
@@ -79,7 +90,7 @@ A plan for building the phone app in [[ssreact]]'s `mobile/` folder, from the Re
 
 | # | Decision | Why |
 |---|---|---|
-| N1 | **Expo** (managed workflow, current SDK) with **expo-router** | No Xcode or Android Studio needed on Dave's Linux machines. EAS Build does iOS builds in the cloud. File-based routes map 1:1 to ssreact's route table. |
+| N1 | **Expo** (managed workflow, current SDK) with **expo-router** | No Xcode or Mac needed: EAS Build does iOS builds in the cloud. Day-to-day testing runs on Dave's real phones through **Expo Go**, and later a development build (see §4a), so an Android emulator is optional. File-based routes map 1:1 to the web app's route table. |
 | N2 | **Share logic only**, through the workspace package **`@ss/core`** (`ssreact/packages/core/`), imported by `web/` and `mobile/` (and later `desktop/`) | Fits "RN is a bridge": no UI kit, only plain TypeScript logic. The repo consolidation (2026-10-03) makes the shared package free, so there's no copying, sync script or drift check. A lint rule keeps the package free of browser APIs (Phase 1). |
 | N2b | **No universal UI** (decided by Dave, 2026-10-07) | React Native and Electron are both bridges. A react-native-web "one UI everywhere" app was considered and rejected, because it would make React Native the long-term base. Web keeps its own UI; mobile gets its own; only `@ss/core` logic is shared. |
 | N3 | **Plain `StyleSheet` + a theme-token object** ported from `index.css`, with no NativeWind or Tamagui | Keeps all six themes with zero dependencies. A UI kit would be thrown away when native arrives. |
@@ -116,6 +127,19 @@ ssreact/
 
 ---
 
+## 4a. How verification works (read before Phase 2)
+The implementing agent usually runs somewhere **without** a phone, a Mac or (often) an Android emulator. Be explicit about which checks you ran and which Dave must do; never claim a device check you couldn't run.
+
+| Check | Who / how |
+|---|---|
+| Types, lint, `@ss/core` unit tests, web build | Agent: `pnpm lint`, `pnpm --filter @ss/core test`, `pnpm build`, `pnpm --filter @ss/mobile exec tsc --noEmit` |
+| Backend changes ([ssapi]) | Agent: the ssapi local bench (`php -S`, see `Inbox/ssapi-improvement-plan.md` Phase 0) |
+| Screens and flows, Phases 2–5 | **Dave's phone in Expo Go.** The agent runs `pnpm mobile -- --tunnel` (or `--lan` on the same network) and gives Dave the QR code/URL. Dave reports back. An Android emulator is fine too, if the machine has one. |
+| Push (Phase 6), anything Expo Go can't run | A **development build** (`eas build --profile development -p android`, and `-p ios` once the Apple account exists), installed on Dave's phone(s) |
+| Release builds (Phase 8+) | EAS builds, installed by Dave |
+
+When a phase ends, the hand-off lists: what the agent verified itself, and a short **"Dave, please check on your phone"** list with exact steps.
+
 ## 4. Phases
 
 ### Phase 1: create `packages/core` and move the platform-free logic into it (the only `web/` work)
@@ -126,7 +150,12 @@ The goal is that the web app behaves **identically** afterwards. This is pure re
 - `"type": "module"`;
 - `"main"` and `"types"` pointing at `src/index.ts`. It's consumed as TypeScript source, with no build step: Vite and Metro both compile it.
 
-Also add a `tsconfig.json` that extends the workspace's base settings with `"lib": ["ES2022"]` and **no `"DOM"`**, so browser globals don't type-check in core. Add `"@ss/core": "workspace:*"` to `web/package.json` and run `pnpm install`.
+Also add a `tsconfig.json` (strict, `"lib": ["ES2022", "DOM"]`, `noEmit`).
+- **Why keep the DOM lib:** `fetch`, `FormData`, `URLSearchParams`, `Blob` and `Response` are typed there, and the API client needs them. They also exist in React Native, so using them is fine.
+- **What actually keeps core portable:** an ESLint rule in `packages/core/eslint.config.js`, `no-restricted-globals` for `window`, `document`, `localStorage`, `sessionStorage`, `navigator`, `location` and `history`, plus `no-restricted-imports` for `react`, `react-dom`, `react-native` and anything under `web/`.
+- **`@ss/core` has no dependencies at all.** It's plain TypeScript, with no React. That keeps it safe for both apps, which use different React versions (Phase 2.1).
+
+Add `"@ss/core": "workspace:*"` to `web/package.json` and run `pnpm install`.
 
 **1.1 Move the pure modules** from `web/src/lib/` to `packages/core/src/`:
 - `types.ts`, `format.ts`, `toast.ts`, `post-cache.ts`, `feed-cache.ts`
@@ -170,7 +199,8 @@ It returns `{ handler, relogin(retryAll), logout() }`. Move the `waitersRef`/`sh
 
 **Verify Phase 1:**
 - `pnpm lint && pnpm build` (workspace root) are clean.
-- `grep -rnE "localStorage|document\.|window\.|navigator\." packages/core/src` returns **nothing**, and `pnpm --filter @ss/core exec tsc --noEmit` passes with no DOM lib. Add both as a `lint:core` script in the root `package.json`, and run it from `pnpm lint`.
+- `pnpm --filter @ss/core exec tsc --noEmit` and `pnpm --filter @ss/core lint` pass, and the restricted-globals rule demonstrably fires: temporarily add `localStorage.getItem('x')` to a core file, see lint fail, then remove it. Make sure `pnpm lint` at the root runs core's lint.
+- **Unit tests for core:** add **Vitest** to `packages/core` with tests for `tokenizePostText` (URL vs. mention ordering, trailing punctuation, `@[26]` inside a URL, deleted mention), `format` (timestamps, relative time), the session-expiry queue (two concurrent waiters both resolve after re-login; logout resolves both with undefined) and `resolveMediaUrl`. These are the only checks of shared logic that run without a device. `pnpm --filter @ss/core test` must pass.
 - Run a manual pass against the dev proxy: login, reload (no 401 burst, which is P1), feed, like, comment with a mention, upload an image, session-expired modal (corrupt `ss_jwt` in DevTools to trigger it), logout.
 
 **Commits:** one per step: `refactor(core): …`.
@@ -183,6 +213,8 @@ It returns `{ handler, relogin(retryAll), logout() }`. Move the `waitersRef`/`sh
   - Follow Expo's current "Work with monorepos" guide. Recent Expo SDKs configure Metro for workspaces automatically, so `mobile/metro.config.js` usually only needs `getDefaultConfig(__dirname)`.
   - Confirm that Metro resolves `@ss/core` from `packages/core` and picks up edits to it live.
   - The root `.npmrc` already has `node-linker=hoisted` (consolidation Step 2.2). Keep it; React Native's tooling expects it with pnpm.
+  - **React versions:** Expo pins exact `react`/`react-native` versions, and `web/` uses its own `react` (`^19.2.x`). They may differ. With a hoisted layout, check `pnpm why react` and confirm that `mobile/` resolves **Expo's** React, from `mobile/node_modules` if versions differ, and web resolves its own. Two copies of React inside one app cause "Invalid hook call" errors. `@ss/core` must not import React (Phase 1.0), so it can't cause this. If Metro picks the wrong copy, follow the Expo monorepo guide's `resolver` settings rather than inventing a workaround.
+  - **Use `npx expo install <pkg>`** (not `pnpm add`) for every Expo or React Native package, so versions match the SDK.
 - Root scripts: add `"mobile": "pnpm --filter @ss/mobile start"`.
 
 **2.2** (Removed 2026-10-03: there's no sync script any more. `@ss/core` is imported directly.)
@@ -205,13 +237,13 @@ It returns `{ handler, relogin(retryAll), logout() }`. Move the `waitersRef`/`sh
 - Hydrate the token store and then render, using `expo-splash-screen` to hold the splash until then.
 - Add providers: Theme, Auth (using `@ss/core`'s session-expiry queue), and a Toast host.
 
-**Verify Phase 2:**
-- `npx expo start`, open in Expo Go or an Android emulator.
+**Verify Phase 2** (see §4a for how):
+- `pnpm mobile` (`expo start`). Dave opens it on his phone in **Expo Go**, or an emulator is used if this machine has one.
 - A temporary debug screen calls `api.getMediaLimits()` after a hard-coded test login against **dev** and shows the JSON.
 - `pnpm --filter @ss/mobile exec tsc --noEmit` and `pnpm lint` (including `lint:core`) are clean. Editing a file in `packages/core` hot-reloads both `pnpm dev` (web) and the running Expo app.
 
 ### Phase 3: auth and app shell
-- **3.1 Screens:** Login, Register and Reset Password. Register's first step has an **Invite code** field (access plan §1.3/1.4: case-insensitive, sent as `inviteCode` with `sendRegisterOTP`, with the hint "Simple Social is invite-only. Ask the person who invited you for a code."). Port `OtpAuthFlow`'s three steps exactly, in the same order as `simple-social-tui`'s `auth.c` (noted in [[ssreact]]).
+- **3.1 Screens:** Login, Register and Reset Password. Register's first step has an **Invite code** field (access plan §1.3/1.4: case-insensitive, sent as `inviteCode` with `sendRegisterOTP`, with the hint "Simple Social is invite-only. Ask the person who invited you for a code."). Until the backend invite system (access plan Step 1) is deployed, the server simply ignores the extra field, so build it now anyway. Port `OtpAuthFlow`'s three steps exactly, in the same order as `simple-social-tui`'s `auth.c` (noted in [[ssreact]]).
   - Use `TextInput` with `secureTextEntry`, `autoComplete="email"` / `"password"` / `"one-time-code"`, and `textContentType` for iOS autofill.
 - **3.2 Navigation:**
   - `RequireAuth` / `RequireGuest` become redirect logic in the `(auth)` and `(tabs)` layouts, based on `user`.
@@ -224,8 +256,9 @@ It returns `{ handler, relogin(retryAll), logout() }`. Move the `waitersRef`/`sh
   - Verify on the ssapi local bench (see the ssapi plan's Phase 0): `curl -H 'X-Client: ssreact-mobile/1.0 (android)' … login`, then `getSessions` shows the new name.
 - **3.4 Session-expired modal:** a non-dismissible RN `Modal` driven by the core queue. Back press is ignored (`onRequestClose={() => {}}`).
 - **3.5 Theme:**
-  - Port the six `.theme-*` blocks in `index.css` to `theme/tokens.ts` as `{ background, foreground, card, primary, primaryForeground, muted, mutedForeground, border, destructive, success, warning }` per theme.
-  - **Copy the hex values exactly.** `simple-social/css/main.css` is the source of truth (per the [[ssreact]] note).
+  - Port the six themes from `web/src/index.css` to `mobile/src/theme/tokens.ts` as `{ background, foreground, card, primary, primaryForeground, muted, mutedForeground, border, destructive, success, warning }` per theme.
+    - Stored values and their labels: `light` (Light), `dark` (Dark Blue), `red` (Red), `blue` (Light Blue), `hacker` (Hacker), `gray` (Dark; grayscale except the red/green/amber status colours).
+    - **Copy the values exactly from `web/src/index.css`**, which is now the source of truth (simple-social is archived). Convert any non-hex colour formats to hex.
   - Theme changes call `api.updateTheme` and re-render through context. Set the status bar style per theme.
 
 **Verify Phase 3 (emulator against dev):**
@@ -255,7 +288,7 @@ It returns `{ handler, relogin(retryAll), logout() }`. Move the `waitersRef`/`sh
   - Video and audio come in Phase 5. Show a placeholder until then.
   - Every media URL goes through `resolveMediaUrl(base, …)`.
 
-**Verify Phase 4 (emulator, against dev or react's test copy, using a test account per the [[ssreact]] note):**
+**Verify Phase 4 (on a phone via Expo Go, against dev, using a dev test account per the [[ssreact]] note):**
 - Every screen renders real data.
 - Like/unlike round-trips (count changes on the server).
 - A mention opens the right profile.
@@ -282,7 +315,7 @@ It returns `{ handler, relogin(retryAll), logout() }`. Move the `waitersRef`/`sh
 - **5.5 Known cross-platform media risk (flag it, don't work around it silently):**
   - Recordings made in browsers are WebM. **iOS can't play WebM.** Prod and dev transcode to MP4/MP3 because ffmpeg exists there, but any server **without** ffmpeg (e.g. the retired react.davidfruin.com chroot) keeps WebM originals as uploaded, and those won't play on iOS.
   - Test iOS playback against dev, and check that ffmpeg works on any new host before pointing the phone app at it.
-  - Native recordings come out as MP4/M4A, which is fine everywhere. Check that the server accepts `audio/mp4`/`audio/m4a`: ssapi's `ALLOWED_AUDIO_TYPES` currently lacks them. **[ssapi], additive:** add `audio/mp4`, `audio/x-m4a` and `audio/aac` to the allowed audio types, and add the `ftyp` M4A case to S3's `sniffMedia` (it already maps `ftyp` to the `av` family, which the audio check accepts). Verify on the ssapi bench with a real `.m4a` file.
+  - Native recordings come out as MP4/M4A (audio) and MP4/MOV (video), which are fine everywhere. ssapi's `ALLOWED_AUDIO_TYPES` (`src/Media/handlers.php`) is currently `audio/wav`, `audio/mpeg`, `audio/mp3`, `audio/webm`, so M4A is **rejected today**. **[ssapi], additive:** add `audio/mp4`, `audio/x-m4a` and `audio/aac` to the allowed audio types, and add the `ftyp` M4A case to S3's `sniffMedia` (it already maps `ftyp` to the `av` family, which the audio check accepts). Verify on the ssapi bench with a real `.m4a` file.
 
 **Verify Phase 5 (a real device is required for capture):**
 - Text post with a mention → the server stores `@[id]`.
@@ -307,10 +340,10 @@ Web Push (VAPID) doesn't exist in React Native. Native push needs FCM (Android) 
 3. In `pushNotification()`, branch on `kind`:
    - Web push stays as it is.
    - Expo rows are batched into one POST to `https://exp.host/--/api/v2/push/send` with `[{to, title, body, data:{url}, badge: count}]`.
-   - Use the same short curl timeouts and deferred sending as ssapi P1 and P2.
+   - Use the same short curl timeouts (ssapi S1) and deferred sending (`defer()`, ssapi P2).
    - On a `DeviceNotRegistered` receipt, delete the row.
-   - **Keep `exp.host` as the only allowed host for this kind**, consistent with S1.
-4. Keep the push URL as it is (`/app.html#/post/…`). The app normalises it exactly like `ssreact/public/sw.js` → `normalizeNotificationUrl` (strip through `#`).
+   - **Keep `exp.host` as the only allowed host for this kind**, consistent with S1. Branch on `kind` *before* `sendWebPush()`, whose `isAllowedPushEndpoint()` check would otherwise reject Expo rows.
+4. Keep the push URL as it is (`/app.html#/post/…`). The app normalises it exactly like `web/public/sw.js` → `normalizeNotificationUrl` (strip through `#`).
 
 **App side:**
 - Ask for permission only from a Settings toggle (a user action), like web.
@@ -324,6 +357,7 @@ Web Push (VAPID) doesn't exist in React Native. Native push needs FCM (Android) 
 - None of these files are committed: `.gitignore` them and use EAS secrets.
 
 **Verify:**
+- **Push needs a development build, not Expo Go.** Recent Expo Go versions don't deliver remote push. Build one with `eas build --profile development` and install it on Dave's phone(s); see §4a.
 - ssapi bench: insert an Expo token row and trigger a like; the deferred send runs. The real delivery check is on a device.
 - Real device: like a test post from a second account → the notification arrives, the tap opens the post, the badge count is right, and mark-as-seen clears it. Logout → no further pushes.
 
@@ -333,7 +367,8 @@ Web Push (VAPID) doesn't exist in React Native. Native push needs FCM (Android) 
   - Devices list with revoke and revoke-all, using `Alert.alert` confirms.
   - Log out.
   - Delete Account (password + double confirm).
-  - Links that open the website: About, Conduct, Roadmap, API.
+  - Links that open the website: About, Conduct, Roadmap, API, History (`/history`).
+  - **App Version** block (matches the web Settings): the app's own version and build number (`expo-application`/`expo-constants`) and the product release name. Read the release list from `@ss/core` if Phase 1 moved `versions.ts` there; otherwise show the app's version and link to `/history`.
 - **Toasts:** one host component subscribed to `@ss/core`'s toast store, with solid colours (the lesson from the Red-theme toast bug in the [[ssreact]] note).
 - **Empty, loading and error states** on every screen.
 - **Accessibility:** `accessibilityLabel` on icon-only buttons, and Dynamic Type / font scaling left enabled.
@@ -358,11 +393,11 @@ Steps marked **Dave** need his accounts or credentials. The agent prepares every
   - auto-incremented build numbers / `versionCode`
   - `ios.config.usesNonExemptEncryption: false`
 - **Permission strings** (camera, microphone, photo library), written in plain language.
-- **Icons:** a 1024×1024 iOS icon (no transparency) and an Android adaptive icon, from the black-and-white heart in `ssreact/public/pwa-icons/`.
+- **Icons:** a 1024×1024 iOS icon (no transparency) and an Android adaptive icon, from the black-and-white heart in `web/public/pwa-icons/`.
 
 **8.3 Build profiles (`eas.json`):**
 - `development`: dev client, dev backend.
-- `preview`: dev or react backend, for Dave's own testing.
+- `preview`: dev backend, for Dave's own testing.
 - `family`: **the `app.davidfruin.com` backend**.
   - Android: `"android": { "buildType": "apk" }`, `distribution: internal`.
   - iOS: `distribution: store`, for TestFlight and later the App Store.
@@ -482,7 +517,7 @@ The planned final stage, after Phase 9 is live and stable: invite-only, **paid**
 - Then production, with a staged rollout.
 - Retire the APK update banner once everyone has moved to Play.
 
-**10.4 After launch:** add store badges on ssreact's `DownloadPage` and simple-social's `download.html`. Moderation duty scales with users (§2.6).
+**10.4 After launch:** add store badges on the web app's `DownloadPage` (`web/src/pages/DownloadPage.tsx`). Moderation duty scales with users (§2.6).
 
 ---
 
@@ -501,11 +536,8 @@ The planned final stage, after Phase 9 is live and stable: invite-only, **paid**
 | `SessionExpiredModal` | Native `Modal` | Non-dismissible |
 | `Toast` | Toast host | |
 | `Header`, `ThumbNav`, `ScrollTopButton` | Tab bar + stack headers; tapping the active tab scrolls to top | Native convention replaces both |
-| `LandingPage`, `AboutPage`, `ApiDocsPage`, `ConductPage`, `RoadmapPage`, `DownloadPage` | Not ported; linked from Settings | N6 |
+| `LandingPage`, `AboutPage`, `ApiDocsPage`, `ConductPage`, `RoadmapPage`, `DownloadPage`, `HistoryPage` | Not ported; linked from Settings | N6 |
 | shadcn `Card`/`Button`/`Input`/`Switch`/`Select`/`AlertDialog`/`Popover`/`Dialog` | `View`+tokens / `Pressable` / `TextInput` / RN `Switch` / action sheet / `Alert.alert` / bottom-sheet `Modal` / `Modal` | Thin local components only |
-
----
-
 
 ---
 
@@ -517,9 +549,9 @@ The planned final stage, after Phase 9 is live and stable: invite-only, **paid**
 ---
 
 ## 7. Open decisions for Dave
-1. **N2:** confirm "share logic only, through the `@ss/core` workspace package". Then record it in the [[ssreact]] note's Decisions.
+1. ~~N2: share logic only~~: confirmed 2026-10-07 (N2, N2b).
 2. **Bundle ID / package name** (`com.davidfruin.simplesocial` proposed). It is permanent.
-3. **How ssapi reaches prod** (ssapi plan D6). **The family release can't ship without it.**
+3. ~~How ssapi reaches prod~~: done 2026-10-06. What's still needed on prod for Phase 8: the invite system (access plan Step 1) and the Expo push additions (Phase 6), each deployed when Dave says so.
 4. Where the APK is hosted, and whether the link is public or a secret path.
 5. Whether Android developer verification applies in the family's country (8.1). Check before the first release.
 6. A contact email, plus approval of the Terms and Privacy texts (needed for Phase 9).
