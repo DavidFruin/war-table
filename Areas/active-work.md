@@ -14,3 +14,4 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
+| admin machine (Claude) | ssreact+ssapi | phone app Phase 3: auth, app shell, themes | 2026-10-07 07:07 |
