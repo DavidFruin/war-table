@@ -159,6 +159,10 @@ React + Vite + TypeScript + shadcn/ui (Base UI, Tailwind 4, pnpm) rewrite of [[s
 - `mobile/src/nav/ThumbNav.tsx`: a round menu button in the bottom corner for the chosen hand; tapping fans Feed, Post, Search, Notifications (with the unseen count), Profile and Settings out along a 150 px quarter-circle arc, staggered spring animation, labels on the inward side, current screen highlighted, dimmed backdrop closes it, hidden while the keyboard is up. With the bubble on, the tab bar is hidden (`tabBarStyle: display none`); screen headers stay. Reverses the plan's earlier decision 3.2 (bottom tabs replace the thumb nav); both are now available.
 - Verified by the agent: typecheck, lint, Android bundle. Not checked on a phone (arc spacing, label overflow, left-hand mirroring).
 
+## Thumb bubble follow-up (2026-10-07)
+- Dave: take Settings out of the thumb bubble (a button on the Profile page instead), on the web too, and make the labels fan out like rays of sunlight so they don't overlap. **Done:** both bubbles now have five entries (Feed, Post, Search, Notifications, Profile). Settings is a button on your own profile (phone and web); the web's desktop top menu still has its Settings link, since the bubble only exists on touch devices. On the phone each label now lies along the ray from the bubble through its dot (turned `90 - angle` degrees, mirrored for the left hand: upright above the bubble, level at the far end), which is what the web's CSS already did.
+- Not yet checked on a phone: label clearance and tap targets on the rotated labels.
+
 ## Next steps
 - [x] ~~Restructure into a pnpm workspace~~ done 2026-10-07 (`web/` now; `mobile/`, `desktop/`, `packages/core/` to come): [[repo-consolidation-plan]] Step 2. **This must happen before the phone port starts.**
 - [x] ~~ssreact tasks from `Inbox/ssapi-improvement-plan.md`~~: done 2026-10-02
