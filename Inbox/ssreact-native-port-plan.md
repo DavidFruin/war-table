@@ -323,7 +323,7 @@ It returns `{ handler, relogin(retryAll), logout() }`. Move the `waitersRef`/`sh
 - **5.5 Known cross-platform media risk (flag it, don't work around it silently):**
   - Recordings made in browsers are WebM. **iOS can't play WebM.** Prod and dev transcode to MP4/MP3 because ffmpeg exists there, but any server **without** ffmpeg (e.g. the retired react.davidfruin.com chroot) keeps WebM originals as uploaded, and those won't play on iOS.
   - Test iOS playback against dev, and check that ffmpeg works on any new host before pointing the phone app at it.
-  - Native recordings come out as MP4/M4A (audio) and MP4/MOV (video), which are fine everywhere. ssapi's `ALLOWED_AUDIO_TYPES` (`src/Media/handlers.php`) is currently `audio/wav`, `audio/mpeg`, `audio/mp3`, `audio/webm`, so M4A is **rejected today**. **[ssapi], additive:** add `audio/mp4`, `audio/x-m4a` and `audio/aac` to the allowed audio types, and add the `ftyp` M4A case to S3's `sniffMedia` (it already maps `ftyp` to the `av` family, which the audio check accepts). Verify on the ssapi bench with a real `.m4a` file.
+  - Native recordings come out as MP4/M4A (audio) and MP4/MOV (video), which are fine everywhere. the server now accepts **any** image, video or audio format (identified by content) and converts to WebP/MP4/MP3 (ssapi, 2026-10-07, dev), so M4A and phone recordings need no further ssapi change.
 
 **Verify Phase 5 (a real device is required for capture):**
 - Text post with a mention → the server stores `@[id]`.
