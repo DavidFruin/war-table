@@ -56,6 +56,8 @@ A review of how [[ssapi]] handles uploaded images, video and audio (`src/Media/h
 ---
 
 ## 2. Phase 0: the media test harness (agent, about an hour)
+**Done 2026-10-07, sstests commit 23f392e** (A5 fixtures added in e8b5776).
+
 Create `sstests/backend/media/` with three files:
 
 **`make-fixtures.sh`** generates every test file locally. It uses ffmpeg only, with no real photos:
@@ -109,6 +111,8 @@ Run with `SSAPI=/path/to/ssapi ./run.sh`. Before any fixes, M1, M2, M3 and R1 mu
 ---
 
 ## 3. Phase A: urgent safety fixes (ssapi, about a day)
+**Done 2026-10-07** (local bench only, not deployed): A1 54ea259, A5 4a0dee9, A2 43d6767, A3 021c236, A4 b382855. Notes and gaps in [[ssapi]].
+
 
 ### A1 (M1). Pixel limits before any decode
 Add to `config.php`'s `$CONFIG`:
