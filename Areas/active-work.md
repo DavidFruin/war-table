@@ -14,3 +14,4 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
+| admin machine (Claude) | ssreact | phone app port plan (mobile/), starting with Phase 1 | 2026-10-07 05:17 |
