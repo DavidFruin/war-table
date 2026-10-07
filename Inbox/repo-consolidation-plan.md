@@ -15,7 +15,8 @@ repos: ssreact @ 865ff6f (+ branch deploy-layout @ 466367f), simple-social-cli @
 > - **Since then:** ssreact `0379b5b` (version display + `/history` page, 2026-10-07) is on `master`; it's not recorded whether it's deployed to prod yet.
 > - **Step 2 done 2026-10-07** (2.1–2.5 and 2.7): ssreact is a pnpm workspace with the app in `web/`, `scripts/deploy-web.sh` added and run once against dev. Dave chose to start without the prod real-use checks. Deviation from 2.2: the lockfile was **kept and migrated**, not deleted, because regenerating it upgraded dependencies (the main bundle came out 28% smaller, a different build). The restored lockfile reproduces the old build file for file.
 > - **2026-10-07 (gh CLI):** archived `simple-social` (README replaced with an archive notice first), `ssreact-native` and `sselectron`, which finishes Steps 1 and 5. Created the empty public repo `DavidFruin/ssterminal` (Step 3.0). Step 3's import is not started.
-> - **Steps 3 (import), 4 and 6 are not started.**
+> - **Step 3 done 2026-10-07:** `ssterminal` imported with history (CLI at the root, `wizard/`, `tui/`), submodules removed, one top-level Makefile (`make`, `make cli|wizard|tui`, `install-*`, `PREFIX`/`DESTDIR`, `make test`). The shared `lib/` was identical between the old pin `d91b04b` and `73431e4`, so 3.4 was a no-op. Verified on a local ssapi bench in the new layout: 35/35 CLI tests, 26/26 wizard tests, the TUI login screen, and install/uninstall into a temp prefix. Old repos got archive READMEs; **Dave still has to archive `simple-social-cli`, `-cli-interactive` and `-tui`.** The ssreact Download page now points at ssterminal, deployed to **dev only** (prod waits for Dave's go).
+> - **Steps 4 and 6 are not started.**
 
 **Decided by Dave, 2026-10-03.** Simple Social ends up in **four repos**:
 
