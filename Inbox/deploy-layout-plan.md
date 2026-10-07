@@ -10,7 +10,7 @@ supersedes: ssapi-improvement-plan D5 (now decided), and the "shared docroot .ht
 
 > **Status 2026-10-03:**
 > - **Code tasks L1–L3 are done** (ssapi `372bc87`, `236a338`).
-> - **L4** is on ssreact branch `deploy-layout`, to be merged by `Inbox/repo-consolidation-plan.md` Step 2.0.
+> - **L4 merged into ssreact `master` 2026-10-06** (`466367f`; consolidation Step 2.0 done). Don't deploy ssreact to a host still on the old shared-docroot layout, or it ends up with no SPA rewrite rules.
 > - **dev.davidfruin.com has been migrated and verified** (it serves the vanilla frontend from `public_html/app/`). See the [[ssapi]] note.
 > - **react.davidfruin.com is retired** (Dave is deleting the vhost), so its runbook steps below are moot.
 > - **app.davidfruin.com: not migrated**; only on Dave's go.
