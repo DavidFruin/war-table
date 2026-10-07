@@ -11,6 +11,8 @@ A plan for building the Electron desktop app for [[simple-social]] in [[ssreact]
 
 > **Deprioritized 2026-10-02 (Dave):** the phone apps (`Inbox/ssreact-native-port-plan.md`, App Store + Google Play) come first. Start this plan only after the phone app is submitted, or when Dave says so. It gets the store-readiness report/block/terms UI for free, because it bundles ssreact.
 >
+> **2026-10-07 (Dave): Electron is a bridge.** Keep this app a thin wrapper around the web build. No desktop-only features beyond what this plan lists, and no shared universal UI.
+>
 > **Updated 2026-10-03 (repo consolidation):** there's no separate `sselectron` repo any more (archived). The app lives in `ssreact/desktop/`, next to `web/`, in the same pnpm workspace (`Inbox/repo-consolidation-plan.md`). So there's no git submodule: the desktop build simply builds `web/` first.
 
 ---

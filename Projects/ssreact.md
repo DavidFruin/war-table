@@ -46,6 +46,7 @@ React + Vite + TypeScript + shadcn/ui (Base UI, Tailwind 4, pnpm) rewrite of [[s
 - **The automated browser sandbox can't** grant camera, mic or notification permission, or do fullscreen and clipboard writes. To exercise capture, inject a synthetic `getUserMedia` stream; anything else needs a real device. **Build and deploy before verifying:** testing against stale deployed code looks exactly like a real failure.
 
 ## Decisions
+- **2026-10-07 (Dave): React Native and Electron are both bridges** (toward true native apps later), **so the three apps stay separate:** `web/` (its own shadcn UI), `mobile/` (its own React Native UI) and `desktop/` (a thin Electron wrapper around the web build). They share **only plain logic** through `packages/core` (`@ss/core`). **No universal / react-native-web UI**: that was considered and rejected, because it would make React Native the long-term base.
 - Reuse the `learn-react-site` scaffold (the stack Dave already chose). No need to keep the retro-BBS look; shadcn's design is fine.
 - **The dev backend is reached through Vite's proxy** (`/api.php` and `/media.php` → `dev.davidfruin.com`), not CORS. The app always uses relative paths. **Never point it at `app.davidfruin.com` (prod).**
 - **Clean URLs with React Router**, not hash routing.
