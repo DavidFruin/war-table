@@ -14,3 +14,4 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
+| admin machine (Claude) | ssreact | deploy ssreact build to dev.davidfruin.com app/ | 2026-10-07 03:15 |
