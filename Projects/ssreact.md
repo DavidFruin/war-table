@@ -135,6 +135,12 @@ React + Vite + TypeScript + shadcn/ui (Base UI, Tailwind 4, pnpm) rewrite of [[s
 - `mobile/eslint.config.js` turns off `react-hooks/set-state-in-effect` (the standard fetch-on-mount pattern trips it; web's lint doesn't cover TS files so it never mattered there).
 - Verified by the agent: typecheck, lint, core tests, Android bundle. **Needs Dave's phone:** every screen against real dev data, like/unlike, mention and link taps, the URL-with-`@[26]` case (unit-tested only).
 
+## Phone app, Phase 5 part A built, waiting on Dave's phone check (2026-10-07)
+- **Write paths:** the Post tab is a real composer (`create-post.tsx`): text with @mention suggestions (`MentionInput`, same `@email` to `@[id]` resolve and the same printable-ASCII/Latin-1 filter and "Returns aren't allowed" message as web), 5000-character counter, draft in AsyncStorage (`ss_post_draft`, same shape as web, includes the attached media), one photo or video from the library (`expo-image-picker`), Rotate for photos, Remove, and posting. Comments can be written on the post screen. A `ToastHost` (solid fills, tap to dismiss) shows `@ss/core`'s toasts.
+- **Image handling:** photos are shrunk to the server's `maxSide` and saved as JPEG 0.92 with `expo-image-manipulator` before upload; rotation is only previewed while composing and applied once at submit (as on web). A library video longer than `maxSeconds` is refused before upload (picker duration is milliseconds). Replacing or removing media deletes the old upload (`deleteMedia`).
+- **Not built yet (part B):** capture (camera photo/video, microphone audio) and video/audio playback (feed still shows the "coming soon" placeholder).
+- **Web follow-up, not done:** web's file picker still has an `accept` list of the old formats (`MEDIA_ACCEPT` in `CreatePostPage.tsx`); the server takes anything now.
+
 ## Next steps
 - [x] ~~Restructure into a pnpm workspace~~ done 2026-10-07 (`web/` now; `mobile/`, `desktop/`, `packages/core/` to come): [[repo-consolidation-plan]] Step 2. **This must happen before the phone port starts.**
 - [x] ~~ssreact tasks from `Inbox/ssapi-improvement-plan.md`~~: done 2026-10-02
