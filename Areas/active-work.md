@@ -14,4 +14,3 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
-| admin machine (Claude) | ssreact | phone app Phase 4: read screens (feed, post, profile, notifications, search) | 2026-10-07 07:16 |

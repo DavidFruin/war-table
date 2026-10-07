@@ -275,6 +275,8 @@ It returns `{ handler, relogin(retryAll), logout() }`. Move the `waitersRef`/`sh
 - All six themes switch live.
 
 ### Phase 4: read paths (feed, post, profile, notifications, search)
+> **Built 2026-10-07** (ssreact `128bf55`, `dc304d3`). Phone check pending; see the [[ssreact]] note.
+
 - **Feed:**
   - `FlatList`, page size 25, "Load more" at the end (`onEndReached`, matching ssreact's offset logic).
   - Pull-to-refresh reloads offset 0.
