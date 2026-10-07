@@ -14,4 +14,3 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
-| admin machine (Claude) | ssapi+ssreact | phone app Phase 6: notifications, badge, deep links | 2026-10-07 19:14 |

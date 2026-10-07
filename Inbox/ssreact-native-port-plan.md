@@ -336,6 +336,8 @@ It returns `{ handler, relogin(retryAll), logout() }`. Move the `waitersRef`/`sh
 - If no device is available, say so in the hand-off.
 
 ### Phase 6: notifications, badge, deep links (backend work, approved 2026-10-02)
+> **Built 2026-10-07** (ssreact `c8f0a11`; ssapi Expo push on dev only). Real delivery waits for a development build and Dave's EAS/Firebase/Apple setup. See the [[ssreact]] and [[ssapi]] notes.
+
 Web Push (VAPID) doesn't exist in React Native. Native push needs FCM (Android) and APNs (iOS). The simplest correct route for an Expo app is the **Expo Push Service**:
 - The app gets an `ExponentPushToken[...]` from `expo-notifications`.
 - The server POSTs JSON to Expo's push API.

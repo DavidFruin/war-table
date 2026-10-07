@@ -142,6 +142,12 @@ React + Vite + TypeScript + shadcn/ui (Base UI, Tailwind 4, pnpm) rewrite of [[s
 - **Server side:** ssapi accepts any media format now (see [[ssapi]]), so phone recordings (M4A, MP4/MOV) need no special handling.
 - **Web follow-up, not done:** web's file picker still has the old `accept` list (`MEDIA_ACCEPT` in `CreatePostPage.tsx`).
 
+## Phone app, Phase 6 built (2026-10-07); real push needs Dave's setup
+- **Works in Expo Go (checkable now):** the Notifications tab shows the unseen count as a badge, refreshed every 60 s while the app is open and whenever it returns to the foreground (never in the background), and "Mark as Seen" clears it at once (`notifications/UnseenProvider.tsx`). Settings has a "Push Notifications" switch that explains why it can't be turned on in Expo Go.
+- **Needs a development build (not checkable in Expo Go):** registering the Expo push token (asked for only from that Settings switch), receiving a push, tapping it to open the post/profile (`NotificationTaps`, via `@ss/core`'s tested `notificationPath()`, which accepts only post/profile/feed/notifications paths), and the app-icon badge. `expo-notifications` is loaded lazily and never in Expo Go (it only logs errors there). Logging out forgets the stored token (the server also drops it).
+- **Dave's setup for real push (credentials, not the agent):** an EAS project (`eas init`, which puts a `projectId` in the config; until then the switch says push isn't set up), a Firebase project with `google-services.json` plus the FCM V1 service-account key uploaded through `eas credentials` for Android, and for iOS the Apple Developer account and an APNs key (EAS can create it on the first iOS build). None of those files go in the repo. Then `eas build --profile development -p android` and install it. `eas.json` doesn't exist yet (Phase 8.3).
+- **Server side:** see [[ssapi]] (Expo push, dev only).
+
 ## Next steps
 - [x] ~~Restructure into a pnpm workspace~~ done 2026-10-07 (`web/` now; `mobile/`, `desktop/`, `packages/core/` to come): [[repo-consolidation-plan]] Step 2. **This must happen before the phone port starts.**
 - [x] ~~ssreact tasks from `Inbox/ssapi-improvement-plan.md`~~: done 2026-10-02
