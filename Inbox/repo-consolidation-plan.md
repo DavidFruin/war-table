@@ -7,6 +7,14 @@ repos: ssreact @ 865ff6f (+ branch deploy-layout @ 466367f), simple-social-cli @
 
 # Repo consolidation plan: four Simple Social repos
 
+> **Progress as of 2026-10-07:**
+> - **Step 1:** half done. The archive READMEs were pushed on 2026-10-03, but `ssreact-native` and `sselectron` are **not archived yet**; Dave needs to archive them.
+> - **Step 2.0 done** (2026-10-06): `deploy-layout` merged into ssreact `master` as `466367f`.
+> - **Step 2.6 done** (2026-10-06): ssreact deployed to dev's `public_html/app/`, replacing the vanilla frontend.
+> - **Prod switched on 2026-10-06:** app.davidfruin.com runs ssapi + ssreact in the new layout, release **2.0.0 "Elia"** (tag `v2.0.0` in ssapi `236a338` and ssreact `466367f`). The vanilla frontend is retired everywhere. **So Step 5 (archive `simple-social`) can happen now**, and Step 3.6 no longer touches `download.html`.
+> - **Since then:** ssreact `0379b5b` (version display + `/history` page, 2026-10-07) is on `master`; it's not recorded whether it's deployed to prod yet.
+> - **Steps 2.1–2.5, 3, 4 and 6 are not started.**
+
 **Decided by Dave, 2026-10-03.** Simple Social ends up in **four repos**:
 
 | Repo | Contents | Language | Visibility |
@@ -25,7 +33,7 @@ Everything else is **merged or archived**:
 | `simple-social-cli` | Merged into `ssterminal` (its history becomes ssterminal's root history), then archived | Step 3 |
 | `simple-social-cli-interactive` | Merged into `ssterminal/wizard/` with history, then archived | Step 3 |
 | `simple-social-tui` | Merged into `ssterminal/tui/` with history, then archived | Step 3 |
-| `simple-social` | **Frozen now, archived later.** It still holds the old vanilla web frontend, which is what `app.davidfruin.com` (prod) and `dev.davidfruin.com` (in `public_html/app/`) serve today. Its backend copy is already obsolete (dev runs ssapi; prod switches when Dave says so). | Archived once prod serves ssreact + ssapi (Step 5) |
+| `simple-social` | Archived. Prod and dev stopped using it on 2026-10-06 (both run ssapi + ssreact); it keeps the 1.x history (`v1.0.0`) | Now (Step 5) |
 
 **Why (summary of the discussion with Dave):**
 - The wizard and the TUI each embed the *whole* `simple-social-cli` repo as a git submodule, just to share `lib/`.
@@ -58,10 +66,12 @@ One repo per language removes all three workarounds: shared code becomes a norma
 ## Step 2: turn ssreact into a pnpm workspace (agent, about half a day to a day)
 Do this **before** the phone port starts (its Phase 1 creates `packages/core` inside this structure).
 
-**2.0 Merge the waiting L4 branch first.**
-- `deploy-layout` (`466367f`) drops `public/.htaccess`.
-- It was meant to merge "on react.davidfruin.com's migration day". That host is being retired, and every future ssreact host uses the split layout, whose root `.htaccess` comes from `ssapi/deploy/`.
-- So merge it into `master` now (Dave confirms). Do it before the restructure, so the merge isn't fighting moved paths.
+**2.0 Done 2026-10-06.** `deploy-layout` was merged into `master` (`466367f`), so ssreact ships no `.htaccess`.
+
+**Before 2.1 (required checks):**
+- **Nobody else is working in ssreact.** On 2026-10-07 a row for the version/history work was still in `Areas/active-work.md`, even though that work had finished (war-table `e071175`, ssreact `0379b5b`). Ask Dave to confirm it can be removed; don't edit another agent's claim yourself.
+- **Prod has been checked with real use since the 2026-10-06 switch:** a browser login, a post with a photo, a push notification from a second account, and opening from an old home-screen icon (`/app.html#/feed` should land on `/feed`). The record says these weren't done. If they still aren't, ask Dave before restructuring, so a prod problem isn't confused with fallout from the restructure.
+- Start from the latest `master`, which includes `0379b5b`.
 
 **2.1 Move the app into `web/`, keeping history:**
 ```bash
@@ -70,7 +80,7 @@ mkdir web
 git mv src public index.html vite.config.ts tsconfig*.json eslint.config.js components.json package.json web/
 # Leave at the root: .git*, .github/, README.md, pnpm-lock.yaml (regenerated below)
 ```
-Check `git ls-files` for anything else that belongs to the app, such as `postcss` configs or `.env.example`, and move it too.
+Check `git ls-files` for anything else that belongs to the app, such as `postcss` configs or `.env.example`, and move it too. `src/lib/versions.ts` (the release list behind the `/history` page) moves with `src/`; update the pointer to it in the [[simple-social]] note's Versions section to `web/src/lib/versions.ts`.
 
 **2.2 Workspace files at the root:**
 - `pnpm-workspace.yaml`:
@@ -116,13 +126,29 @@ Check `git ls-files` for anything else that belongs to the app, such as `postcss
 
 **Commit:** `repo: turn ssreact into a pnpm workspace (web/ + future mobile/, desktop/, packages/core)`
 
-**2.6 How ssreact gets deployed now** (it has no live host since react.davidfruin.com is being retired):
-- **DECISION for Dave:** recommended is to deploy ssreact to **dev**'s `public_html/app/`, replacing the vanilla frontend there. dev is a test host, already on the split layout, already running ssapi.
-- Command:
+**2.6 Done 2026-10-06:** ssreact is deployed to dev's `public_html/app/`.
+
+**2.7 Deploying after the restructure (dev and prod).** The build output moves from `dist/` to `web/dist/`. **Running the old command after the restructure would copy the wrong folder**, so make the new way the only obvious one:
+- Add `scripts/deploy-web.sh` to ssreact, taking the target host as its argument (`dev` or `app`):
   ```bash
-  pnpm build && rsync -rltz --no-owner --no-group --delete web/dist/ el1:/home/davidfruin/domains/dev.davidfruin.com/public_html/app/
+  #!/usr/bin/env bash
+  # Builds web/ and deploys it into <host>.davidfruin.com/public_html/app/. Prod only when Dave says so.
+  set -euo pipefail
+  HOST="${1:?usage: deploy-web.sh dev|app}"
+  case "$HOST" in dev|app) ;; *) echo "unknown host: $HOST" >&2; exit 1;; esac
+  if [ "$HOST" = app ]; then read -r -p "Deploy to PROD (app.davidfruin.com)? Type 'prod' to continue: " ok; [ "$ok" = prod ]; fi
+  cd "$(dirname "$0")/.."
+  pnpm install --frozen-lockfile
+  pnpm --filter @ss/web build
+  test -f web/dist/index.html   # never rsync --delete from an empty or wrong folder
+  rsync -rltz --no-owner --no-group --delete web/dist/ "el1:/home/davidfruin/domains/$HOST.davidfruin.com/public_html/app/"
   ```
-- After that, the vanilla frontend lives only on prod until prod switches (Step 5).
+- **Rewrite the [[ssreact]] note's Hosting section.** It still describes the retired react.davidfruin.com host and its old exclude-list command. It should describe:
+  - dev and prod, both on the split layout;
+  - this script;
+  - the backend deploy (`ssapi/deploy/`, per [[deploy-layout-plan]] §2);
+  - the `v2.0.0` tags as the rollback anchor.
+- **Verify:** run `scripts/deploy-web.sh dev` once after the restructure. dev serves the app (login, feed, `/history`), and nothing outside `public_html/app/` changed.
 
 ---
 
@@ -191,9 +217,7 @@ Include paths become `-Ilib -Ivendor/include` for everything. **Binary names sta
 **3.6 Docs:**
 - `README.md`: what's in the repo, build and install, the per-OS dependency packages (merge the three READMEs' instructions; keep the LMDE/Debian vs Arch/Omarchy split from the download page), and where the config lives.
 - Keep `ARCHITECTURE.md` and the TUI's `notes.md` (move it to `tui/notes.md` if it isn't there already).
-- **Install instructions on the websites:** they currently say "clone each repo with `--recursive`, then `make install`". Update them to "clone `ssterminal`, `make && sudo make install`":
-  - ssreact: `web/src/pages/DownloadPage.tsx`;
-  - simple-social: `download.html`. It's still served by prod, so this is a one-line-scope commit that Dave deploys with his usual process.
+- **Install instructions on the website:** ssreact's `web/src/pages/DownloadPage.tsx` currently says "clone each repo with `--recursive`, then `make install`". Change it to "clone `ssterminal`, `make && sudo make install`", then deploy to dev with `scripts/deploy-web.sh dev`; prod only on Dave's go. (simple-social's `download.html` isn't served anywhere since 2026-10-06, so leave it alone.)
 
 **3.7 Push and archive:**
 - `git push -u origin` the default branch to `DavidFruin/ssterminal`.
@@ -222,21 +246,18 @@ Include paths become `-Ilib -Ivendor/include` for everything. **Binary names sta
 
 ---
 
-## Step 5: simple-social, frozen now and archived later
-**Now (agent):** add a banner to the top of `simple-social`'s README:
-> **Frozen 2026-10-03.**
-> - The backend lives in [ssapi](https://github.com/DavidFruin/ssapi).
-> - The web, phone and desktop apps live in [ssreact](https://github.com/DavidFruin/ssreact).
-> - The terminal clients live in [ssterminal](https://github.com/DavidFruin/ssterminal).
->
-> This repo only keeps the legacy vanilla web frontend that `app.davidfruin.com` still serves, until ssreact replaces it. No new features here; only fixes Dave asks for.
+## Step 5: archive simple-social (its condition was met on 2026-10-06)
+Prod and dev both run ssapi + ssreact, and the vanilla frontend is retired, so nothing deploys from `simple-social` any more.
 
-**Later (Dave decides when):** once prod (`app.davidfruin.com`) runs **ssapi** (deploy-layout migration + the security/speed fixes) **and serves ssreact** from `public_html/app/`:
+**Agent:**
 1. Check nothing unique is left:
-   - `ARCHITECTURE.md` and `notes.md` stay readable in the archive. Their still-relevant lessons are already summarized in the [[ssreact]] and [[simple-social]] notes.
+   - `ARCHITECTURE.md` and `notes.md` stay readable in the archive. Their still-relevant lessons are already summarized in the [[ssreact]] and [[simple-social]] notes. Skim `notes.md` for open wishlist items missing from the [[simple-social]] note, and copy any across.
    - `tests/front-end-test/` is the older 6-spec suite; [[sstests]] already holds the mature one.
-2. Update its README to "Archived".
-3. **Dave:** archive the repo.
+   - Tag `v1.0.0` ("Alpha Simple", `28d378f`) must exist on GitHub before archiving. It's recorded in the [[simple-social]] note's Versions section; check with `git ls-remote --tags`.
+2. Replace the top of `README.md` with:
+   > **Archived 2026-10-0X.** Simple Social 1.x (vanilla web frontend + PHP backend). Since 2.0.0 "Elia" (2026-10-06), the backend lives in [ssapi](https://github.com/DavidFruin/ssapi); the web, phone and desktop apps in [ssreact](https://github.com/DavidFruin/ssreact); the terminal clients in [ssterminal](https://github.com/DavidFruin/ssterminal) (until that exists, the three simple-social-cli/-interactive/-tui repos).
+
+**Dave:** archive the repo.
 
 ---
 
@@ -255,7 +276,7 @@ Follow `AGENTS.md`: one note per repo, terse.
   - fold in the **Decisions** bullets from `Projects/ssreact-native.md` and `Projects/sselectron.md`;
   - update the Hosting section after Step 2.6.
 - `Projects/ssreact-native.md`, `Projects/sselectron.md` and `Projects/simple-social-tui.md`: set frontmatter `status: archived`, and put a first line "Merged into [[ssreact]] (`mobile/`)" / "(`desktop/`)" / "[[ssterminal]]". Keep the files so old links still work.
-- `Projects/simple-social.md`: becomes the **product-level** note (planning, roadmap, decisions that span every repo). Update its repo list to the four repos + "simple-social (frozen, legacy vanilla frontend)".
+- `Projects/simple-social.md`: becomes the **product-level** note (planning, roadmap, decisions that span every repo). Update its repo list to the four repos + "simple-social (archived, 1.x history)".
 - `Projects/sstests.md`: Step 4's note.
 - `AGENTS.md` → "Machines": on Citadel, repos live under `~/dev`, so the clones become `~/dev/ssapi`, `~/dev/ssreact`, `~/dev/ssterminal` and `~/dev/sstests`. Old clones of archived repos can be deleted once nothing points at them.
 - **Plans in `Inbox/`** already describe the new layout (updated 2026-10-03). Agents must use the new paths.
@@ -268,17 +289,17 @@ Follow `AGENTS.md`: one note per repo, terse.
 
 | Step | Who | Effort | Blocks |
 |---|---|---|---|
-| 1. Archive the two empty repos | Dave (+ agent for READMEs) | 15 min | nothing |
-| 2. ssreact workspace | agent; Dave confirms 2.0 and decides 2.6 | ½–1 day | **phone port Phase 1** |
+| 1. Archive the two empty repos | READMEs done; **Dave archives** | 5 min | nothing |
+| 2. ssreact workspace (2.0 and 2.6 done) | agent, after the checks before 2.1 | ½–1 day | **phone port Phase 1** |
 | 3. ssterminal | Dave creates the repo; agent does the rest; Dave archives | about 1 day | nothing (independent) |
 | 4. sstests references | agent | about 1 hour | after 2 and 3 |
-| 5. simple-social freeze → archive | agent (banner); Dave (archive later) | minutes / later | prod switch |
+| 5. Archive simple-social | agent (README + checks); Dave archives | about 30 min | nothing (prod switched 2026-10-06) |
 | 6. Notes | agent | about 1 hour | with each step |
 
 About **2–3 days of agent work** in total, or roughly a week of calendar time on the $20 plan.
 
 **Decisions for Dave:**
-1. Confirm merging the `deploy-layout` branch (2.0).
-2. Where ssreact is test-deployed now that react.davidfruin.com is retired (2.6). dev is recommended.
+1. ~~Merge `deploy-layout` (2.0)~~ and ~~test-deploy ssreact on dev (2.6)~~: both done 2026-10-06.
+2. Do the prod real-use check (see "Before 2.1") and clear the stale ssreact row in `Areas/active-work.md`.
 3. Permission for an agent to run `gh repo create/archive`, or Dave does those himself.
-4. When prod switches to ssapi + ssreact, which is what lets `simple-social` be archived.
+4. ~~When prod switches~~: done 2026-10-06, so archive `simple-social` (Step 5) whenever convenient.

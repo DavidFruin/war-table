@@ -30,42 +30,34 @@ React + Vite + TypeScript + shadcn/ui (Base UI, Tailwind 4, pnpm) rewrite of [[s
 - **Later:** the invite-code field, admin pages, and report/block/terms UI (`Inbox/access-and-public-launch-plan.md`).
 
 ## Hosting / deployment
-- **Live on production 2026-10-06:** app.davidfruin.com now serves this build from `public_html/app/`, with ssapi as the backend (new layout). The vanilla frontend is retired. Details in [[ssapi]].
-- **Deployed to dev.davidfruin.com 2026-10-06** (`466367f`), replacing the vanilla frontend in `public_html/app/` (Dave: vanilla is no longer needed; ssapi + ssreact replace it). Plain `rsync --delete` of `dist/` into `app/`, no exclude list. The old vanilla `app/` is backed up at `~/domains/dev.davidfruin.com/app.vanilla.bak-2026-10-06` (outside the web root); delete after a few days. react.davidfruin.com is retired, so dev is now the test host.
-- **Changing soon (decided 2026-10-02):** the build will deploy to `public_html/app/` with a plain `rsync --delete`, and the root `.htaccess` will come from ssapi's `deploy/`, so ssreact will ship no `.htaccess` (task L4, merged on migration day). See [[deploy-layout-plan]]. Until react is migrated, the command below is still the correct one.
-- **Target:** `react.davidfruin.com` → `/home/davidfruin/domains/react.davidfruin.com/public_html` on `el1`.
-  - It's a **static build**: only the *contents* of `dist/` go in `public_html`.
-  - `public/.htaccess` does the SPA rewrite. If `/feed` 404s on refresh, check that this file was deployed first.
-- **Same docroot as a copy of the PHP backend** (copied 2026-09-29, superseding the earlier reverse-proxy plan): `api.php`, `media.php`, `config.php`, the `src/` handlers, `vendor/` and so on, plus uploaded `media/`.
-- **Isolated test data:**
-  - `react.davidfruin.com/private/userdata.db` is a copy of dev's SQLite DB, **never prod's**.
-  - `private/.env` holds its **own** generated JWT secret, so tokens only work on this host.
-- **Manual deploy, the only correct command.** Two real bugs came from simplifying it:
+*(Rewritten 2026-10-07; the old react.davidfruin.com details are in [[ssreact-history]].)*
+- **Live on prod and dev since 2026-10-06**, release **2.0.0 "Elia"**: `app.davidfruin.com` and `dev.davidfruin.com` both serve this build from `public_html/app/`, with [[ssapi]] as the backend, in the split layout ([[deploy-layout-plan]]). The vanilla frontend is retired. **react.davidfruin.com is retired**; Dave is deleting that vhost.
+- **Layout per domain:**
+  - `private/` (`.env`, DB, logs);
+  - `ssapi/` (backend code, outside the web root);
+  - `public_html/`: the `api.php`/`media.php` stubs, one root `.htaccess` from `ssapi/deploy/root.htaccess`, `app/` (this build), `media/`, `downloads/`.
+
+  ssreact ships **no** `.htaccess`. The root file does the SPA fallback, security headers and caching.
+- **Deploy the frontend (current, before the workspace restructure):**
   ```
   pnpm run build
-  rsync -rltz --no-owner --no-group --delete \
-    --exclude='api.php' --exclude='media.php' --exclude='config.php' --exclude='auth.php' \
-    --exclude='logging.php' --exclude='schema.php' --exclude='webpush.php' --exclude='clean-notifications.php' \
-    --exclude='composer.json' --exclude='composer.lock' --exclude='vendor/' --exclude='src/' \
-    --exclude='media/' \
-    dist/ el1:/home/davidfruin/domains/react.davidfruin.com/public_html/
+  rsync -rltz --no-owner --no-group --delete dist/ el1:/home/davidfruin/domains/<dev|app>.davidfruin.com/public_html/app/
   ```
-  - `-a` would reset `public_html`'s group, which breaks PHP-FPM writes. The directory needs `chgrp davidfruin` + setgid, which is already set.
-  - Without `--exclude='media/'`, `--delete` wipes every uploaded file.
-  - **Known risk:** `dist/.htaccess` replaces the backend's `.htaccess` in this shared docroot. That's why the ssapi plan's S2 merges the two.
-- **Host quirks:**
-  - PHP runs through **PHP-FPM over a unix socket**, so the vhost needs `CGIPassAuth On`, which is already set. Without it, the `Authorization` header never reaches PHP and every authenticated call returns 401. app and dev use mod_fcgid and don't need it.
-  - PHP-FPM runs in a **chroot without ffmpeg/ffprobe**. So there are no video thumbnails, no transcoding, no server-side duration check (it fails open), and no video rotate. This needs an infrastructure fix, not app code.
-  - Files copied over with `scp` as root end up owned `root:root`. That's fine for read-only PHP files; watch out if anything ever needs write access.
-- **GitHub Actions deploy: decided, but ON HOLD until Dave says go.** It must use the exact rsync command above. Whoever has `el1` access builds and verifies it; it must not be written blind.
-- **The endgame:** `app.davidfruin.com` serves this build directly, same-origin with the backend. No migration date has been set.
+  - Prod only on Dave's explicit go.
+  - `--no-owner --no-group` still matters: `-a` resets group ownership that PHP needs.
+  - Never rsync `--delete` from an empty or wrong folder.
+  - **After the workspace restructure** ([[repo-consolidation-plan]] Step 2), the output is `web/dist/`; use `scripts/deploy-web.sh dev|app` (Step 2.7) instead of this command.
+- **Rollback anchor:** tag `v2.0.0` (ssreact `466367f`, ssapi `236a338`). On `master` since then: `0379b5b` (version display + `/history`), not recorded as deployed.
+- **Backups from the 2026-10-06 switch:** dev `app.vanilla.bak-2026-10-06`; prod `public_html.bak-2026-10-06` and `private/userdata.db.pre-ssapi-migration-20261006`. All are outside the web root. Delete them after a few days of clean running.
+- **Not yet checked on prod with real use:** a browser login, a post with a photo, push delivery, and an old home-screen icon (`/app.html#/feed` should land on `/feed`).
+- **Hosts:** app and dev run PHP through mod_fcgid, and have ffmpeg (thumbnails and transcoding work). The PHP-FPM `CGIPassAuth` and chroot-without-ffmpeg quirks were react-only.
+- **GitHub Actions deploy: decided, but ON HOLD until Dave says go.**
 
 ## Testing
-- **Test accounts on react's DB:**
-  - `e2e-test@ssreact.local` (id 32) and `e2e-test-2@ssreact.local`, created directly with `password_hash()` + `INSERT`.
-  - Passwords are not recorded (this vault is public). Make a new account the same way if you need one.
+- **Test accounts:** test on **dev** (react.davidfruin.com and its test DB are retired). Create a throwaway account in dev's DB with `password_hash()` + `INSERT`, or register with an invite once invites exist.
+  - Passwords are never recorded (this vault is public).
   - Leave data as you found it.
-- **The old Playwright suite** (`simple-social/tests/front-end-test/`) is **incompatible**: wrong domain, hash routes, a different DOM. Verification has been by manual or headless-browser walkthrough against real data. A new suite is an open idea, not a plan.
+- **The old Playwright suites** (`simple-social/tests/front-end-test/` and [[sstests]]' E2E suite) target the **retired vanilla frontend**: hash routes, a different DOM. Verification has been by manual or headless-browser walkthrough against real data. A new suite is an open idea, not a plan.
 - **The automated browser sandbox can't** grant camera, mic or notification permission, or do fullscreen and clipboard writes. To exercise capture, inject a synthetic `getUserMedia` stream; anything else needs a real device. **Build and deploy before verifying:** testing against stale deployed code looks exactly like a real failure.
 
 ## Decisions
@@ -129,8 +121,9 @@ React + Vite + TypeScript + shadcn/ui (Base UI, Tailwind 4, pnpm) rewrite of [[s
 
 ## Next steps
 - [ ] Restructure into a pnpm workspace (`web/`, `mobile/`, `desktop/`, `packages/core/`). The `deploy-layout` branch is already merged (2026-10-06, `466367f`; ssreact ships no `.htaccess` now): [[repo-consolidation-plan]] Step 2. **This must happen before the phone port starts.**
-- [ ] ssreact tasks from `Inbox/ssapi-improvement-plan.md` (in progress)
-- [ ] `src/core` extraction for the phone app ([[ssreact-native]] plan, Phase 1)
+- [x] ~~ssreact tasks from `Inbox/ssapi-improvement-plan.md`~~: done 2026-10-02
+- [ ] `packages/core` (`@ss/core`) for the phone app ([[ssreact-native-port-plan]] Phase 1, after the workspace restructure)
+- [ ] **Prod real-use check after the 2.0.0 switch** (login, photo post, push, old home-screen icon)
 - [ ] Real-device checks: push delivery, install prompt, Delete Account with a disposable account, clipboard, fullscreen
 - [ ] Invite-code field + `/admin/invites`; later report/block/terms (`Inbox/access-and-public-launch-plan.md`)
 - [ ] GitHub Actions deploy, **on hold until Dave says go**

@@ -173,11 +173,12 @@ Dave: "Push the new version of simple social to prod! ssapi and ssreact with the
 - [x] ~~[[deploy-layout-plan]] code tasks~~ — **L1–L4 done 2026-10-02/03**, see the Status section above.
 - [x] ~~dev.davidfruin.com migration~~ — **done and verified live 2026-10-02/03**, see the Status section above. react.davidfruin.com's own migration is moot — Dave says he's done with that host and will delete the vhost himself.
 - [ ] Delete `dev.davidfruin.com/public_html.bak-2026-10-02` after a few days, once the migration has had time to prove itself
-- [ ] Prod-side checklist items (`ls *.php` on app.davidfruin.com, duplicate-email check there) — blocked in every session so far by a hard sandbox denial on prod reads
+- [x] ~~Prod-side checklist items (`ls *.php`, duplicate-email check)~~: done during the 2026-10-06 prod migration (only the expected PHP files, no duplicate emails among 17 users). See "app.davidfruin.com (prod) migrated" above.
 - [x] ~~Deploy to app.davidfruin.com (prod)~~ — done 2026-10-06 at Dave's explicit go, see "app.davidfruin.com (prod) migrated" above
-- [ ] Dave-on-el1 checklist above (schema dump, `ls *.php`, duplicate-email check, post-deploy curl/CSP/FastCGI verification) — still open for app/prod specifically; dev's own curl checks were rerun and passed as part of the migration above
+- [ ] Prod: a real-use check after the 2026-10-06 switch (browser login, photo post, push delivery) and a terminal-client (TUI) login + post. curl checks passed; these weren't done.
+- [ ] Delete prod's `public_html.bak-2026-10-06` and `private/userdata.db.pre-ssapi-migration-20261006` after a few days of clean running
 - [ ] Decide S9 (drop vs. dedupe unlike/unfollow notifications) and the D1–D8 structural items — all currently gated on Dave
-- [ ] Decide whether `simple-social` should eventually stop tracking its own copy of the backend files now that `ssapi` exists (not decided — currently both repos have a copy; D6 above is the sharper version of this question)
+- [x] ~~Decide whether `simple-social` keeps its backend copy~~: resolved. Prod and dev run ssapi since 2026-10-06, and `simple-social` gets archived ([[repo-consolidation-plan]] Step 5).
 - [ ] GitHub Actions deploy workflow — on hold, see Decisions
 - [ ] Whoever picks this up should read [[simple-social]]'s own Decisions/Planning sections first — this repo's own history doesn't carry the "why" behind the backend module split that happened before this split existed
 
