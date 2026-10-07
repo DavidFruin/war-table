@@ -30,7 +30,7 @@ React + Vite + TypeScript + shadcn/ui (Base UI, Tailwind 4, pnpm) rewrite of [[s
 - **Later:** the invite-code field, admin pages, and report/block/terms UI (`Inbox/access-and-public-launch-plan.md`).
 
 ## Hosting / deployment
-- **Repo layout (2026-10-07):** a pnpm workspace. The web app is in `web/`; `mobile/`, `desktop/` and `packages/core/` come later. Run commands from the repo root.
+- **Repo layout (2026-10-07):** a pnpm workspace. The web app is in `web/`, the shared logic is in `packages/core/` (`@ss/core`); `mobile/` and `desktop/` come later. Run commands from the repo root.
 - **Live:** app.davidfruin.com (prod) and dev.davidfruin.com, both on the split layout ([[deploy-layout-plan]]): the build goes into `public_html/app/`, the backend is in `ssapi/`, one root `.htaccess` from ssapi's `deploy/`. ssreact ships no `.htaccess`. react.davidfruin.com is retired.
 - **Frontend deploy:** `scripts/deploy-web.sh dev|app`. It builds `web/`, checks `web/dist/index.html` exists, and runs `rsync --delete` into `public_html/app/`. Prod asks for a typed "prod". Never run the old `dist/` command.
 - **Backend deploy:** see [[ssapi]] and [[deploy-layout-plan]] section 2.
@@ -104,6 +104,13 @@ React + Vite + TypeScript + shadcn/ui (Base UI, Tailwind 4, pnpm) rewrite of [[s
   - Logged-in: `/feed`, `/create-post`, `/profile[/:id]`, `/post/:id`, `/notifications`, `/settings`, `/search`.
   - Anything else redirects to `/feed`.
 - **Layout:** Header (desktop nav + badge), ThumbNav (touch devices only, mirrors for the left-hand setting), ScrollTopButton, Toast.
+
+## Phone app, Phase 1 done (2026-10-07)
+- `@ss/core` (`packages/core/`) holds the logic that doesn't depend on the browser: types, format helpers, the toast store, post/feed caches, the media-limits loader, the post-text tokenizer, the injectable API client (`createApiClient` with endpoints, a token store and extra headers passed in), the session-expiry queue and `resolveMediaUrl`. `web/` imports it; `getMediaDuration` stays in web because it needs a `<video>` element.
+- **Core stays portable by lint, not by types:** its tsconfig keeps the DOM lib (fetch/FormData types are needed and exist in React Native), and ESLint `no-restricted-globals` bans `window`, `document`, `localStorage` and friends, `no-restricted-imports` bans React and anything from the apps. Verified that the rule fires. Core has no runtime dependencies.
+- 23 Vitest tests cover the tokenizer, formatting, the session-expiry queue and `resolveMediaUrl` (`pnpm test`).
+- Verified the web app is unchanged with a headless browser pass against a local ssapi bench: login, reload with no 401s, posting a link (trailing dot stays outside the link), forcing session expiry then re-login via the modal, Settings version block, logout. **Not deployed yet**; Phase 1 is on `master` only.
+- Next: Phase 2 (create `mobile/` with Expo). Needs Dave's phone with Expo Go for the checks; see the plan's 4a.
 
 ## Next steps
 - [x] ~~Restructure into a pnpm workspace~~ done 2026-10-07 (`web/` now; `mobile/`, `desktop/`, `packages/core/` to come): [[repo-consolidation-plan]] Step 2. **This must happen before the phone port starts.**

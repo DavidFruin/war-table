@@ -143,6 +143,8 @@ When a phase ends, the hand-off lists: what the agent verified itself, and a sho
 ## 4. Phases
 
 ### Phase 1: create `packages/core` and move the platform-free logic into it (the only `web/` work)
+> **Done 2026-10-07** (ssreact commits `bc42f15`..`d82215e`). Hand-off notes in the [[ssreact]] note.
+
 The goal is that the web app behaves **identically** afterwards. This is pure refactoring.
 
 **1.0 Create the package:** `packages/core/package.json` with:
