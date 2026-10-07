@@ -176,3 +176,15 @@ React + Vite + TypeScript + shadcn/ui (Base UI, Tailwind 4, pnpm) rewrite of [[s
 - Repo: https://github.com/DavidFruin/ssreact
 - History: [[ssreact-history]]
 - Related: [[simple-social]], [[ssapi]], [[ssreact-native]], [[sselectron]], [[sstests]], [[simple-social-tui]]
+
+## Moderation UI (access plan Step 1B, Phases B + C) done (2026-10-07, local only, not deployed)
+**Web** (checked with headless Chromium against a local ssapi bench; lint, `tsc --noEmit` and build pass):
+- `5b3eeaa` **Fix: the web app rendered a blank page, in dev and in the production build.** `node-linker=hoisted` put the phone app's React 19.2.3 at the root; hoisted `react-router-dom` imported it while `web/` uses its own 19.2.5, so every hook threw. `resolve.dedupe: ['react','react-dom']` in `web/vite.config.ts`. **Any web build made since the phone's React reached the root (around `c8f0a11`) is broken; check what dev.davidfruin.com is serving.**
+- `8c9312e` core: moderation API methods, `moderation.ts` (reasons, types, `needsTermsAcceptance`), `userFromMyInfo()` used by every login path.
+- `f18cf0c` report ("..." menu on posts/comments/profiles), `8dc47f8` block + Settings Blocked users, `b83a0bd` `/terms` + `/privacy` (**drafts**, `LEGAL_DRAFT` in `web/src/content/legal.ts` shows a draft notice until Dave approves), `31cc1ce` terms gate (plus register agreement and a once-per-load `getMyInfo` refresh), `d331e78` `/admin` moderation page.
+- **Gap noticed:** `web/` has no `typecheck` script and its `build` is plain `vite build`, so nothing type-checks the web app automatically. Ran `npx tsc --noEmit -p tsconfig.json` in `web/` by hand.
+
+**Phone** (tsc, expo lint, Android + iOS bundle export; **not run on a device**, none here):
+- `80e523a` report and block, Blocked users card; `9bbe3ef` terms gate (non-dismissible, Back ignored), register agreement, Settings links to Terms/Privacy/contact email.
+
+**Needs Dave:** approve the Terms/Privacy text, the contact address (`hello@davidfruin.com` for now, shared via `@ss/core` `CONTACT_EMAIL`), the 24-hour review promise, the minimum-age wording; then flip `LEGAL_DRAFT`. Phone checks on a device.

@@ -179,6 +179,8 @@ This rides on the same deploy that puts ssapi on prod (ssapi plan D6 / the phone
 ---
 
 # STEP 1B (right after the family release): moderation, terms, privacy
+**Phases A-C done 2026-10-07 (local only, not deployed).** A: ssapi d768449, 78cb8b3, acc5e37, e0c0fe2. B: ssreact 8c9312e, f18cf0c, 8dc47f8, b83a0bd, 31cc1ce, d331e78 (plus the React fix 5b3eeaa). C: ssreact 80e523a, 9bbe3ef. Phase D is Dave's. Details and deviations in [[ssapi]] and [[ssreact]].
+
 **Why:**
 - The iPhone app goes on the App Store as **Unlisted** (phone plan, Phase 9), and Unlisted apps go through **full App Store review**.
 - Apple's guideline 1.2 requires apps with user posts to have:
