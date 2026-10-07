@@ -154,6 +154,15 @@ Dave: "Start a loop to go thru the new ssapi layout change so you can run all ni
 
 **Not done, still open:** app.davidfruin.com — never touched, never will be without Dave's explicit go-ahead ("prod is too important"). react.davidfruin.com's own migration is now moot per Dave's "we're done with react" call; he said he'll delete that vhost himself. The plan's remaining DECISION/GATED items (S9, D1–D8) are all still open and untouched.
 
+## app.davidfruin.com (prod) migrated 2026-10-06
+Dave: "Push the new version of simple social to prod! ssapi and ssreact with the new layout", and the vanilla frontend is no longer needed.
+- **Before:** read-only checks on prod worked this time (earlier sessions were blocked). Only the expected PHP files were in the docroot, no duplicate emails among the 17 users, and `private/.env` already had the JWT secret and the push keys.
+- **Backups:** `~/domains/app.davidfruin.com/public_html.bak-2026-10-06` (full old docroot) and `private/userdata.db.pre-ssapi-migration-20261006` (consistent DB copy). Delete after a few days.
+- **Done:** `ssapi/` backend, `public_html/app/` = ssreact build (`466367f`), stubs + root `.htaccess` from `ssapi/deploy/`. The old backend and vanilla files were removed with `rsync --delete` (same method as dev), with `app/`, `media/` and `downloads/` protected.
+- **Checked with curl:** frontend pages 200, every sensitive path 403, an old uploaded image still served, DB integrity ok (17 users, 97 posts), wrong login returns proper JSON.
+- **Not checked:** a real browser login and post, and push delivery on prod. Do a click-through.
+- Old prod `api.log` and `media.log` were in the old docroot; they are only in the backup now.
+
 ## Decisions
 - **2026-10-02 (Dave): new deploy layout.** Per domain: `private/` (.env, DB, logs), `ssapi/` (all backend code, outside the web root), and `public_html/` containing only `api.php`/`media.php` stubs, one root `.htaccess` (canonical copy in this repo's `deploy/`), `app/` (frontend build), `media/` and `downloads/`. URLs are unchanged for every client. Deploys stop overlapping, and backend code can't be requested from the web. Plan + migration runbook: [[deploy-layout-plan]]. react.davidfruin.com migrates first; dev/app follow with the simple-social → ssapi switch (improvement plan D6).
 - **Copy, don't move, and don't rewrite git history.** Simplest correct choice for "make these independently cloneable" — a `git filter-repo`-style history-preserving extraction was not attempted; this repo's history starts fresh from the 2026-09-30 copy.
@@ -165,7 +174,7 @@ Dave: "Start a loop to go thru the new ssapi layout change so you can run all ni
 - [x] ~~dev.davidfruin.com migration~~ — **done and verified live 2026-10-02/03**, see the Status section above. react.davidfruin.com's own migration is moot — Dave says he's done with that host and will delete the vhost himself.
 - [ ] Delete `dev.davidfruin.com/public_html.bak-2026-10-02` after a few days, once the migration has had time to prove itself
 - [ ] Prod-side checklist items (`ls *.php` on app.davidfruin.com, duplicate-email check there) — blocked in every session so far by a hard sandbox denial on prod reads
-- [ ] Deploy the security/speed improvements AND the deploy-layout migration to app.davidfruin.com (prod) — **explicitly not done**, Dave: "prod is too important," deploy there only when he says so
+- [x] ~~Deploy to app.davidfruin.com (prod)~~ — done 2026-10-06 at Dave's explicit go, see "app.davidfruin.com (prod) migrated" above
 - [ ] Dave-on-el1 checklist above (schema dump, `ls *.php`, duplicate-email check, post-deploy curl/CSP/FastCGI verification) — still open for app/prod specifically; dev's own curl checks were rerun and passed as part of the migration above
 - [ ] Decide S9 (drop vs. dedupe unlike/unfollow notifications) and the D1–D8 structural items — all currently gated on Dave
 - [ ] Decide whether `simple-social` should eventually stop tracking its own copy of the backend files now that `ssapi` exists (not decided — currently both repos have a copy; D6 above is the sharper version of this question)

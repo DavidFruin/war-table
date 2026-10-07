@@ -14,4 +14,3 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
-| admin machine (Claude) | ssapi+ssreact | migrate app.davidfruin.com (prod) to new layout | 2026-10-07 03:47 |
