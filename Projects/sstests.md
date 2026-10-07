@@ -22,6 +22,9 @@ All test suites for the Simple Social project, kept in one repo so none of it sh
 - `backend/media/`: `make-fixtures.sh` (every fixture made by ffmpeg, no real media), `harness.php` (runs one step of ssapi's real `src/Media/handlers.php` with a stub `$CONFIG`, filling handler arguments by parameter name so it survives signature changes), `run.sh` (PASS/FAIL per check, peak RSS sampled across php and its ffmpeg grandchildren). Run with `SSAPI=~/dev/ssapi backend/media/run.sh`.
 - **Needs PHP with GD.** The admin machine's PHP has no GD and there's no sudo. The fix used there: `apt download php8.4-gd`, extract with `dpkg -x` into `~/.local/phpgd/root`, add an ini file loading that `gd.so`, and run with `PHP_INI_SCAN_DIR=/etc/php/8.4/cli/conf.d:$HOME/.local/phpgd/conf.d`. (The apt download comes with an `install` script that wants sudo; it isn't needed.)
 
+- **Checks now (2026-10-07):** M1/M2/M3, photo, R1, R4 (8-bit tagged + 10-bit HEVC HLG + SDR), the A5 format list, and D6 GIFs: 24 checks, all pass on ssapi `768fe86`.
+- `backend/moderation/run.sh`: 35 HTTP checks for the moderation work (block/report/freeze/terms/old clients/account deletion) on a throwaway bench built from an ssapi checkout. Needs PHP, composer and `jq`.
+
 ## Decisions
 - **One test repo for the whole project, frontend and backend both** — Dave's direct instruction: "Tests shouldn't be on the server so that is another repo on gh." Consolidating avoids splitting test code across `ssapi` and a separate test repo for no benefit.
 - **Rename over recreate.** Nearly created a fresh empty `sstests` repo before Dave caught it — the mature suite already existed under `simple-social-tests`. Worth remembering: check for an existing repo under a different name before assuming one needs to be created.

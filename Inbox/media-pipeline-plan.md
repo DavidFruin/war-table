@@ -314,6 +314,8 @@ The clients only call `deleteMedia` for drafts, so nothing breaks; confirm with 
 ---
 
 ## 6. Phase D: reliability and quality (ssapi + [ssreact], about 1–2 days)
+**Done 2026-10-07** (local only, not deployed): D1 c50c7af, D3 5543ef2, D5 aef5737, D6 f2cae18, staging fix 768fe86 (ssapi); clients 658f494 (D2 step 4, D3, D6; D4 was already done). D2 steps 1-3 (real iPhone HEIC on dev) and D5's visual check are Dave's. Section 7 ops checks are Dave's.
+
 
 ### D1 (R1). Keep transparency for every image type
 In `processImage`, when resizing, always prepare `$dst` for alpha (`imagealphablending($dst, false)`, `imagesavealpha($dst, true)`, transparent fill), not only for `png`. JPEG has no alpha, so this costs nothing there.

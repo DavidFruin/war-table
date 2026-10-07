@@ -188,3 +188,9 @@ React + Vite + TypeScript + shadcn/ui (Base UI, Tailwind 4, pnpm) rewrite of [[s
 - `80e523a` report and block, Blocked users card; `9bbe3ef` terms gate (non-dismissible, Back ignored), register agreement, Settings links to Terms/Privacy/contact email.
 
 **Needs Dave:** approve the Terms/Privacy text, the contact address (`hello@davidfruin.com` for now, shared via `@ss/core` `CONTACT_EMAIL`), the 24-hour review promise, the minimum-age wording; then flip `LEGAL_DRAFT`. Phone checks on a device.
+
+## Media plan client work done (2026-10-07, local only, not deployed)
+- `ef01eeb` quota (`media_quota` shown on the create-post page, buttons disabled when full, Settings storage line), one automatic retry on a busy-server 503, expired draft media dropped after 24 h; `9aa2ac8` web + `22b5381` phone use the 960 px variant, stored size (no layout jump) and stored poster; `658f494` WebP before upload with fallbacks (Safari -> JPEG/PNG; phone WebP then JPEG), GIFs sent untouched, looping GIF-video playback, video/audio options hidden when the server's ffmpeg is down.
+- `e3e444a` **dev proxy fix:** Vite proxied only `/api.php` and `/media.php`, so `/media/...` files never loaded in dev (Vite answered with index.html). Now proxied too; production unaffected.
+- **Measured** with real loads after that fix: a 25-photo feed downloads 444 KB of 960 px variants instead of 1.68 MB of full-size images (synthetic test images).
+- **Phone not checked on a device:** WebP saving on iOS (the code falls back to JPEG if it fails), whether the iOS picker hands over GIFs unflattened, looping GIF playback, quota/storage UI.
