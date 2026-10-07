@@ -188,6 +188,8 @@ This protects every log line, not just uploads.
 ---
 
 ## 4. Phase B: resource limits and hygiene (ssapi, about a day)
+**Done 2026-10-07** (local bench only, not deployed): B4 fcdde8a, B1 cc6b125, B2 4eba368, B5 1b732f4, B3 4cc8921 (ssapi); clients ssreact ef01eeb. Notes in [[ssapi]].
+
 
 ### B1 (M5). Bound CPU, memory and concurrency
 1. **Command prefix for ffmpeg and ffprobe** (build it once in a helper, `resourcePrefix($seconds)`):
