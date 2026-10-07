@@ -128,7 +128,7 @@ React + Vite + TypeScript + shadcn/ui (Base UI, Tailwind 4, pnpm) rewrite of [[s
 - `typedRoutes` is off in `app.config.ts` (the generated types got stale as routes were added).
 - Verified by the agent: typecheck, lint, 23 core tests, web build, Android bundle export. **Needs Dave's phone:** see the Phase 3 checks in the port plan.
 
-## Phone app, Phase 4 built, waiting on Dave's phone check (2026-10-07)
+## Phone app, Phase 4 done and checked on Dave's phone (2026-10-07)
 - **Read screens, all in `mobile/src/app/(tabs)/`:** Feed (FlatList, 25 per page, pull to refresh, loads the next page at the end), Post (`post/[id]`, uses the cached post when the feed already loaded it, comments newest first, delete your own), Profile (own tab and `profile/[id]`, followers/following sheets, Follow/Unfollow, their posts), Notifications (Today/Yesterday/Earlier, same wording and targets as web, Mark as Seen) and Search (one `getUsers()` fetch filtered on the device, Follow toggles).
 - **Shared pieces:** `PostCard` (like, likes sheet, delete with an Alert, six-line clamp with Show more), `PostText` (draws `@ss/core`'s tokens: links via `Linking`, mentions open the profile), `MediaView` (images contain-fit, tap for full screen; **video and audio show a "coming soon" placeholder until Phase 5**), `Sheet`/`PersonListSheet`. The post and profile screens are hidden tabs so they sit under the auth guard; Tabs uses `backBehavior="history"` so Back returns to where you came from.
 - Not in this phase on purpose: writing comments and posts (Phase 5), the notification badge count (Phase 6).
