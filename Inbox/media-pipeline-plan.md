@@ -1,5 +1,5 @@
 ---
-status: proposal
+status: approved (decisions made 2026-10-07)
 written: 2026-10-07
 for: Sonnet 5 (medium effort), implementing agent
 repos: ssapi @ e3304e2 (media handler), ssreact (web/ + mobile/ client tasks marked [ssreact]), sstests (media test harness)
@@ -153,8 +153,30 @@ This protects every log line, not just uploads.
 
 **Verify:** upload a file named `"a\nFAKE LINE.png"` on the bench (`curl -F 'file=@x.png;filename="a\nFAKE LINE.png"'`). `media.log` shows it on one line.
 
+### A5 (M4). Accept only the formats phones, browsers and normal apps produce
+**Chosen 2026-10-07** (Dave left the choice to the reviewer). Keep every format a family member could plausibly upload, and drop old desktop/broadcast formats. Those have the most complex demuxers and decoders and the longest CVE history, and nobody records in them any more.
+
+| | Keep | Drop |
+|---|---|---|
+| Containers (`PROBE_ALLOWED_FORMATS`) | `mov,mp4,m4a,3gp,3g2,mj2` (iPhone, Android, most apps), `matroska,webm` (browser recordings, Android), `ogg` (Opus/Vorbis voice notes), `wav`, `mp3`, `flac`, `aac`, `aiff`, `caf` (iOS), `amr` (Android voice recorders) | `avi`, `flv`, `asf` (WMV/WMA), `mpegts`, `mpeg`, `mpegvideo` |
+| Images | JPEG, PNG, GIF, WebP (GD); HEIC/HEIF, AVIF, BMP (ffmpeg) | TIFF, ICO, anything else |
+
+1. Remove the dropped names from `PROBE_ALLOWED_FORMATS`, and remove their signature checks from `sniffMedia` (ASF, FLV, MPEG-PS, MPEG-TS, the `AVI ` RIFF branch). Rejecting at the sniff means ffprobe never parses them either. In the image branch, only send HEIC/HEIF/AVIF brands and BMP (`BM` header) to ffmpeg; TIFF and ICO return null.
+2. **Codec allow-list:** a trusted container can still hold any codec, so check the probe's streams and reject unknown ones:
+   - video: `h264`, `hevc`, `vp8`, `vp9`, `av1`, `mpeg4`, `h263`;
+   - audio: `aac`, `mp3`, `opus`, `vorbis`, `flac`, `alac`, `amr_nb`, `amr_wb`, `pcm_*`;
+   - images through ffmpeg: `hevc`, `av1`, `bmp`;
+   - attached cover pictures (`mjpeg`, `png`) are allowed only as `attached_pic` streams; A2/A3 drop them anyway.
+
+   Also pass the matching list to ffmpeg as `-codec_whitelist` on the input in `runFfmpeg` (A1), so the decoder itself refuses anything else. Check that the M3 `tagged.mp3` fixture still converts, since cover streams must not break it.
+3. **Message** for anything rejected: "That file type isn't supported. Try a photo (JPEG, PNG, HEIC, WebP, GIF), a video (MP4, MOV, WebM) or audio (MP3, M4A, WAV, Ogg)."
+4. **Update the [[ssapi]] note's "accepts any format" section** to record the narrowed list and why.
+
+**Verify:** the harness gains fixtures made with ffmpeg: `x.avi`, `x.flv`, `x.ts`, `x.wmv` and `x.tiff` are all rejected; the M1–M3 fixtures, a 3GP with AMR audio, an Opus `.ogg` and a WebM all still convert.
+
 **Commits:**
 - `media: refuse oversized images/videos before decoding (pixel limits + ffmpeg -max_pixels)`
+- `media: accept only common phone/browser formats; codec allow-list`
 - `media: strip metadata (GPS, comments) from converted video/audio`
 - `media: always re-encode audio`
 - `logging: strip control characters from log lines`
@@ -206,7 +228,7 @@ This protects every log line, not just uploads.
 - Force a failure after encoding (a temporary `throw` before the move). Nothing appears in `media/`, and `private/tmp` is empty afterwards.
 - A normal upload still works.
 
-### B3 (M7). Upload throttle, orphan sweep, optional quota
+### B3 (M7). Upload throttle, orphan sweep, 1 GB quota
 1. **Throttle:** 60 uploads per user per hour, reusing the `auth_attempts`-based counter from ssapi plan S4 (`throttleSend`-style) with key `upload:<uid>`, window 3600 s. Over the limit → 429: "Too many uploads. Try again later."
 2. **Orphan sweep:** media rows with `post_id IS NULL` and `created_at` older than 24 h are deleted (file, thumbnail, row).
    - Run it for the uploading user at the start of each upload; it's cheap and indexed by `user_id`.
@@ -214,10 +236,19 @@ This protects every log line, not just uploads.
    - Reuse `mediaFilePath()`.
    - **Check first** that no client attaches media more than 24 h after uploading it. Drafts restore `mediaUrl` from local storage: web `ss_post_draft`, and the same key on mobile. So a draft older than 24 h would point at deleted media.
    - **Fix the clients [ssreact]:** when restoring a draft with media older than 24 h, drop the media part with a toast ("Your attached file expired; please add it again"). Alternatively, the server returns `400 'That media is invalid…'` on post and the client clears it. Do the client fix; it's a nicer experience.
-3. **Quota (DECISION, off by default):** `media_max_user_bytes`, e.g. 2 GB. Needs a `bytes` column (B4).
+3. **Quota: 1 GB of media per user (Dave, 2026-10-07).** `$CONFIG['media_max_user_bytes'] = 1_073_741_824`. Needs the `bytes` column (B4).
+   - **What counts:** every stored file the user owns: originals, 960 px variants, posters and thumbnails. Use `SUM(bytes) FROM media WHERE user_id = ?`. Unattached uploads count until the orphan sweep removes them; run the user's sweep (step 2) **before** checking the quota so expired drafts don't hold space.
+   - **When:**
+     - Before conversion: if the user is already at or over the limit, reject straight away, without spending CPU.
+     - After conversion, before the move into `media/` (B2): if `used + bytes of the new files` is over the limit, reject and delete the staged files.
+   - **Response:** `413` with `{valid:false, code:'media_quota', message:'You have reached your media storage limit of 1 GB of media.'}`. Add an optional `$extra` array to `bad()` in `media.php` to carry `code`. Build the "1 GB" text from the config value, so changing the limit changes the message.
+   - **API (additive):** `getMediaLimits` adds `storageUsedBytes` and `storageLimitBytes`.
+   - **[ssreact] web and mobile:** on the create-post page, an upload rejected with `code:'media_quota'` shows that message as an error on the page, next to the media picker. Don't use a toast that disappears, and don't retry. When the user is already full (from `getMediaLimits`), show the same message up front and disable the media button; text-only posts still work. Settings shows "Media storage: 230 MB of 1 GB used".
+   - **Existing files:** rows uploaded before B4 have `bytes = NULL`. Ship a small CLI script with B4, `ssapi/bin/media-backfill.php --bytes`, that fills in `filesize()` for each row (and its poster/thumbnail). Dave runs it on dev, then prod, right after deploying B4, and before the quota is enforced. C3 later extends the same script. The quota check treats any remaining NULL as 0. Log any user who is already over 1 GB; they can't upload more but keep what they have.
+   - **Verify:** on the bench, set the limit to 5 MB. Uploads succeed until the total passes 5 MB, then the exact 413 message appears. Delete a post, and uploading works again. `getMediaLimits` reports the right numbers.
 
 ### B4. Media table columns (migration)
-Through the schema migration mechanism (`migrationN` in `schema.php`), add to `media`: `width INTEGER`, `height INTEGER`, `duration REAL`, `bytes INTEGER`, `variant_path TEXT` (F2), `poster_path TEXT` (F3), plus an index on `media(path)` (F2's join).
+Through the schema migration mechanism (`migrationN` in `schema.php`), add to `media`: `width INTEGER`, `height INTEGER`, `duration REAL`, `bytes INTEGER`, `variant_path TEXT` (F2), `poster_path TEXT` (F3), `loop INTEGER DEFAULT 0` (D6), plus an index on `media(path)` (F2's join).
 
 Fill the columns on upload. `bytes` = `filesize()` of the final file, summing variants.
 
@@ -286,7 +317,11 @@ In `processImage`, when resizing, always prepare `$dst` for alpha (`imagealphabl
 2. Test with a **real** iPhone HEIC. Dave uploads one to dev from his phone, or provides a non-personal sample to the agent. Check that the result is the whole photo, upright, at the right aspect ratio.
 3. If ffmpeg is older than 7.1 or the result is wrong, either:
    - **(a)** upgrade ffmpeg on the server (distro backport or a static build); **DECISION** for Dave; or
-   - **(b)**, and do this anyway: **[ssreact] mobile** converts library photos to JPEG and resizes them to 1920 px before upload with `expo-image-manipulator`, the same as the web app's `renderImageFile`. That's faster uploads, less server work, and no HEIC on the server. Web browsers already hand over JPEG for HEIC in most cases.
+   - **(b)** the phone converts photos before upload. **Already done**, by the mobile work: `mobile/src/lib/media-upload.ts` `renderImage` resizes to the server's limit and saves JPEG 0.92 with `expo-image-manipulator`. The web equivalent is `web/src/lib/media-image.ts` `renderImageFile` (JPEG, or PNG for formats that can be transparent).
+4. **Switch the client-side conversion to WebP (Dave, 2026-10-07).** The server re-encodes to WebP anyway (that's how it strips metadata and enforces sizes, and it can't trust client files), so the upload format only affects upload size and transparency. WebP wins on both: about 25–35% smaller than JPEG at the same quality (faster on mobile data), and it keeps transparency, so the web no longer needs a PNG fallback.
+   - **mobile:** `SaveFormat.WEBP`, `compress: 0.9`. **First** read the SDK 57 `expo-image-manipulator` docs (per `mobile/AGENTS.md`; don't trust memory). Older SDKs could only write WebP on Android. If iOS still can't, use WebP on Android and keep JPEG on iOS (`Platform.OS`). Check on a real iPhone and Android phone with a development build: the photo uploads, and the server output looks right.
+   - **web:** `canvas.toBlob(cb, 'image/webp', 0.9)`. Safari can't encode WebP and silently returns PNG instead (much bigger), so check `blob.type`. If it isn't `image/webp`, encode again as JPEG, or as PNG when the image has transparency.
+   - **Animated GIFs must skip this step** on both web and mobile. Drawing them to a canvas or manipulator keeps only the first frame, which would defeat D6. Send GIFs to the server as they are.
 
 ### D3 (R3). ffmpeg health check and honest errors
 - Add `mediaCapabilities()`: `exec` is available, and `ffmpeg -version` / `ffprobe -version` succeed under `timeout 5`. Cache the result for 1 hour in `private/tmp/media-capabilities.json`.
@@ -297,7 +332,7 @@ In `processImage`, when resizing, always prepare `$dst` for alpha (`imagealphabl
 **Verify:** on the bench, set `FFMPEG` to a non-existent path (temporarily). `getMediaLimits` reports false, a video upload gives the clear 503, and images still work.
 
 ### D4 (R5). Align the web picker
-`MEDIA_ACCEPT` in `web/src/pages/CreatePostPage.tsx` becomes `image/*,video/*,audio/*`.
+`MEDIA_ACCEPT` in `web/src/pages/CreatePostPage.tsx` becomes `image/*,video/*,audio/*`. That's wider than A5's list, but the server is the gatekeeper and its message names the supported types. A precise MIME list would wrongly hide files whose browser-reported type is missing or odd.
 
 Keep the client-side duration check. It already falls back gracefully when the browser can't read a format's duration (it returns 0 and lets the server decide).
 
@@ -309,8 +344,15 @@ Keep the client-side duration check. It already falls back gracefully when the b
 - Without `zscale`, convert as today and log a WARN.
 - **Verify:** harness R4 picks the HDR path. Then check a real iPhone HDR clip on dev visually (Dave).
 
-### D6 (optional, DECISION). Animated GIFs
-Animated GIFs are currently flattened to their first frame. The option is to convert animated GIFs (more than one frame, per ffprobe `nb_frames` or GD) to a short looping, muted MP4 stored as `type=video`, and have clients loop them. Dave decides whether that's wanted.
+### D6. Animated GIFs become looping video (Dave, 2026-10-07: yes)
+Today an animated GIF is flattened to its first frame, both by the clients (D2 step 4) and by GD on the server.
+- **Detect:** ffprobe the GIF (C1's single probe). It is animated if `nb_frames > 1`, or if `-count_packets` reports more than one packet when `nb_frames` is missing. A single-frame GIF stays a WebP image.
+- **Convert:** run the video path with GIF-specific args: `-an -t <media_max_seconds> -vf "scale=trunc(min(iw\,960)/2)*2:-2,format=yuv420p" -c:v libx264 -preset veryfast -crf 26 -movflags +faststart -map_metadata -1`. Even dimensions are required by H.264, and 960 px is plenty for GIFs. The same pixel limits (A1), resource caps (B1) and quota (B3.3) apply. A GIF with thousands of tiny frames is stopped by `-t` and `timeout`.
+- **Store:** `type = 'video'`, plus a new `loop INTEGER DEFAULT 0` column on `media` (add it to B4's migration) set to 1. Make a poster the normal way (C2).
+- **API (additive):** C3's post `media` object gains `loop: true`. Older clients just see a short silent video with controls, which still works.
+- **[ssreact] web:** when `loop` is true, render `<video autoplay loop muted playsinline poster=…>` with no controls, styled like an image.
+- **[ssreact] mobile:** `expo-video` with `loop`, `muted`, autoplay when on screen, no controls.
+- **Harness:** `anim.gif` (Phase 0) → an MP4 with no audio stream, ≥ 2 s long, `loop = 1`. Add a single-frame GIF fixture → WebP.
 
 **Commits:** one per task.
 
@@ -334,15 +376,17 @@ Animated GIFs are currently flattened to their first frame. The option is to con
 | Phase | Tasks | Effort |
 |---|---|---|
 | 0 | Harness + fixtures (sstests) | about 1 hour |
-| A | A1 pixel limits, A2 metadata strip, A3 audio re-encode, A4 log sanitising | about 1 day. **Do first; deploy soon after (Dave).** |
-| B | B1 resource caps + concurrency, B2 atomic outputs, B3 throttle + orphan sweep, B4 columns, B5 delete guard | about 1 day |
+| A | A1 pixel limits, A2 metadata strip, A3 audio re-encode, A4 log sanitising, A5 narrower formats + codec allow-list | about 1 day. **Do first; deploy soon after (Dave).** |
+| B | B1 resource caps + concurrency, B2 atomic outputs, B3 throttle + orphan sweep + 1 GB quota (with client messages), B4 columns + bytes backfill, B5 delete guard | 1–1.5 days |
 | C | C1 single probe, C2 poster, C3 variants + API + backfill + clients | 1–2 days |
-| D | D1 alpha, D2 HEIC check / mobile JPEG, D3 health check, D4 picker, D5/D6 optional | 1–2 days |
+| D | D1 alpha, D2 HEIC test + WebP client conversion, D3 health check, D4 picker, D5 HDR (optional), D6 looping GIFs | about 2 days |
 
-About **4–6 days of agent work** in total, roughly 1.5–2 weeks of calendar time on the $20 plan. Phase A alone closes the two high-severity problems.
+About **5–7 days of agent work** in total, roughly 1.5–2 weeks of calendar time on the $20 plan. Phase A alone closes the two high-severity problems.
 
-**Decisions for Dave:**
-1. HEIC: ffmpeg is already 7.1, so D2a is likely unneeded. Do D2b (mobile converts to JPEG) anyway?
-2. A per-user storage quota (B3.3): yes/no and how much.
-3. Animated GIFs as looping video (D6).
-4. Whether to narrow the accepted containers (drop ASF/FLV/MPEG-TS/AVI). A1/M4's probe-based codec checks already limit the risk, so this is optional.
+**Decisions (Dave, 2026-10-07):**
+1. HEIC: ffmpeg is already 7.1; the phone already converts before upload. Clients switch from JPEG to **WebP** (D2 step 4), with a fallback where the platform can't encode WebP.
+2. **1 GB of media per user**, with a clear error on the create-post page (B3.3).
+3. **Animated GIFs become looping video** (D6).
+4. Formats: the reviewer's choice, recorded in A5. Keep phone/browser/common-app formats; drop AVI, FLV, WMV/ASF, MPEG-TS/PS, TIFF and ICO.
+
+Still open: none for this plan. Ops checks (§7) are Dave's on el1.
