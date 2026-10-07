@@ -154,6 +154,11 @@ React + Vite + TypeScript + shadcn/ui (Base UI, Tailwind 4, pnpm) rewrite of [[s
 - Empty/loading/error states and `accessibilityLabel`s on the icon-only buttons were already in place from earlier phases; font scaling is left on.
 - Not in Phase 7 by design: report/block/terms (Phase 9.0) and the paywall.
 
+## Phone app: thumb bubble navigation option (2026-10-07, waiting on Dave's phone check)
+- Dave asked for the website's thumb bubble in the phone app **as an option**, with **left and right hand**. Settings has a new Navigation section: **Tab bar** (default) or **Thumb bubble** (a per-device choice kept in the token store as `ss_nav_style`), and, when the bubble is chosen, **Left hand / Right hand**. The hand is saved to the account (`api.updateHand`, optimistic with a revert on failure), the same value the website's bubble uses.
+- `mobile/src/nav/ThumbNav.tsx`: a round menu button in the bottom corner for the chosen hand; tapping fans Feed, Post, Search, Notifications (with the unseen count), Profile and Settings out along a 150 px quarter-circle arc, staggered spring animation, labels on the inward side, current screen highlighted, dimmed backdrop closes it, hidden while the keyboard is up. With the bubble on, the tab bar is hidden (`tabBarStyle: display none`); screen headers stay. Reverses the plan's earlier decision 3.2 (bottom tabs replace the thumb nav); both are now available.
+- Verified by the agent: typecheck, lint, Android bundle. Not checked on a phone (arc spacing, label overflow, left-hand mirroring).
+
 ## Next steps
 - [x] ~~Restructure into a pnpm workspace~~ done 2026-10-07 (`web/` now; `mobile/`, `desktop/`, `packages/core/` to come): [[repo-consolidation-plan]] Step 2. **This must happen before the phone port starts.**
 - [x] ~~ssreact tasks from `Inbox/ssapi-improvement-plan.md`~~: done 2026-10-02
