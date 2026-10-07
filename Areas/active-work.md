@@ -14,3 +14,4 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
+| admin machine (Claude) | ssapi | accept any media format, convert to webp/mp4/mp3; then phone Phase 5 | 2026-10-07 07:53 |
