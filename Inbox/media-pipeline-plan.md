@@ -268,6 +268,8 @@ The clients only call `deleteMedia` for drafts, so nothing breaks; confirm with 
 ---
 
 ## 5. Phase C: speed (ssapi + [ssreact], about 1–2 days)
+**Done 2026-10-07** (local only, not deployed): C1 85a1461, C2 6f630ac, C3 eed3af9, backfill ebbdd7f (ssapi); web 9aa2ac8, mobile 22b5381 (ssreact).
+
 
 ### C1 (F1). One ffprobe call
 `probeMedia` returns everything at once:
