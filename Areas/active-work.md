@@ -14,4 +14,3 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
-| admin machine (Claude) | ssreact | phone app Phase 7: Settings and remaining parity | 2026-10-07 19:50 |

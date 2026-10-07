@@ -148,6 +148,12 @@ React + Vite + TypeScript + shadcn/ui (Base UI, Tailwind 4, pnpm) rewrite of [[s
 - **Dave's setup for real push (credentials, not the agent):** an EAS project (`eas init`, which puts a `projectId` in the config; until then the switch says push isn't set up), a Firebase project with `google-services.json` plus the FCM V1 service-account key uploaded through `eas credentials` for Android, and for iOS the Apple Developer account and an APNs key (EAS can create it on the first iOS build). None of those files go in the repo. Then `eas build --profile development -p android` and install it. `eas.json` doesn't exist yet (Phase 8.3).
 - **Server side:** see [[ssapi]] (Expo push, dev only).
 
+## Phone app, Phase 7 built, waiting on Dave's phone check (2026-10-07)
+- **Settings** now matches web (`mobile/src/app/(tabs)/settings.tsx`): Appearance (the six themes), Push Notifications, **Devices** (`DevicesCard`: each device with last-active time, Sign out with an Alert confirm, Sign out all other devices), Info (About, API, Code of Conduct, Roadmap, History open the website in the browser, on the same server the app talks to), Log Out, **App Version** (product release `2.0.0 "Elia"` from `@ss/core`, plus the phone app's own version and build number), and **Delete Account** last (`DeleteAccountCard`: password, then a confirm Alert). The web app's "navigation hand" switch is deliberately not in the phone app (it positions the website's menu bubble). The dev-only "Expire my session" button stays under `__DEV__`.
+- **`versions.ts` moved into `@ss/core`** (`packages/core/src/versions.ts`) so web and phone share one release list; add a new entry at the top for each release.
+- Empty/loading/error states and `accessibilityLabel`s on the icon-only buttons were already in place from earlier phases; font scaling is left on.
+- Not in Phase 7 by design: report/block/terms (Phase 9.0) and the paywall.
+
 ## Next steps
 - [x] ~~Restructure into a pnpm workspace~~ done 2026-10-07 (`web/` now; `mobile/`, `desktop/`, `packages/core/` to come): [[repo-consolidation-plan]] Step 2. **This must happen before the phone port starts.**
 - [x] ~~ssreact tasks from `Inbox/ssapi-improvement-plan.md`~~: done 2026-10-02

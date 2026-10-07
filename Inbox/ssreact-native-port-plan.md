@@ -56,7 +56,7 @@ It is written to be carried out phase by phase by an agent. Each step names the 
 ## 1. What exists today (inputs)
 
 - **ssreact `web/`** (the workspace's web app, `@ss/web`): about 7.5k lines of TS/TSX.
-  - Routes in `web/src/App.tsx`, including the public `/history` page (release list in `web/src/lib/versions.ts`).
+  - Routes in `web/src/App.tsx`, including the public `/history` page (release list in `packages/core/src/versions.ts`).
   - Logic lives in `web/src/lib/*`.
   - UI is shadcn/Base UI plus Tailwind 4 with six themes (the `.theme-*` blocks in `web/src/index.css`).
   - All paths below that start `lib/`, `components/` or `pages/` are under `web/src/`.
@@ -374,6 +374,8 @@ Web Push (VAPID) doesn't exist in React Native. Native push needs FCM (Android) 
 - Real device: like a test post from a second account → the notification arrives, the tap opens the post, the badge count is right, and mark-as-seen clears it. Logout → no further pushes.
 
 ### Phase 7: settings and remaining parity
+> **Built 2026-10-07** (ssreact `2c6ab18`). Phone check pending; `versions.ts` now lives in `@ss/core`. See the [[ssreact]] note.
+
 - **Settings:**
   - Theme picker, hand preference (stored, mostly unused on native; see 3.2), push toggle.
   - Devices list with revoke and revoke-all, using `Alert.alert` confirms.

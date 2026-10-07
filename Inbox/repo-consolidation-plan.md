@@ -83,7 +83,7 @@ mkdir web
 git mv src public index.html vite.config.ts tsconfig*.json eslint.config.js components.json package.json web/
 # Leave at the root: .git*, .github/, README.md, pnpm-lock.yaml (regenerated below)
 ```
-Check `git ls-files` for anything else that belongs to the app, such as `postcss` configs or `.env.example`, and move it too. `src/lib/versions.ts` (the release list behind the `/history` page) moves with `src/`; update the pointer to it in the [[simple-social]] note's Versions section to `web/src/lib/versions.ts`.
+Check `git ls-files` for anything else that belongs to the app, such as `postcss` configs or `.env.example`, and move it too. `packages/core/src/versions.ts` (the release list behind the `/history` page) moves with `src/`; update the pointer to it in the [[simple-social]] note's Versions section to `packages/core/src/versions.ts`.
 
 **2.2 Workspace files at the root:**
 - `pnpm-workspace.yaml`:
