@@ -208,6 +208,8 @@ It returns `{ handler, relogin(retryAll), logout() }`. Move the `waitersRef`/`sh
 **Commits:** one per step: `refactor(core): …`.
 
 ### Phase 2: scaffold `mobile/`
+> **Code done 2026-10-07** (ssreact `f1e839e`, `814e718`); the Expo Go check on Dave's phone is still open. See the [[ssreact]] note.
+
 **2.1 Create the app inside the workspace:**
 - From the ssreact root: `pnpm create expo-app mobile --template` (TypeScript, expo-router template). Set `"name": "@ss/mobile"` in `mobile/package.json`, and add `"@ss/core": "workspace:*"`.
 - Add `expo-router`, `expo-secure-store`, `@react-native-async-storage/async-storage`, `expo-image`, and `react-native-safe-area-context` (Expo includes it).
