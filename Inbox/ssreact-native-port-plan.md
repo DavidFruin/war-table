@@ -495,7 +495,8 @@ This gets family onto iPhones quickly while Phase 9 (the Unlisted App Store list
 ### Phase 9: iPhone: Unlisted App Store distribution (after the family release)
 **Unlisted App Distribution** is Apple's official route for apps meant for a limited audience. The app is on the real App Store but **doesn't appear in search, charts or categories**; only people with the direct link can find it. It **goes through full App Store review**, so the content rules apply.
 
-**9.0 Prerequisite: access plan Step 1B** (report, block, admin actions, terms gate, Terms and Privacy pages, contact email) must be built and **deployed to prod**. Apple's guideline 1.2 applies to unlisted apps that have user posts too. The phone UI for it is:
+**9.0 Prerequisite: access plan Step 1B** (report, block, admin actions, terms gate, Terms and Privacy pages, contact email) must be built and **deployed to prod**. So must **Step 1C** (reported posts fold away, the word filter, minimum age 13): it closes the gaps found on 2026-10-08.
+- **Age checks:** some US states now require apps to respect the app stores' age signals (Apple's Declared Age Range API, Google's Play Age Signals API). Check the current rules for the states the family lives in before submitting, and add whatever they require. Apple's guideline 1.2 applies to unlisted apps that have user posts too. The phone UI for it is:
 - a "…" action sheet on posts and comments → **Report** (reason + optional details);
 - profile header "…" → **Report user** / **Block user**;
 - reported or blocked content disappears straight away;

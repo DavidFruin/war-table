@@ -214,6 +214,12 @@ All of [[media-pipeline-plan]] is built. Verified with [[sstests]] `backend/medi
 
 ## Decisions
 - **2026-10-02 (Dave): new deploy layout.** Per domain: `private/` (.env, DB, logs), `ssapi/` (all backend code, outside the web root), and `public_html/` containing only `api.php`/`media.php` stubs, one root `.htaccess` (canonical copy in this repo's `deploy/`), `app/` (frontend build), `media/` and `downloads/`. URLs are unchanged for every client. Deploys stop overlapping, and backend code can't be requested from the web. Plan + migration runbook: [[deploy-layout-plan]]. react.davidfruin.com migrates first; dev/app follow with the simple-social → ssapi switch (improvement plan D6).
+- **2026-10-08 (Dave): store-review fixes** ([[access-and-public-launch-plan]] Step 1C).
+  - Reported posts fold away for the reporter.
+  - A word filter rejects posts and comments that match a plain one-word-per-line list in `private/blocked-words.txt`, which is never committed.
+  - The minimum age is 13; the family member who is 12 waits until her birthday.
+  - Payments are parked: invites already keep strangers out.
+  - **Why:** Apple's guideline 1.2 requires filtering, and both stores ask for an age.
 - **2026-10-08 (Dave): invites, redesigned.**
   - **Who:** every member can invite exactly one person, using a code generated on their own profile; the owner has unlimited codes.
   - **The code:** 8 characters mixing upper- and lowercase letters, numbers and symbols, valid 7 days, deleted once used or expired.

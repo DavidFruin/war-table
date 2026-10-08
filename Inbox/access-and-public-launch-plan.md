@@ -313,7 +313,7 @@ The phone app's Register screen already has an invite field next to the email (`
 **Report:**
 - Any logged-in user can report a **post**, a **comment** or a **user**, choosing a reason (`spam`, `harassment`, `hate`, `sexual`, `violence`, `self_harm`, `illegal`, `other`) and adding optional details of up to 500 characters.
 - One report per reporter per target; repeats are accepted silently, with no duplicate row.
-- Reporting **automatically hides that content from the reporter**. Users expect that, and it is one of the ways Apple's filtering requirement is met.
+- Reporting **automatically hides that content from the reporter**. Users expect that, and it is one of the ways Apple's filtering requirement is met. *(Changed later: reported items now stay visible but **fold away** for the reporter, with a Show button; see Step 1C.)*
 - Each new report emails Dave (the admin address) straight away, so the "timely response" expectation, roughly 24 hours, can be met.
 
 **Block (two-way invisibility):**
@@ -339,7 +339,7 @@ The phone app's Register screen already has an invite field next to the email (`
 - Registration shows the same agreement.
 - The server records `terms_version_accepted` and when it was accepted. It **doesn't** reject requests from users who haven't accepted, because that would break the CLI and TUI clients. Enforcement is in the store clients (phone and web).
 
-**Optional, DECISION:** a word filter on posts and comments, set by Dave, either rejecting or masking listed words. Report + block + hide-on-report usually satisfies Apple's "filter" requirement, so this starts off.
+**Optional, DECISION:** a word filter on posts and comments, set by Dave, either rejecting or masking listed words. Report + block + hide-on-report usually satisfies Apple's "filter" requirement, so this starts off. *(Decided 2026-10-08: **on**, as a reject list in `private/blocked-words.txt`; see Step 1C.)*
 
 ---
 
@@ -536,6 +536,87 @@ See the phone plan's Phase 9. Because Phase B1 puts the API methods in `@ss/core
 ---
 
 
+
+---
+
+# STEP 1C (before any App Store or Play review): store-review fixes
+
+> **Dave, 2026-10-08:**
+> - Reported posts **fold away**.
+> - A **word filter** built from a plain list in `private/`, one word per line.
+> - A **minimum age of 13**. The one family member under 13 waits until her 13th birthday.
+> - **Payments stay parked:** invites already keep out the people he doesn't want.
+>
+> **Why:** Apple's guideline 1.2 requires "a method for filtering objectionable material", as well as report, block and contact details. The reported-content change (ssreact `c8064c4`) made reported items stay visible, and the word filter in 1B was off, so nothing clearly met that requirement. Both stores also ask for an age.
+
+## 1C.1 Reported posts and comments fold away (web + phone, no server change)
+- **Today:** reported items stay visible to the reporter with a red "Reported" label (`reportedByMe`).
+- **Change:** for the reporter, a reported post or comment shows **folded**: one line, "You reported this post." or "You reported this comment.", with a **Show** button.
+  - **Show** reveals it, with the red Reported label as now, until the screen is left. It's folded again the next time.
+  - Everyone else sees it normally until staff act on the report.
+- **Files:** `PostCard.tsx` and `CommentItem.tsx`, in both `web/src/components/post/` and `mobile/src/components/`. All text through `tr()`, with Spanish: "Reportaste esta publicación." / "Reportaste este comentario." / "Mostrar".
+- **Verify (web and phone):**
+  - Report a post: it folds at once in the feed, on the profile and on the post page. Show reveals it. After a reload it's folded again.
+  - Another account still sees it normally.
+  - The same checks for a comment.
+
+## 1C.2 Word filter (ssapi)
+- **The list:** `private/blocked-words.txt` on the server, next to the database. **It never goes in any repo or this vault.**
+  - **Format:** plain UTF-8 text, one word or phrase per line. Blank lines are ignored and surrounding spaces trimmed. Everything else is **literal**, with no regex syntax, so a typo can't break posting.
+  - **Matching:** whole words or phrases, case-insensitive and Unicode-aware, so accented Spanish words work. A listed word inside a longer word doesn't trigger: listing "ass" doesn't block "class".
+- **Code** (`src/Moderation/handlers.php`), with config `$CONFIG['blocked_words_file']` set to `blocked-words.txt` in the same `private/` folder as the database:
+  ```php
+  // Built once per request from private/blocked-words.txt. Null when the file
+  // is missing or empty: no filtering (posting must never break over a file).
+  function blockedWordsRegex(): ?string {
+      global $CONFIG;
+      static $cache = null;
+      if ($cache === null) {
+          $file = $CONFIG['blocked_words_file'] ?? '';
+          $lines = is_readable($file) ? file($file, FILE_IGNORE_NEW_LINES) : [];
+          $parts = [];
+          foreach ($lines as $line) {
+              $word = trim($line);
+              if ($word !== '') $parts[] = preg_quote($word, '/');
+          }
+          $cache = $parts ? '/(?<![\p{L}\p{N}])(?:' . implode('|', $parts) . ')(?![\p{L}\p{N}])/iu' : '';
+      }
+      return $cache === '' ? null : $cache;
+  }
+
+  function containsBlockedWord(string $text): bool {
+      $re = blockedWordsRegex();
+      return $re !== null && preg_match($re, $text) === 1;
+  }
+  ```
+- **Where it applies:**
+  - In `handle_post` (the post text) and `handle_createComment`, the request is refused with 400, "Your post contains a word that isn't allowed." or "Your comment contains a word that isn't allowed."
+  - The message never repeats the word, which keeps the list private.
+  - Add the Spanish to `es.php`.
+- **Where it doesn't apply:** report details (staff may need to quote what was said) and existing posts.
+- **The apps** already show server errors. Make sure the create-post page and the comment box **keep the typed text** after this error, so the person can edit it.
+- **Limits, stated honestly:** it catches exact words and phrases only, and misspellings or spacing tricks get through. Fold-away, reports and staff are the backstop.
+- **Changing the list:** Dave edits the file any time, and it takes effect on the next request. Later, the owner-only settings dashboard could edit it ([[staff-roles-plan]] §7).
+- **Verify (`sstests/backend/wordfilter/run.sh`, with a temporary list):**
+  - A listed word, a two-word phrase and an accented word are each refused in posts and in comments, in any capitalisation.
+  - "class" is allowed when "ass" is listed.
+  - Regex characters in the list (`a.b`, `c++`) are matched literally.
+  - With the file missing, everything is allowed.
+  - Existing tests still pass.
+
+## 1C.3 Minimum age: 13
+- **Terms** (en/es): "You must be at least 13 years old to use Simple Social."
+- **Privacy** (en/es): "Simple Social isn't for children under 13. We don't knowingly collect information from anyone under 13, and if we learn an account belongs to someone under 13, we delete it."
+- **Registration:** the terms checkbox (web and phone) becomes "I agree to the Terms of Use and I'm at least 13 years old." (es: "Acepto los Términos de uso y tengo al menos 13 años.") **No birth date is collected or stored.**
+- **Existing users see the updated terms once:** Dave sets `TERMS_VERSION=2` in `private/.env` when this deploys, and the terms gate asks everyone to accept again. Its text includes the age line.
+- **The store questionnaires** (phone plan Phases 9/10) must say the same minimum age.
+
+## 1C.4 Rollout (Dave)
+1. Create `private/blocked-words.txt` with your list on dev and on prod, and make it readable only by you and the web server (as with `.env`).
+2. Deploy ssapi and the web app. The phone changes ship with the next build.
+3. Set `TERMS_VERSION=2` in `private/.env`.
+
+**Estimate:** about a day of agent work. Fold-away is 2–3 hours across both apps; the filter with its tests is 3–4 hours; the age wording and checkbox are about 2 hours.
 
 ---
 
