@@ -219,6 +219,7 @@ All of [[media-pipeline-plan]] is built. Verified with [[sstests]] `backend/medi
   - **The code:** 8 characters mixing upper- and lowercase letters, numbers and symbols, valid 7 days, deleted once used or expired.
   - **Registration** asks for the code before the email field appears.
   - **`users.invited_by`** is stored but never returned by any API. Existing users are set as invited by Dave.
+  - **Follow-up the same day:** the new person **does** see whose code it was, on the Register page and in a one-time welcome at first login ("…used their only invite on you, so use yours just as wisely"). A code is only used up when registration completes.
   - **Why:** growth only through people already trusted, and no live codes to guess when nobody is inviting.
   - Details in [[access-and-public-launch-plan]] Step 1.
 - **2026-10-08 (Dave): staff roles.**
