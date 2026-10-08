@@ -44,6 +44,8 @@ Additional rules:
 # STEP 1 (now): invite-only registration, one invite per member
 
 > **Redesigned 2026-10-08 by Dave**, replacing the earlier admin-made code batches. His words: "The codes should be auto generated in people's profile page. It should be an complicated code so people can't guess it. Symbols letters (upper and lower) numbers and it should be 8 digits long. There should be a note that says you can only invite one person so choose wisely! As owner i should have infinite codes. There should be a data field in a users info in the database that shows who invited them to the platform. It shouldnt be visible tho. For the current users put their invite as from me as if I invited them. On the register page there should be just a code field and doesnt even offer them an email field until they enter a valid code. Everybody's code on their profile page should generate when they click a generate code button and it should only be valid for 1 week."
+>
+> Then: "I do want people to see who's code it was when they make an account. I also want to make sure the code is only used if the person completes the account registration. Also [upon] logging [in] congratulate them that the user that invited them used their only code on them so they should use their code just as wisely."
 
 ## 1.1 Behaviour
 - **Every member can invite exactly one person.** The **owner** (Dave) can invite as many as he likes.
@@ -62,15 +64,27 @@ Additional rules:
   - With 61 possible characters, there are about 10¹⁴ possible codes. Combined with the guessing limit below and the few codes alive at any time, guessing is hopeless.
 - **Nothing to guess after a week:** expired codes and used codes are **deleted**. If nobody has generated a code in the last week, no valid code exists at all.
 - **Registering:** the Register page shows **only an "Invite code" field** at first.
-  - The email field appears only after the server accepts the code. The rest of registration (email code, password) is unchanged.
-  - The server checks the code again when the account is created, and only then uses it up. If two people try the same code, exactly one gets in.
+  - Once the server accepts the code, the page shows **whose code it is**: "Invited by ana@example.com". Only then does the email field appear. The rest of registration (email code, password) is unchanged.
+  - **The code is only used up when the account is actually created**, at the last registration step.
+    - Entering the code, receiving the email code, or giving up halfway uses nothing up.
+    - The code stays valid until it expires or someone completes registration with it, and the inviter's invite isn't spent until then.
+  - The server checks the code again at that last step. If two people try the same code, exactly one gets in.
   - A code made by an account that has since been frozen or deleted no longer works.
+- **Welcome, at the first login after registering**, shown once and on whichever device they log in first:
+  - **Invited by a member:** "Welcome to Simple Social! **ana@example.com used their only invite on you.** You have one invite too, so use it just as wisely."
+  - **Invited by the owner:** "Welcome to Simple Social! **dave@… invited you.** You have one invite of your own, so choose wisely."
+  - It has two buttons, **Invite someone** (opens your own profile's invite card) and **Got it**.
+  - It comes after the terms and language prompts, so it's in the right language.
+  - Existing users (backfilled as invited by Dave) never see it.
 - **Guessing protection:**
   - Every wrong code counts against the person's IP through the existing attempt limiter (20 per 15 minutes, then blocked for a while).
   - The message is always the same: "That invite code isn't valid." It doesn't say whether the code was wrong, expired or used, so it tells a guesser nothing.
 - **Who invited whom:** `users.invited_by` stores the inviter's user id.
-  - **No API ever returns it,** and it doesn't show in either app.
-  - Dave can read it with `sqlite3` (§1.6).
+  - **No API ever returns the field,** and it isn't shown on profiles or anywhere else.
+  - **The two exceptions Dave asked for are both shown only to the new person:**
+    - the inviter's email on the Register page once their code is accepted;
+    - the one-time welcome.
+  - Dave can read the whole list with `sqlite3` (§1.6).
   - **Existing users are set as invited by Dave** (§1.6).
 - **The owner:** this step adds the `users.role` column, but only uses the value `owner`. Dave sets it on himself by hand. The [[staff-roles-plan]] adds moderator and admin to the same column later.
 - **Mode switch:** `REGISTRATION_MODE` in `private/.env`, `invite` or `open`.
@@ -93,6 +107,7 @@ Then add these columns, using the column-exists guard pattern:
 - **`users.role`:** `TEXT NOT NULL DEFAULT 'user'`.
 - **`users.invited_by`:** `INTEGER`. NULL until the backfill in §1.6.
 - **`users.invite_used_at`:** `TEXT`. Set when someone joins with this user's code.
+- **`users.welcome_pending`:** `INTEGER NOT NULL DEFAULT 0`. Set to 1 for a new account created with an invite; cleared when the welcome is dismissed.
 - **`pending_users.invite_code`:** `TEXT`.
 
 **New module `src/Invites/handlers.php`** (add it to `composer.json`'s `autoload.files`, then run `composer dump-autoload`):
@@ -143,7 +158,9 @@ function requireValidInvite($pdo, string $raw): array {
 `recordFailedAttempt` takes a keys map; passing only `ip` works, because its limits map has an `ip` entry. Confirm that still holds in the current code.
 
 **Endpoints:**
-- **`checkInviteCode`** (public, the Register page's first step): `requireValidInvite`, then `{valid: true, expiresAt}`.
+- **`checkInviteCode`** (public, the Register page's first step): `requireValidInvite`, then `{valid: true, expiresAt, inviterEmail}`.
+  - Only a valid code reveals the inviter, and whoever holds one was given it by that person.
+  - Use the same `JOIN users` as `requireValidInvite` to get the email.
 - **`getMyInvites`** (logged in):
   - `{unlimited, canGenerate, used, codes: [{code, expiresAt}]}`.
   - `unlimited` is true for the owner. `used` means `invite_used_at` is set. `codes` are the caller's live codes.
@@ -170,13 +187,16 @@ function requireValidInvite($pdo, string $raw): array {
       $pdo->prepare('UPDATE users SET invite_used_at = ? WHERE id = ? AND role != ?')->execute([date('Y-m-d H:i:s'), $inviterId, 'owner']);
   }
   ```
-  - Then insert the user with `invited_by = $inviterId` (NULL in `open` mode).
+  - Then insert the user with `invited_by = $inviterId` and `welcome_pending = 1`. In `open` mode, use NULL and 0.
+  - **Nothing earlier in the flow touches the code row.** `checkInviteCode` and `sendRegisterOTP` only read it, so an abandoned registration leaves the code live.
   - `BEGIN IMMEDIATE` makes the select-then-delete atomic, so two simultaneous registrations can't both use one code.
   - Add `invite_code` to the `SELECT` that reads the pending row.
 - **Deleting an account** (`deleteAccount`, and the staff plan's `deleteUserAndData` later) also deletes that user's `invite_codes` rows.
 - **`getMyInfo`:**
   - Add `registrationMode` (`invite`/`open`). It's additive.
-  - **Never** add `invited_by` to it, or to any other response.
+  - **While `welcome_pending = 1`, add `welcome: {inviterEmail, inviterIsOwner}`**, from a `LEFT JOIN` on the inviter. If the inviter's account is gone, `inviterEmail` is null and the apps show a plain welcome.
+  - **Never** add the `invited_by` field itself to this or any other response.
+- **`dismissWelcome`** (logged in): sets `welcome_pending = 0`. It's idempotent.
 - **Messages:** every new message gets its Spanish in `src/I18n/es.php`, and `check-messages.php` must pass ([[language-plan]]).
 - **API docs** (`ssreact/web/src/content/api-docs.html`, English): the new endpoints, the `inviteCode` parameter, and the code rules.
 - **`.env.example`:** `REGISTRATION_MODE=invite`.
@@ -193,17 +213,24 @@ function requireValidInvite($pdo, string $raw): array {
    - `sendRegisterOTP` without a valid code sends **no** email.
    - 21 wrong codes from one IP → 429.
 5. **Race:** two pending registrations holding the same code, finished at the same moment → exactly one account.
-6. **Frozen inviter:** freeze Alice while her code is live → the code stops working.
-7. **Mode switch:** `REGISTRATION_MODE=open` → registration works without a code, and `invited_by` is NULL. Remove the setting → invite mode.
-8. **Not leaked:** no response anywhere contains `invited_by`. Grep the responses of `getMyInfo`, `getUserInfo`, `getUsers` and `getStaff` (if present).
-9. **Regression:** existing users still log in, and the i18n, moderation and media suites still pass.
+6. **Only completed registrations use a code:**
+   - Start registering with Alice's code: `checkInviteCode` returns her email, and `sendRegisterOTP` succeeds. Then stop, and never call `finishRegister`.
+   - The code is still live in Alice's `getMyInvites`, her invite isn't spent, and a different person can still complete registration with it.
+7. **Welcome:**
+   - Bob's first `getMyInfo` after registering has `welcome` with Alice's email and `inviterIsOwner: false`. After `dismissWelcome` it's gone.
+   - Someone invited by the owner gets `inviterIsOwner: true`.
+   - An existing (backfilled) user never gets `welcome`.
+8. **Frozen inviter:** freeze Alice while her code is live → the code stops working.
+9. **Mode switch:** `REGISTRATION_MODE=open` → registration works without a code, and `invited_by` is NULL. Remove the setting → invite mode.
+10. **Not leaked:** no response anywhere contains the `invited_by` field, and no inviter email appears except in `checkInviteCode` and the new user's own pending `welcome`. Grep the responses of `getMyInfo` (for other users), `getUserInfo`, `getUsers` and `getStaff` (if present).
+11. **Regression:** existing users still log in, and the i18n, moderation and media suites still pass.
 
 **Commits:** `invites: schema (invite_codes, users.role/invited_by/invite_used_at)`, `invites: one code per member, unlimited for the owner`, `invites: code-first registration`, `api docs: invites`.
 
 ## 1.3 Web (ssreact)
 - **Register page** (`OtpAuthFlow`, register mode):
   - **Step 0 is only an "Invite code" field** and Continue, with the hint "Simple Social is invite-only. Enter the code someone gave you." It calls `checkInviteCode`.
-  - On success the existing email step appears, and the code is sent with `sendRegisterOTP`.
+  - On success, show "Invited by <inviterEmail>" at the top. Then the existing email step appears, and the code is sent with `sendRegisterOTP`.
   - The field turns off `autoCapitalize`, `autoCorrect` and `spellCheck`, uses a monospace font, and has a show/hide toggle.
   - `/register?invite=<code>` (URL-encoded) fills the field in and checks it at once.
   - When the server says `registrationMode: open`, skip step 0. Before login that isn't known, so always show step 0 unless a check says otherwise.
@@ -213,11 +240,19 @@ function requireValidInvite($pdo, string $raw): array {
     - Share uses the Web Share API where it exists, otherwise copies the message. The message puts the code on its own line, with the website and the download page: "Join me on Simple Social!", then the code, then "Valid for 7 days. Codes are case-sensitive.", then the links.
   - **Member who has used their invite:** "You've used your invite." Nothing else, and never who.
   - **Owner:** "As the owner you can invite as many people as you like." It shows Generate code and a list of live codes, each with its expiry, Copy, Share and Cancel.
-- **Client code:** the API methods go in `packages/core/src/api-client.ts` (`checkInviteCode`, `getMyInvites`, `generateInviteCode`, `cancelInviteCode`). The `sendRegisterOTP` client method gains `inviteCode` (the phone app already passes it).
-- **Translate everything** with `tr()` and Spanish in `es.ts`. The note in Spanish: "Solo puedes invitar a una persona, ¡así que elige bien!" (the reviewer may adjust it).
+- **The welcome dialog:** after login, when `getMyInfo` has `welcome`, show it once (§1.1 wording) and call `dismissWelcome` when it's closed.
+  - **Order:** it comes after the terms gate and the first-login language popup, never on top of them.
+  - **Invite someone** goes to `/profile` (your own).
+- **Client code:** the API methods go in `packages/core/src/api-client.ts` (`checkInviteCode`, `getMyInvites`, `generateInviteCode`, `cancelInviteCode`, `dismissWelcome`). `User` gains the optional `welcome`. The `sendRegisterOTP` client method gains `inviteCode` (the phone app already passes it).
+- **Translate everything** with `tr()` and Spanish in `es.ts`. The reviewer may adjust any of these:
+  - The note: "Solo puedes invitar a una persona, ¡así que elige bien!"
+  - "Invited by …": "Te invitó …"
+  - The welcome from a member: "¡Te damos la bienvenida a Simple Social! **ana@… usó su única invitación contigo.** Tú también tienes una, así que úsala con la misma sabiduría."
+  - The welcome from the owner: "¡Te damos la bienvenida a Simple Social! **dave@… te invitó.** Tienes una invitación propia, así que elige bien."
 - **Verify** with `pnpm dev` against the bench:
   - Register end to end: code first, then email, reading the OTP from `mail.log`.
   - The profile card in each state: member with no code, live code, used, and owner.
+  - The welcome shows once after the new account's first login (after the terms and language prompts), and not again after a reload or on a second device.
   - `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm build`.
 
 ## 1.4 Phone (`ssreact/mobile/`)
@@ -225,6 +260,8 @@ The phone app's Register screen already has an invite field next to the email (`
 - **Code-first:** a code-only step, then the email step.
 - **The code field:** `autoCapitalize="none"`, `autoCorrect={false}`, and a monospace font.
 - **The profile card:** the same "Invite someone" card on your own profile in `ProfileView`, with the system share sheet.
+- **The register screen** shows "Invited by <email>" once the code is accepted.
+- **The welcome dialog,** as on the web: shown once from `getMyInfo.welcome`, after the terms gate and the language popup, then `dismissWelcome`.
 - **Verify:** `npx expo lint` and `npx tsc --noEmit` pass. This is JavaScript only, so it can ship in the family build.
 
 ## 1.5 Other clients
