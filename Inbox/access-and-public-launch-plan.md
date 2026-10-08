@@ -42,6 +42,7 @@ Additional rules:
 ---
 
 # STEP 1 (now): invite-only registration, one invite per member
+**Status 2026-10-08: sections 1.2, 1.3 and 1.4 are built and tested on a local bench; nothing is deployed. Section 1.6 (rollout) is Dave's.**
 
 > **Redesigned 2026-10-08 by Dave**, replacing the earlier admin-made code batches. His words: "The codes should be auto generated in people's profile page. It should be an complicated code so people can't guess it. Symbols letters (upper and lower) numbers and it should be 8 digits long. There should be a note that says you can only invite one person so choose wisely! As owner i should have infinite codes. There should be a data field in a users info in the database that shows who invited them to the platform. It shouldnt be visible tho. For the current users put their invite as from me as if I invited them. On the register page there should be just a code field and doesnt even offer them an email field until they enter a valid code. Everybody's code on their profile page should generate when they click a generate code button and it should only be valid for 1 week."
 >
@@ -258,6 +259,7 @@ function requireValidInvite($pdo, string $raw): array {
   - `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm build`.
 
 ## 1.4 Phone (`ssreact/mobile/`)
+**Done 2026-10-08 (local only; not tried on a phone; JavaScript only, no new native module):** ssreact `f4d8a82` (code-first register screen), `0d8b0fb` (Invite someone card), `ddc3042` (welcome dialog), `de6e459` (fix to the share text's line breaks). Notes in [[ssreact]].
 The phone app's Register screen already has an invite field next to the email (`OtpAuthFlow`, `askInviteCode`). Rework it to match the web:
 - **Code-first:** a code-only step, then the email step.
 - **The code field:** `autoCapitalize="none"`, `autoCorrect={false}`, and a monospace font.
