@@ -1,309 +1,358 @@
 ---
-status: proposal
+status: proposal (revised 2026-10-08 with Dave's owner, badge and freeze/delete rules)
 written: 2026-10-08
 for: Sonnet 5 (medium effort), implementing agent
-repos: ssapi @ 6fa06d2, ssreact @ 0595e5c (packages/core, web/, mobile/), sstests
+repos: ssapi @ 8db90d3, ssreact @ 62b07c8 (packages/core, web/, mobile/), sstests
 ---
 
-# Staff roles plan: admins and moderators
+# Staff roles plan: owner, admins and moderators
 
-Dave (2026-10-08): "I want there to be two levels of administrator. Admin and moderator. Admins can appoint other admins and moderators and can change the settings of the app when we later make an app settings dashboard."
+Dave (2026-10-08), first: "I want there to be two levels of administrator. Admin and moderator. Admins can appoint other admins and moderators and can change the settings of the app when we later make an app settings dashboard."
+
+Then, revising it: "I want my role to be a third role called owner and it should be public who is a moderator admin and owner of the app. When someone is looking at your profile it should have a badge that says either "user" "moderator" "admin" or "owner". Moderators have control to freeze comments posts and accounts. Administrator can appoint and unappoint moderators and can delete accounts or posts. Owner can appoint admins and [unappoint] admins. But the owner is an account that cannot be deleted even by itself and moderators and admins cannot freeze or delete comments posts or the owners account."
 
 **Today:**
-- There is one level. `users.is_admin` is set by hand with `sqlite3` on the server, and there is no API to grant it (`src/Moderation/handlers.php`, `requireAdmin()`).
-- Admins can list and resolve reports, delete reported posts and comments, and freeze or unfreeze accounts: the four `admin*` endpoints and the web `/admin` page.
-- The phone app has no admin screens.
-- The role is read from the database on every request, which this plan keeps. A role change therefore takes effect on the person's very next request, with no new login.
+- There is one level. `users.is_admin` is set by hand with `sqlite3` on the server (`src/Moderation/handlers.php`, `requireAdmin()`), and there is no API to grant it.
+- Admins resolve reports (dismiss, **delete** the reported post or comment, freeze the account) and freeze or unfreeze accounts, through the four `admin*` endpoints and the web `/admin` page.
+- The phone app has no staff tools.
+- Roles are read from the database on every request, which this plan keeps, so a role change takes effect on the person's next request with no new login.
 
 **After this plan:**
-- Three roles: **user**, **moderator** and **admin**.
-- Admins appoint and remove admins and moderators from a new **Team** tab, and see an **Activity** log of everything staff did.
-- Moderators handle reports, except reports about other staff.
-- Dave's own account is protected as the **owner**, so nobody can lock him out from inside the app.
-- **App settings are not built here.** Section 6 sets the rules the later settings dashboard must follow, so it slots straight in.
+- **Four roles, public:** every profile shows a badge reading User, Moderator, Admin or Owner.
+- **Moderators freeze** posts, comments and accounts. Freezing hides them and is reversible.
+- **Admins also delete** them, which is permanent, and appoint or remove moderators.
+- **The owner also appoints or removes admins.**
+- **Nobody can act on anyone at their own level or above.** The owner, its posts and comments can't be touched by anyone, and the owner account can't be deleted, not even by the owner.
+- **Staff act where they see things:** the "…" menu on posts, comments and profiles, in the web and phone apps. The website's staff page has the report queue, the frozen list, the team and the activity log.
+- **Everything stays in the same SQLite database.** The owner is set there by hand, and the app never makes or removes an owner.
+- **App settings are not built here.** Section 7 sets the rules the later dashboard must follow.
 
 ---
 
 ## 0. Rules for the implementing agent
 - The usual rules apply: check and claim `Areas/active-work.md` first, one task per commit, push after each commit, **never deploy**, never touch prod. Dave deploys.
 - Tests go in [[sstests]] (`sstests/backend/staff/`), never in ssapi.
-- The database change is the next free `migrationN`. `SCHEMA_VERSION` is 5 as of `6fa06d2`, so it's most likely `migration6`. Check first, and never edit a migration that has shipped.
-- **Every new server message goes into `src/I18n/es.php`** with its Spanish (`sstests/backend/i18n/check-messages.php` must still pass). **Every new web text goes through `tr()`** with Spanish in `packages/core/src/i18n/es.ts` (the web lint rule enforces it). See [[language-plan]].
-- **Mobile:** follow `mobile/AGENTS.md`. If the language plan's Phase 4 (phone) is in progress, do this plan's phone task after it.
+- The database change is the next free `migrationN`. `SCHEMA_VERSION` is 5 as of `8db90d3`, so most likely `migration6`. Check first, and never edit a migration that has shipped.
+- **Every new server message** goes into `src/I18n/es.php` with its Spanish, and `sstests/backend/i18n/check-messages.php` must pass. **Every new app text** goes through `tr()` with Spanish in `packages/core/src/i18n/es.ts`. See [[language-plan]].
+- **Mobile:** follow `mobile/AGENTS.md`. The language plan's Phase 4 (phone) was in progress at `62b07c8`, so do this plan's phone phase after it.
 - Skip anything marked **DECISION** until Dave answers. Use the stated default if he says "go" without answering.
 
 ---
 
 ## 1. Who can do what
 
-| | User | Moderator | Admin | Owner (Dave) |
-|---|---|---|---|---|
-| Report and block (unchanged) | ✓ | ✓ | ✓ | ✓ |
-| See reports; dismiss, delete reported content, freeze and unfreeze **regular users** | | ✓ | ✓ | ✓ |
-| The same when the reported person is **staff** (moderator or admin) | | | ✓ | ✓ |
-| See who reported something | | | ✓ | ✓ |
-| See the team list | | ✓ (view only) | ✓ | ✓ |
-| Appoint, change or remove admins and moderators | | | ✓ | ✓ |
-| Freeze and unfreeze staff | | | ✓ | ✓ |
-| See the Activity log | | | ✓ | ✓ |
-| Change app settings (later, section 6) | | | ✓ | ✓ |
-| Can lose their role or be frozen | — | by an admin | by another admin | **never from the app** |
+Rank: **user 0 < moderator 1 < admin 2 < owner 3.**
 
-**The rules behind the table:**
-- **R1. The owner.**
-  - `OWNER_EMAIL` in the server's `private/.env` names the owner. The owner is always treated as an admin, whatever the database says.
-  - Nobody can change the owner's role or freeze the owner from the app. Changing the owner is a server edit only.
-  - This is the lock-out protection: with several admins, any of them could otherwise remove all the others, Dave included.
-  - **DECISION**, default yes.
-- **R2. No changing your own role.** Another admin does it. This stops accidental self-demotion.
-- **R3. Never zero admins.** The last unfrozen admin can't delete their account: "You're the only admin. Make someone else an admin before deleting your account."
-  - R2 already means an admin can only lose the role, or be frozen, at another admin's hands, so those paths can't empty the admin list.
-  - With an owner set this can't happen at all; the check guards a server with `OWNER_EMAIL` unset.
-- **R4. Moderators never see reports about staff.**
-  - Reports whose target belongs to a moderator or admin (a post, a comment or the account itself) are left out of moderators' report lists, and every action on them, including dismiss, is admin-only.
-  - This prevents moderators burying complaints about themselves or each other, and from seeing who complained.
-  - **DECISION**, default yes.
-- **R5. Moderators don't see who reported.** `reporterEmail` is `null` for moderators and kept for admins. In a family app, knowing who reported you invites friction. **DECISION**, default hidden.
-- **R6. Frozen accounts can't hold a new role.** Giving a role to a frozen account is refused ("Unfreeze this account first"). Freezing a staff member keeps their role, but they can't log in, so it does nothing until they're unfrozen.
-- **R7. The server enforces everything.** The apps only hide buttons people can't use; every rule above is checked on the server.
+| | Moderator | Admin | Owner |
+|---|---|---|---|
+| Freeze and unfreeze posts and comments | users' | users' and moderators' | users', moderators' and admins' |
+| Freeze and unfreeze accounts | users | users and moderators | users, moderators and admins |
+| Delete other people's posts and comments | — | users' and moderators' | users', moderators' and admins' |
+| Delete accounts (must be frozen first) | — | users and moderators | users, moderators and admins |
+| Appoint and remove moderators | — | ✓ | ✓ |
+| Appoint and remove admins | — | — | ✓ |
+| Handle reports | about users | about users and moderators | all |
+| See who made a report | — | ✓ | ✓ |
+| Activity log | — | ✓ | ✓ |
+| App settings (later, section 7) | — | ✓ | ✓ |
+
+Everyone can still report, block, and delete their own posts and comments, as today.
+
+**The rules:**
+- **R1. Rank:** staff can only act on people **below** their own role: their posts, their comments and their account. This is Dave's owner rule applied at every level, so an admin can't delete another admin and a moderator can't freeze another moderator. A misbehaving admin is the owner's to deal with; a misbehaving moderator is any admin's. **DECISION**, default yes.
+- **R2. The owner:**
+  - It is stored in SQLite as `users.role = 'owner'` and set by hand on the server (section 6). No endpoint ever sets or removes `owner`.
+  - Nobody can freeze, delete or change the owner, its posts or its comments.
+  - The owner account can't be deleted, not even by the owner: "The owner account can't be deleted. Ownership can only be changed on the server."
+  - Handing over ownership is the same one-line `sqlite3` command.
+  - Apple requires in-app account deletion for users. The owner account is the operator's own, and App Review deletes the demo account, so this is low risk; the message explains why.
+- **R3. Nobody changes their own role.** Freezing, deleting or demoting yourself is refused too; your own posts you delete the normal way.
+- **R4. Freezing is reversible; deleting is permanent.**
+  - A frozen post or comment is hidden from everyone except its author, who sees it labelled "Hidden by a moderator", with no likes or comments while frozen. **DECISION**, default: the author sees it.
+  - Frozen accounts work as today: no login, and all their content hidden.
+  - While something is frozen its photos and videos stay on the server, so a link someone already copied still works. Deleting removes the files.
+- **R5. Deleting an account** needs the account frozen first, plus the admin typing the account's email to confirm. It removes all of the account's posts, comments, photos and videos, and can't be undone. **DECISION**, default yes.
+- **R6. Moderators don't see who made a report.** **DECISION**, default hidden.
+- **R7. Roles are public.** Every profile shows exactly one badge: User, Moderator, Admin or Owner. Dave asked for "User" too; **DECISION**, the alternative is badges only for staff.
+- **R8. A frozen account can't be given a role.** Unfreeze it first.
+- **R9. The server enforces everything.** The apps only hide buttons people can't use.
 
 ---
 
-## 2. Phase 1: server (ssapi, about a day)
+## 2. Phase 1: server (ssapi, about 1.5 days)
 
 ### 1.1 Migration (`migration6`, `SCHEMA_VERSION` 6)
-Follow `migration5`'s pattern (`PRAGMA table_info` check before `ALTER`):
-```php
-// users.role replaces users.is_admin (left in place, no longer read).
-if (!in_array('role', $have, true)) {
-    $pdo->exec("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'user'");
-    $pdo->exec("UPDATE users SET role = 'admin' WHERE is_admin = 1");
-}
-// Who did what. Emails are copied in, so the log stays readable after an
-// account is deleted.
-$pdo->exec('CREATE TABLE IF NOT EXISTS staff_actions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    actor_id INTEGER, actor_email TEXT NOT NULL,
-    action TEXT NOT NULL,              -- set_role | freeze | unfreeze | resolve_report | update_setting (later)
-    target_user_id INTEGER, target_email TEXT,
-    details TEXT,                      -- JSON, e.g. {"from":"user","to":"moderator"} or {"reportId":12,"resolution":"dismiss"}
-    created_at TEXT NOT NULL)');
-$pdo->exec('CREATE INDEX IF NOT EXISTS idx_staff_actions_created ON staff_actions(created_at)');
-$pdo->exec('CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)');
-```
-- Leave `is_admin` in the table but stop reading it. Add a comment in `schema.php`, and note that the ssapi improvement plan's D7 ("drop dead columns") now covers it too.
-- Dave's existing admin flag on dev and prod becomes `role = 'admin'` automatically.
+Follow `migration5`'s pattern (`PRAGMA table_info` before each `ALTER`):
+- `users.role TEXT NOT NULL DEFAULT 'user'`, then `UPDATE users SET role = 'admin' WHERE is_admin = 1`. Dave makes himself owner by hand after deploying (section 6). Leave `is_admin` in the table but stop reading it, with a comment in `schema.php`.
+- `posts.frozen_at TEXT`, `posts.frozen_by INTEGER`, `comments.frozen_at TEXT`, `comments.frozen_by INTEGER`.
+- The `staff_actions` table:
+  ```sql
+  CREATE TABLE IF NOT EXISTS staff_actions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      actor_id INTEGER, actor_email TEXT NOT NULL,
+      action TEXT NOT NULL,      -- set_role | freeze_user | unfreeze_user | freeze_content | unfreeze_content
+                                 -- | delete_content | delete_account | resolve_report | update_setting (later)
+      target_user_id INTEGER, target_email TEXT,
+      details TEXT,              -- JSON: {"from":"user","to":"moderator"}, {"type":"post","id":"…","text":"first 200 chars"}, …
+      created_at TEXT NOT NULL)
+  ```
+  Emails and a short text snapshot are copied in, so the log stays readable after something is deleted.
+- Indexes on `users(role)` and `staff_actions(created_at)`.
 
 ### 1.2 New module `src/Staff/handlers.php`
-Add it to `composer.json`'s `autoload.files` and run `composer dump-autoload`. It holds the role helpers and the new endpoints:
+Add it to `composer.json`'s `autoload.files` and run `composer dump-autoload`.
 ```php
-const ROLES = ['user', 'moderator', 'admin'];
-const ROLE_RANK = ['user' => 0, 'moderator' => 1, 'admin' => 2];
+const ROLES = ['user', 'moderator', 'admin', 'owner'];
+const ROLE_RANK = ['user' => 0, 'moderator' => 1, 'admin' => 2, 'owner' => 3];
 
-// The owner (OWNER_EMAIL in private/.env) is always an admin and can't be
-// changed or frozen from the app (staff-roles plan, R1).
-function isOwnerEmail(?string $email): bool {
-    global $CONFIG;
-    $owner = strtolower(trim($CONFIG['owner_email'] ?? ''));
-    return $owner !== '' && $email !== null && strtolower($email) === $owner;
-}
+// ['id', 'email', 'role', 'frozen'], or null for an unknown id.
+function userRole($pdo, int $userId): ?array { /* SELECT id, email, role, frozen_at FROM users WHERE id = ? */ }
 
-// ['id', 'email', 'role' (effective), 'isOwner', 'frozen'], or null for an unknown id.
-function staffInfo($pdo, int $userId): ?array {
-    $s = $pdo->prepare('SELECT id, email, role, frozen_at FROM users WHERE id = ?');
-    $s->execute([$userId]);
-    $row = $s->fetch(PDO::FETCH_ASSOC);
-    if (!$row) return null;
-    $owner = isOwnerEmail($row['email']);
-    $role = $owner ? 'admin' : (in_array($row['role'], ROLES, true) ? $row['role'] : 'user');
-    return ['id' => (int)$row['id'], 'email' => $row['email'], 'role' => $role, 'isOwner' => $owner, 'frozen' => $row['frozen_at'] !== null];
-}
-
-// Stops the request unless the caller has at least $min. Returns the caller's staffInfo.
+// Stops the request unless the caller has at least $min. Returns the caller.
 function requireRole($pdo, $user, string $min): array {
-    $me = staffInfo($pdo, (int)$user['sub']);
+    $me = userRole($pdo, (int)$user['sub']);
     if (!$me || ROLE_RANK[$me['role']] < ROLE_RANK[$min]) {
-        bad($min === 'admin' ? 'Admins only' : 'Moderators and admins only', 403);
+        bad(['moderator' => 'Moderators only', 'admin' => 'Admins only'][$min] ?? 'Not allowed', 403);
     }
     return $me;
 }
 
-// Rules R1 and R4 for any action aimed at another account.
-function requireCanActOn(array $me, ?array $target): void {
-    if ($target === null) return;   // deleted account: nothing to protect
-    if ($target['isOwner']) bad("That account can't be changed from the app.", 403);
-    if ($target['role'] !== 'user' && $me['role'] !== 'admin') {
-        bad('Only an admin can act on an admin or moderator.', 403);
-    }
+// Rules R1-R3 for any action on another person, their posts or their comments.
+function requireOutranks(array $me, ?array $target): void {
+    if ($target === null) return;   // the account is already gone
+    if ($target['role'] === 'owner') bad("The owner's account, posts and comments can't be changed.", 403);
+    if (ROLE_RANK[$me['role']] <= ROLE_RANK[$target['role']]) bad('You can only act on people below your own role.', 403);
 }
 
-function logStaffAction($pdo, array $me, string $action, ?array $target, array $details = []): void { /* INSERT INTO staff_actions … */ }
-
-// Unfrozen admins, counting the owner (rule R3, used by deleteAccount).
-function activeAdminCount($pdo): int { /* role = 'admin' AND frozen_at IS NULL, plus the owner if their row says otherwise */ }
+function logStaffAction($pdo, array $me, string $action, ?array $target, array $details = []): void { /* INSERT … */ }
 ```
-`config.php`: `$CONFIG['owner_email'] = getenv('OWNER_EMAIL') ?: '';` Add `OWNER_EMAIL=` to `.env.example`, with a comment.
+`requireOutranks` also covers yourself, because equal rank is refused.
 
-### 1.3 Change the existing admin endpoints
-Keep their names (`admin*`), so no client breaks; moderators now use them too.
-- **Replace `requireAdmin()`** (`src/Moderation/handlers.php`) with `requireRole($pdo, $user, 'moderator')` in all four, keeping `$me` for the checks below. Delete `requireAdmin()` once nothing calls it.
-- **`adminListReports`:**
-  - For moderators (`$me['role'] === 'moderator'`), leave out reports whose `target_user_id` is staff (R4). Do it in SQL, e.g. `AND (r.target_user_id IS NULL OR r.target_user_id NOT IN (<staff ids>))`. Build the id list from `role IN ('moderator','admin')` plus the owner's id.
-  - Set `reporterEmail` to `null` (R5).
-  - Add `targetUserIsStaff` to every row, for the admin UI.
-- **`adminResolveReport`:** load `staffInfo` for `target_user_id` and call `requireCanActOn($me, $target)` before **any** action, including dismiss. Then call `logStaffAction(… 'resolve_report', …, ['reportId' => …, 'resolution' => $act])`.
-- **`adminFreezeUser` / `adminUnfreezeUser`:** call `requireCanActOn` before acting, then `logStaffAction('freeze' | 'unfreeze')`.
-- Keep the existing `writeLog(...)` lines as well.
+### 1.3 Hiding frozen posts and comments (R4)
+- **The filter:** `frozenFilter(string $alias, $viewerId)` returns `[" AND ($alias.frozen_at IS NULL OR $alias.user_id = ?)", [$viewerId]]`. Append it the same way `hiddenFilter()` is used.
+- **Apply it everywhere posts or comments are shown:**
+  - the feed (`fetchFollowedPosts`), profile posts (`getUserPosts`, `getMyPosts`), `getPostById` and the comment lists;
+  - **comment counts**, which leave out frozen comments for everyone (`getPostCommentCounts` and the `commentCount` field).
 
-### 1.4 New endpoints (register them in `api.php`'s handler map)
-- **`adminListStaff`** (moderator+): every account whose effective role isn't `user`, as `{ userId, email, role, isOwner, frozen }`. Admins first, then by email.
-- **`adminSetRole`** (admin):
-  - **Params:** `email` (for appointing someone new; matched case-insensitively) or `userId`, plus `role` (`user|moderator|admin`).
-  - **Order of checks:**
-    1. Invalid role → 400 `Invalid role`.
-    2. Unknown account → 404 (`No account found with this email` is already in es.php).
-    3. Owner → 403 (R1).
-    4. Self → 400 `You can't change your own role` (R2).
-    5. Frozen and the new role isn't `user` → 400 `Unfreeze this account before giving it a role` (R6).
-  - **Then:** `UPDATE users SET role = ?`, then `logStaffAction('set_role', …, ['from' => …, 'to' => …])`, then respond with the member's new `{ userId, email, role, isOwner, frozen }`.
-  - The same role again is a no-op success and isn't logged.
-- **`adminListActivity`** (admin): newest first, paged with `pageParams()`, as `{ id, actorEmail, action, targetEmail, details (decoded), createdAt }` plus `hasMore`.
+  `grep -rn "FROM posts\|FROM comments\|JOIN posts\|JOIN comments" src api.php` finds 21 queries as of `8db90d3`. Go through every one, and list in the commit message which got the filter and why the rest don't need it (deletes, internal lookups).
+- **Flag:** objects the author can still see get `frozen: true`.
+- **No interactions while frozen:** liking or commenting on a frozen post gives 404 `Post not found`, the author included.
 
-### 1.5 Other server changes
-- **`getMyInfo`:**
-  - Add `role` (effective) and `isOwner`.
-  - **Keep `isAdmin`** (`role === 'admin'`), so older app builds keep working.
-  - Read `role` instead of `is_admin`.
-- **`deleteAccount`:** refuse the last unfrozen admin (R3), 400 with the message above.
-- **API docs** (`ssreact/web/src/content/api-docs.html`, English): the roles, the new endpoints, `role`/`isOwner` in `getMyInfo`, and which endpoints moderators can call.
-- **Report emails stay as they are** (`ADMIN_REPORT_EMAIL`). **DECISION**, optional: also email every admin and moderator. Default no; moderators check the Moderation page.
+### 1.4 Account deletion, shared
+- Move everything in `handle_deleteAccount` (`api.php`) after the password check into `deleteUserAndData($pdo, int $uid)`, with no change in behaviour, so self-deletion and admin deletion use the same code.
+- `handle_deleteAccount` refuses the owner (R2).
+
+### 1.5 Endpoints
+**Existing ones keep their names, so older app builds still work:**
+- **`adminListReports`** (moderator+):
+  - Only reports whose target account is **below** the caller's rank, plus reports with no account left.
+  - `reporterEmail` is `null` for moderators (R6).
+  - Each row gains `targetUserRole`.
+- **`adminResolveReport`** (moderator+):
+  - Resolutions: `dismiss`, `freeze_content` (new), `freeze_user`, `delete_content` and `delete_and_freeze`. Moderators may use only the first three; the delete ones are admin+.
+  - Every resolution, dismiss included, first calls `requireOutranks` on the reported account.
+  - `freeze_content` on a user report → 400.
+  - Log `resolve_report`.
+- **`adminFreezeUser` / `adminUnfreezeUser`** (moderator+): `requireOutranks`, then log.
+
+**New:**
+- **`staffFreezeContent` / `staffUnfreezeContent`** (moderator+):
+  - Params `type` (`post|comment`) and `id`. Call `requireOutranks` on the author, then set or clear `frozen_at`/`frozen_by`.
+  - Freezing also resolves any open reports on that item as actioned (`freeze_content`).
+  - Log the action.
+- **`adminDeleteContent`** (admin+):
+  - Params `type` and `id`. Call `requireOutranks` on the author, then `deletePostById` / `deleteCommentById` (media files removed as today).
+  - Resolve any open reports on it, then log the action with a text snapshot.
+- **`adminDeleteAccount`** (admin+): params `userId` and `confirmEmail`.
+  1. `requireOutranks`.
+  2. The account must be frozen (R5): 400 `Freeze this account before deleting it`.
+  3. `confirmEmail` must match, case-insensitively: 400 `The email doesn't match`.
+  4. Log **before** deleting (the snapshot keeps the email), then call `deleteUserAndData`.
+- **`adminSetRole`:** params `email` or `userId`, plus `role` (`user|moderator|admin`).
+  - `role = 'owner'`, or a target who is the owner → 403 `Ownership can only be changed on the server.`
+  - The caller (admin+) must **outrank the target's current role**, and the **new role must be below the caller's**:
+    - admins can switch people between user and moderator;
+    - the owner can set user, moderator or admin.
+    - Otherwise → 403 `Only the owner can appoint or remove admins.` when an admin is involved, or the rank message.
+  - Yourself → 400 `You can't change your own role`.
+  - Frozen target with a non-`user` role → 400 `Unfreeze this account before giving it a role` (R8).
+  - The same role again is a no-op success and isn't logged. Otherwise log `set_role` with `{from, to}`.
+- **`getStaff`** (any logged-in user; roles are public, R7):
+  - Every unfrozen account whose role isn't `user`, as `{userId, email, role}`, ordered owner, admins, moderators, then by email.
+  - For staff callers, also include frozen staff with `frozen: true`, for the Team tab.
+- **`adminListFrozen`** (moderator+):
+  - Frozen accounts, posts and comments **the caller outranks**, newest first, paged with `pageParams()`.
+  - Each as `{type, id, userId, email, text (first 200 chars), mediaUrl, frozenAt, frozenByEmail}`.
+- **`adminListActivity`** (admin+): newest first, paged, `{id, actorEmail, action, targetEmail, details, createdAt}`.
+
+**Changed:**
+- **`getUserInfo`** (a profile) adds `role` (R7).
+- **`getMyInfo`** adds `role`, and **keeps `isAdmin`** (true for admin and owner) for older app builds.
+- **Delete `requireAdmin()`** once nothing calls it.
+
+Report emails stay as they are (`ADMIN_REPORT_EMAIL`). The **API docs** (`ssreact/web/src/content/api-docs.html`, English) get the roles, the new endpoints and which role each needs.
 
 ### 1.6 Verify on the bench (`sstests/backend/staff/run.sh`)
-Bench users: **O** (owner, via `OWNER_EMAIL`), **A1** and **A2** (admins), **M** (moderator), **U1** and **U2** (users). Make the checks PASS/FAIL like the other suites:
-- **Migration:** a database at version 5 with `is_admin = 1` on one user becomes version 6 with that user's `role = 'admin'`. `getMyInfo` returns the right `role` / `isOwner` / `isAdmin` for each user.
-- **Report lists:** U1 calling `adminListReports` → 403.
-  - M sees reports about U2 but not the report about A1, and `reporterEmail` is null.
-  - A1 sees both, with reporter emails.
-- **Report actions:** M dismisses, deletes and freezes on a U2 report → OK.
-  - M acting on the A1 report (even dismissing it) → 403, and M freezing A1 → 403.
-  - A1 resolving the A1-targeted report → refused (it's their own account); A2 resolving it → OK.
-- **Roles:** M calling `adminSetRole` → 403.
-  - A1 makes U1 a moderator by email, and U1's **next** `adminListReports` call succeeds with no new login.
-  - A1 removes it again, and the next call → 403.
-  - A1 changing O → 403, freezing O → 403, changing their own role → 400.
-- **Last admin:** with `OWNER_EMAIL` unset, A2 demoted and A1 the only admin, A1 deleting their account → 400.
-- **Frozen accounts:** freeze U2, then try to make U2 a moderator → 400.
-- **Activity:** `adminListActivity` lists every action above with emails, newest first; M → 403.
+Bench users: **O** (owner), **A1** and **A2** (admins), **M1** and **M2** (moderators), **U1** and **U2** (users).
+- **Migration:** a version-5 database with `is_admin = 1` becomes version 6 with `role = 'admin'`.
+- **Public roles:** U1's `getUserInfo` on O, A1, M1 and U2 returns owner, admin, moderator and user. `getStaff` lists O, A1, A2, M1 and M2.
+- **Freezing:**
+  - M1 freezes U1's post. U2 no longer sees it in the feed, on U1's profile or by id. U1 still sees it, with `frozen: true`. Comment counts drop. Liking it → 404.
+  - M1 then unfreezes it, and everything is back.
+- **Rank:**
+  - M1 freezing M2's post → 403, and M1 freezing A1 → 403.
+  - A1 freezes M1's comment → OK. A1 freezing A2 → 403.
+  - O freezes and unfreezes A1 → OK.
+  - **Anyone** freezing or deleting O's post, comment or account → 403. O deleting its own account → 400.
+- **Deleting:**
+  - M1 calling `adminDeleteContent` → 403.
+  - A1 deletes U2's post → OK, and its media files are gone.
+  - A1 calls `adminDeleteAccount` on U2 while U2 isn't frozen → 400. After freezing U2: wrong email → 400; right email → OK, and U2's posts, comments, media and sessions are gone.
+  - A1 deleting A2 → 403.
+- **Roles:**
+  - A1 makes U1 a moderator, and U1's **next** `adminListReports` call works without a new login.
+  - A1 making U1 an admin → 403 ("Only the owner…"), and A1 demoting A2 → 403.
+  - O makes U1 an admin, then back to a user → OK.
+  - Setting `owner` → 403. Changing your own role → 400. Frozen account to moderator → 400.
+- **Reports:**
+  - M1 sees reports about users only, with no reporter email.
+  - A1 also sees reports about moderators, with reporter emails. O sees all.
+  - M1 calling `delete_content` → 403; M1 calling `freeze_content` → OK.
+- **Activity:** `adminListActivity` lists all of the above with emails; M1 → 403.
+- **Frozen list:** `adminListFrozen` for M1 shows only users' frozen items; A1's also shows moderators' items.
 - **Spanish:** one 403 with `X-SS-Lang: es` comes back in Spanish.
-- **Regression:** the moderation and i18n suites still pass, and so does `check-messages.php`.
+- **Regression:** the moderation, media and i18n suites still pass, and so does `check-messages.php`.
 
-**Commits:** `staff: users.role + staff_actions (migration6)`, `staff: roles on the moderation endpoints`, `staff: team and activity endpoints`, `staff: getMyInfo role, last-admin guard, API docs`.
+**Commits:**
+- `staff: roles, frozen content columns, staff_actions (migration6)`
+- `staff: hide frozen posts and comments`
+- `staff: shared account deletion; owner can't be deleted`
+- `staff: rank rules on the moderation endpoints`
+- `staff: freeze/delete content and accounts, roles, staff list, frozen list, activity`
+- `api docs: roles`
 
 ---
 
-## 3. Phase 2: shared code + web (about a day)
+## 3. Phase 2: shared code + web (about 1.5 days)
 
 ### 2.1 `@ss/core`
-- **`types.ts`:**
-  - `User` gains `role: 'user' | 'moderator' | 'admin'` and `isOwner: boolean`.
-  - `userFrom` maps them, with `role: info.role ?? (info.isAdmin ? 'admin' : 'user')` so an older server still works.
-  - Add helpers `isStaff(user)` and `isAdminRole(user)`.
-- **`moderation.ts`:**
-  - Types `StaffMember` and `StaffAction`.
-  - `ModerationReport` gains `targetUserIsStaff`, and `reporterEmail` can be `null`.
-- **`api-client.ts`:** `adminListStaff()`, `adminSetRole(target: { email: string } | { userId: number }, role)`, `adminListActivity(offset)`.
-- **Tests:** the `userFrom` fallback, and `isStaff`.
+- **Types:** `Role = 'user' | 'moderator' | 'admin' | 'owner'`, plus `ROLE_RANK`.
+  - `User` gains `role`. `userFrom` uses `info.role ?? (info.isAdmin ? 'admin' : 'user')`, so an older server still works.
+  - The profile type gains `role`, and posts and comments gain `frozen?`.
+- **Permission helpers that mirror the server table** (section 1):
+  - `isStaff(me)`, `outranks(me, targetRole)`;
+  - `canFreeze(me, targetRole)`, `canDelete(me, targetRole)`;
+  - `canSetRole(me, targetRole, newRole)`, `rolesICanGive(me)`.
+- **API client:** `getStaff`, `staffFreezeContent`, `staffUnfreezeContent`, `adminDeleteContent`, `adminDeleteAccount`, `adminSetRole`, `adminListFrozen` and `adminListActivity`.
+  - `adminResolveReport` accepts `freeze_content`.
+- **A staff list cache:** userId → role, from `getStaff`. Load it at start, refresh it after any Team change, and treat anyone missing as `user`. The apps use it to decide which staff buttons to show on someone's post.
+- **Tests:** every cell of the section-1 table through the helpers, plus the `userFrom` fallback.
 
-### 2.2 `/admin` becomes the staff page (`web/src/pages/AdminPage.tsx`)
-- **Access:** staff (moderator or admin); anyone else is sent to `/feed`, as now.
-  - The page title is **"Admin"** for admins and **"Moderation"** for moderators.
-  - If an admin endpoint answers 403 (the role was just removed), refresh the user (`getMyInfo`) and go to `/feed` with a toast: "Your role has changed."
-- **Tabs:**
-  - **Reports** (Open / Resolved, the existing tabs) for all staff. Show "Reported by" only when the email is present.
-  - **Team** for all staff.
-  - **Activity** for admins only.
-  - **No App settings tab yet**; the dashboard plan adds it (section 6).
-- **Team tab:**
-  - One row per staff member: email, role badge, an **Owner** badge on the owner, and a **Frozen** badge when frozen.
-  - **Admins see:**
-    - A role control on each row except the owner's and their own. Those two get a short note instead: "Set on the server" and "Another admin can change your role".
-    - An **Add someone** form: email + role (Moderator or Admin) + Add.
-    - A confirmation before every change, e.g. "Make ana@… an admin? Admins can appoint and remove other admins and moderators, and will be able to change the app's settings." or "Remove ana@…'s moderator role?"
-  - Server errors show inline under the form or row.
-  - **Moderators see the list read-only.**
-- **Activity tab:** one line per entry, newest first, with a Load more button. Build the text client-side from `action` + `details` with `tr()` keys, e.g.:
-  - "dave@… made ana@… a moderator"
-  - "ana@… froze leo@…"
-  - "ana@… resolved report #12 (dismissed)"
-- **Translate the whole page.** It was English-only because only Dave saw it; moderators may be Spanish speakers.
-  - Remove `src/pages/AdminPage.tsx` from the lint rule's ignore list in `web/eslint.config.js`.
-  - Change the language plan's "English only" list to drop Admin.
-  - Spanish role names: "Admin" and "Moderador/a" (neutral, per the language plan's no-gendered-words rule; the Spanish reviewer may change them).
-- **Settings** (`SettingsPage.tsx`): the existing Admin card shows for **all staff** (`isStaff(user)`). Moderators get new `settings.moderation.*` keys ("Moderation", "Review reports from the community", "Open").
+### 2.2 Web
+- **Badge:** a small `RoleBadge` on **every** profile, next to the email (R7). Keys `role.user`, `role.moderator`, `role.admin` and `role.owner`.
+  - Spanish: Usuario/a, Moderador/a, Admin and Propietario/a. These follow the language plan's no-gendered-words rule; the Spanish reviewer may change them.
+- **Staff actions in the existing "…" menus** (`PostCard`, `CommentItem`, `ProfilePage`), shown only when the core helpers allow them:
+  - **Post or comment:** **Freeze** (moderator+), with a confirmation that says it can be undone from the staff page. **Delete** (admin+), with a confirmation that says it's permanent.
+  - **Profile:** **Freeze account** (moderator+).
+  - Deleting an account happens from the staff page's Frozen tab, because frozen profiles are hidden.
+- **The author's own frozen post or comment:** muted, with a "Hidden by a moderator" label and no like or comment buttons.
+- **The staff page `/admin`:**
+  - **Access:** staff only. The title is Moderation, Admin or Owner to match the role.
+  - **Reports** (Open / Resolved): each role sees only the actions it may take.
+  - **Frozen:** accounts, posts and comments with Unfreeze (moderator+) and Delete (admin+). **Delete account** opens a confirmation where the admin types the account's email.
+  - **Team:** the staff list with badges and a Frozen marker.
+    - Admins can add someone as a moderator by email, or remove a moderator.
+    - The owner can do the same for admins.
+    - Ask for confirmation before every change. The owner's row and your own row have no controls.
+  - **Activity:** admin+ only. One line per entry, built with `tr()` from `action` + `details`, e.g. "dave@… made ana@… a moderator", "ana@… froze a post by leo@…" or "dave@… deleted the account leo@…".
+  - **No App settings tab yet** (section 7).
+  - If an action comes back 403 because the role was just removed, refresh the user and go to `/feed` with a toast: "Your role has changed."
+- **Settings:** the Admin card shows for all staff, with wording to match the role.
+- **Translate the staff page.** Remove `src/pages/AdminPage.tsx` from the lint ignore list in `web/eslint.config.js`, and drop "Admin" from the language plan's English-only list.
 
 ### 2.3 Verify
 - **Checks:** `pnpm typecheck`, `pnpm lint` and `pnpm test` pass.
-- **On the local bench, with three logins:**
-  - **Owner:** can manage everyone.
-  - **Admin:** can't change the owner or themselves; adding, changing and removing a moderator works and shows up in Activity.
-  - **Moderator:** sees "Moderation", the Reports and Team tabs only, no reporter emails, and no reports about staff. Removing their role while their page is open sends them to the feed on their next action.
-  - **Regular user:** visiting `/admin` lands on `/feed`.
-- **Spanish:** check the page in Spanish at 375 px wide.
+- **On the local bench, with one login per role:**
+  - Each role sees only its own buttons.
+  - A moderator freezes a user's post: the author sees the label, someone else doesn't see it, and the moderator unfreezes it from the Frozen tab.
+  - An admin deletes a frozen account with the typed email.
+  - The owner appoints and removes an admin.
+  - Nobody gets buttons on the owner's things.
+  - Badges show on every profile.
+  - Removing a moderator's role while their page is open sends them to the feed on their next action.
+- **Spanish:** check everything in Spanish at 375 px wide.
 
-**Commits:** `core: staff roles`, `web: staff page (roles, team, activity)`, `web: translate the staff page`.
-
----
-
-## 4. Phase 3: phone app (`ssreact/mobile/`, about an hour)
-Moderation stays on the website, so the phone app needs no staff screens.
-- In Settings, for staff only (`isStaff(user)`), add a card after Blocked users. It's titled "Moderation" ("Admin" for admins) and says "Reports are handled on the website." Its button opens `${apiBase}/admin?lang=${lang}` in the browser, the same way the info links do. Use `tr()`.
-- Verify with `npx expo lint` and `npx tsc --noEmit`. On a development build: a moderator account shows the card, and a regular account doesn't.
-- This is JavaScript only, so it can ship in any phone update.
-
-**Commit:** `mobile: staff link in Settings`.
+**Commits:** `core: roles and permission helpers`, `web: role badges`, `web: staff actions in menus`, `web: staff page (reports, frozen, team, activity)`, `web: translate the staff page`.
 
 ---
 
-## 5. Deploy (Dave)
+## 4. Phase 3: phone app (`ssreact/mobile/`, half a day to a day)
+- **Badge:** on every profile in `ProfileView`.
+- **Staff actions:** in the `PostCard`, `CommentItem` and `ProfileView` menus, with the same core helpers and confirmations as the web. The author sees the "Hidden by a moderator" label.
+- **Settings:** for staff, a card that opens the website's staff page (`${apiBase}/admin?lang=${lang}`) for the report queue, frozen list, team and activity. Those stay website-only.
+- **Verify:** `npx expo lint` and `npx tsc --noEmit` pass. Then, on a development build, with a moderator login and an admin login:
+  - Each sees only its own buttons.
+  - Freezing a post works.
+  - The badge shows.
+- This is JavaScript only, so it can ship in any phone update after the language plan's phone build.
+
+**Commits:** `mobile: role badges`, `mobile: staff actions in menus`, `mobile: staff link in Settings`.
+
+---
+
+## 5. What older app builds see
+- The server keeps `isAdmin` and all `admin*` endpoint names, and the old `adminResolveReport` resolutions still work for admins.
+- An old web build won't show badges or staff menus. It treats the owner as an admin (`isAdmin`).
+- A moderator on an old build sees nothing new until they update.
+
+---
+
+## 6. Deploy (Dave)
 1. **Server, dev then prod:**
    1. Back up the database.
-   2. Add `OWNER_EMAIL=<your login email>` to `private/.env`.
-   3. Deploy ssapi.
-   4. Run `composer dump-autoload` for the new `src/Staff` module.
+   2. Deploy ssapi.
+   3. Run `composer dump-autoload` for the new `src/Staff` module.
 
-   `migration6` runs on the first request. The deploy is backward compatible: `isAdmin` stays, and the `admin*` endpoint names don't change.
-2. **The web app.**
-3. **The phone app** with its next update.
-4. **Appoint people** from Admin → Team. Roles live in the same SQLite database as everything else (`users.role`). Setting one by hand with the `sqlite3` tool still works, e.g. `UPDATE users SET role = 'moderator' WHERE email = '…'`, but the Team tab doesn't need a server login, checks the rules in section 1, and records the change in Activity, which a hand edit doesn't.
+   `migration6` runs on the first request, and your current admin flag becomes `role = 'admin'`.
+2. **Make yourself the owner**, right after deploying, on dev and then on prod:
+   ```
+   sqlite3 private/userdata.db "UPDATE users SET role = 'owner' WHERE email = '<your login email>';"
+   ```
+   Until you do, nobody can appoint admins. Handing over ownership later is the same command for the new owner, plus `role = 'admin'` (or `'user'`) for yourself.
+3. **The web app, then the phone app** with its next update.
+4. **Appoint people** from Admin → Team. Setting a role with `sqlite3` still works, but the Team tab checks the rules and records the change in Activity, which a hand edit doesn't.
 
 ---
 
-## 6. Later: the app settings dashboard (design rules only; don't build now)
-When the dashboard is planned, it must follow these rules, so roles and settings fit together:
-- **Admins only:** `requireRole($pdo, $user, 'admin')` on every settings endpoint.
-- **Logged:** every change writes a `staff_actions` row (`update_setting`, `{"key": …, "from": …, "to": …}`), so Activity shows who changed what.
-- **Stored** in an `app_settings` table (`key`, `value` as JSON, `updated_at`, `updated_by`). Each setting is declared once in code with its type, default, minimum/maximum and description. Today's `config.php` values become the defaults, and code reads settings through one cached helper (`appSetting('media_max_user_bytes')`).
+## 7. Later: the app settings dashboard (design rules only; don't build now)
+- **Admins and the owner** can change settings, per Dave's first message. Every settings endpoint uses `requireRole($pdo, $user, 'admin')`.
+- **Every change is logged** as a `staff_actions` row (`update_setting`, `{"key": …, "from": …, "to": …}`).
+- **Stored in SQLite:** an `app_settings` table (`key`, `value` as JSON, `updated_at`, `updated_by`).
+  - Each setting is declared once in code with its type, default, minimum/maximum and description.
+  - Today's `config.php` values become the defaults, read through one cached helper, e.g. `appSetting('media_max_user_bytes')`.
 - **Good candidates:**
   - the per-user media quota, upload limits and uploads per hour;
   - whether registration is open or invite-only;
   - the terms version, the contact email and who gets report emails.
-- **Never settings:** secrets (`.env` stays the only place for keys and passwords), the owner, or anything that could lock admins out.
+- **Never settings:** secrets (`.env` stays the only place for keys and passwords), anything about the owner, or anything that could lock staff out.
 
 ---
 
-## 7. Estimate and decisions
+## 8. Estimate and decisions
 
 | Phase | Work | Effort |
 |---|---|---|
-| 1 | Server: roles, owner, guards, team/activity endpoints, tests | about a day |
-| 2 | Core + web: staff page with Team and Activity tabs, translated | about a day |
-| 3 | Phone: Settings link for staff | about an hour |
+| 1 | Server: roles, frozen content, rank rules, delete account, staff/frozen/activity endpoints, tests | about 1.5 days |
+| 2 | Core + web: badges, staff menus, staff page with Reports, Frozen, Team and Activity, translated | about 1.5 days |
+| 3 | Phone: badges, staff menus, link to the staff page | half a day to a day |
 
-About **2 days of agent work**.
+About **3.5–4 days of agent work**.
 
 **Decisions for Dave (defaults in brackets):**
-1. Protect your account as the owner, set on the server so nobody can demote or freeze it from the app (R1) [yes].
-2. Moderators can't see or act on reports about other staff; only admins handle those (R4) [yes].
-3. Moderators don't see who made a report (R5) [hidden].
-4. Report emails: only `ADMIN_REPORT_EMAIL` as now, or also every admin and moderator [only as now].
-5. Admins can freeze other admins (never the owner) [yes].
+1. The rank rule at every level, so nobody can act on someone at their own level or above (R1) [yes].
+2. The author still sees their own frozen post or comment, labelled "Hidden by a moderator" (R4) [yes].
+3. An account must be frozen before an admin can delete it, and the admin types its email to confirm (R5) [yes].
+4. Moderators don't see who made a report (R6) [hidden].
+5. A "User" badge on everyone, as asked (R7) [yes; the alternative is badges only on staff].
+6. App settings can be changed by admins and the owner, as in the first message (section 7) [admins and owner].
+7. Report emails are unchanged, still only going to `ADMIN_REPORT_EMAIL` [unchanged].
