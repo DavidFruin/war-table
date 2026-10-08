@@ -164,6 +164,7 @@ React + Vite + TypeScript + shadcn/ui (Base UI, Tailwind 4, pnpm) rewrite of [[s
 - **Follow-up, phone app only:** Dave found the full ray fan too steep and asked for just enough to avoid overlap. Labels now turn `0.45 x (90 - angle)` degrees (about 40 at the top item, none at the last). Worked out from the label boxes for both hands: below about 0.4 the top label runs into the next dot. The web bubble keeps its CSS rays. Not yet checked on a phone: label clearance and tap targets on the tilted labels.
 
 ## Next steps
+- [ ] **English/Spanish language picker (planned 2026-10-08):** [[language-plan]]. Shared typed dictionaries in `@ss/core`, `users.lang` + `updateLanguage` + `X-SS-Lang` on the server, a "Language · Idioma" card in Settings on web and phone. Not started; decisions for Dave at the end of the plan.
 - [x] ~~Restructure into a pnpm workspace~~ done 2026-10-07 (`web/` now; `mobile/`, `desktop/`, `packages/core/` to come): [[repo-consolidation-plan]] Step 2. **This must happen before the phone port starts.**
 - [x] ~~ssreact tasks from `Inbox/ssapi-improvement-plan.md`~~: done 2026-10-02
 - [ ] `packages/core` (`@ss/core`) for the phone app ([[ssreact-native-port-plan]] Phase 1, after the workspace restructure)
