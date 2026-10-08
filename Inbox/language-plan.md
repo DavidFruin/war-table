@@ -260,6 +260,7 @@ Add `updateLanguage`, the `lang` field of `getMyInfo` and the `X-SS-Lang` header
 ---
 
 ## 4. Phase 3: web app (about 1.5–2 days)
+**Done 2026-10-08, deployed to dev for Dave's check (prod untouched):** ssreact `8d54fd3` (provider and sync), screens `a…f18abd3`, final commit after it. Details in [[ssreact]].
 
 ### 3.1 Provider and sync
 - **`web/src/lib/i18n.tsx`:** `I18nProvider` wraps **outside** `AuthProvider`, because the login pages need it. It exposes `useI18n()` → `{ lang, setLang, tr, trn }`, where `tr`/`trn` are `translate`/`translatePlural` bound to the current language.
