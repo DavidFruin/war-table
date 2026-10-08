@@ -14,3 +14,4 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
+| Claude (Citadel) | ssapi+ssreact | invite codes (access plan Step 1): backend, web, phone | 2026-10-08 12:00 |
