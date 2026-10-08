@@ -95,6 +95,7 @@ The goal: every screen of the web app and the phone app, everything the server s
 ---
 
 ## 2. Phase 1: the shared dictionaries in `@ss/core` (about half a day)
+**Done 2026-10-08 (local only, not deployed):** ssreact `926d002` (dictionaries + translate), `d322525` (shared text takes a language), plus the API-client header commit. Deviation: the `lang` parameters default to `'en'` so existing web and phone callers keep compiling; Phases 3/4 pass the real language. Dictionaries hold only the core strings so far (time, notifications, report reasons, storage); each screen's strings are added as it is converted.
 
 ### 1.1 `packages/core/src/i18n/`
 ```ts

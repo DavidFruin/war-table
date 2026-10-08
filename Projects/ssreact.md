@@ -195,3 +195,6 @@ React + Vite + TypeScript + shadcn/ui (Base UI, Tailwind 4, pnpm) rewrite of [[s
 - `e3e444a` **dev proxy fix:** Vite proxied only `/api.php` and `/media.php`, so `/media/...` files never loaded in dev (Vite answered with index.html). Now proxied too; production unaffected.
 - **Measured** with real loads after that fix: a 25-photo feed downloads 444 KB of 960 px variants instead of 1.68 MB of full-size images (synthetic test images).
 - **Phone not checked on a device:** WebP saving on iOS (the code falls back to JPEG if it fails), whether the iOS picker hands over GIFs unflattened, looping GIF playback, quota/storage UI.
+
+## Language plan Phase 1 done (2026-10-08, local only, not deployed)
+[[language-plan]] Phase 1 in `@ss/core`: `i18n/` (typed `en`/`es` dictionaries, `translate`, `translatePlural`, `langFromTags`, `LANGS`, header and storage key names), shared text now takes a `Lang` (`relativeTime`, `displayEmail`, `reportReasonLabel`, storage messages; default English), new `notificationText` used by the web and phone notification lists, `ApiConfig.getLang` -> `X-SS-Lang` on all three request paths, `pnpm --filter @ss/core i18n:table` for the reviewer. Verified: core tests 56/56, lint and typecheck clean on core, web, mobile; web build ok. Left: Phase 2 (ssapi), 3 (web), 4 (phone), 5 (review). Dev and prod unchanged.
