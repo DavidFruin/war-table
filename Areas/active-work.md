@@ -14,3 +14,4 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
+| Claude (Citadel) | ssreact | language plan Phase 1: i18n dictionaries in @ss/core | 2026-10-08 03:20 |
