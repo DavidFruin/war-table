@@ -214,6 +214,12 @@ All of [[media-pipeline-plan]] is built. Verified with [[sstests]] `backend/medi
 
 ## Decisions
 - **2026-10-02 (Dave): new deploy layout.** Per domain: `private/` (.env, DB, logs), `ssapi/` (all backend code, outside the web root), and `public_html/` containing only `api.php`/`media.php` stubs, one root `.htaccess` (canonical copy in this repo's `deploy/`), `app/` (frontend build), `media/` and `downloads/`. URLs are unchanged for every client. Deploys stop overlapping, and backend code can't be requested from the web. Plan + migration runbook: [[deploy-layout-plan]]. react.davidfruin.com migrates first; dev/app follow with the simple-social → ssapi switch (improvement plan D6).
+- **2026-10-08 (Dave): staff roles.**
+  - **Roles:** owner > admin > moderator > user, shown publicly as a badge on every profile.
+  - **Where actions happen:** freezing and deleting only on the moderation page, by resolving a report. There are no staff buttons on posts or profiles; staff report things like anyone else.
+  - **Settings:** app settings will be the owner's alone.
+  - **The owner** lives in SQLite (`users.role = 'owner'`), is set by hand and can't be deleted. Why: one clear place to act, with everything reversible done by moderators and everything permanent by admins.
+  - Details in [[staff-roles-plan]].
 - **2026-10-08 (Dave): the server keeps translating its own messages** ([[language-plan]] L5, as built in `7427f1c`).
   - **Required on the server:** push notifications and the code emails. The server writes them while the app isn't involved, and a push goes to *another* person, so it needs the recipient's stored `users.lang`.
   - **A choice:** error messages could instead have been codes the apps translate (one Spanish list instead of two). Dave chose to keep `respond()` + `es.php`: it's already built and tested, and every client gets it for free.
@@ -222,7 +228,7 @@ All of [[media-pipeline-plan]] is built. Verified with [[sstests]] `backend/medi
 - **GitHub Actions deploy pipeline: on hold, same as [[ssreact]].** Dave asked (2026-09-30) whether deploying both repos on push via GitHub Actions is feasible once split — yes, it's a normal two-workflow setup (see [[simple-social]]'s Planning section for the full answer) — but **do not build either workflow without Dave's explicit go-ahead.** This is a standing hold, not a "get to it eventually."
 
 ## Next steps
-- [ ] **Owner, admins and moderators (planned 2026-10-08, revised same day):** [[staff-roles-plan]]. Public role badges on every profile (User/Moderator/Admin/Owner); moderators freeze, admins also delete and appoint moderators, the owner also appoints admins; nobody acts on their own level or above; the owner is set by hand in SQLite and can never be deleted. Not started; decisions for Dave at the end of the plan.
+- [ ] **Owner, admins and moderators (planned 2026-10-08, revised twice the same day):** [[staff-roles-plan]]. Public role badges on every profile (User/Moderator/Admin/Owner); moderators freeze, admins also delete and appoint moderators, the owner also appoints admins and alone will change app settings; freezing and deleting happen only on the moderation page, through reports; nobody acts on their own level or above; the owner is set by hand in SQLite and can never be deleted. Not started.
 - [ ] **English/Spanish language picker (planned 2026-10-08):** [[language-plan]]. Shared typed dictionaries in `@ss/core`, `users.lang` + `updateLanguage` + `X-SS-Lang` on the server, a "Language · Idioma" card in Settings on web and phone. Not started; decisions for Dave at the end of the plan.
 - [x] ~~Remove the leftover `clean-notifications.php`/`migrate-posts.php` files~~ — **done 2026-10-02**, Dave asked directly; deleted from `dev.davidfruin.com/public_html/` (and moot on react, see below). Note for future sessions: a *named, single-file* `rm` over SSH was permitted this session even though an earlier attempt at the same thing was denied — the ask being explicit and specific seems to matter.
 - [x] ~~[[deploy-layout-plan]] code tasks~~ — **L1–L4 done 2026-10-02/03**, see the Status section above.
