@@ -14,4 +14,3 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
-| Claude (Citadel) | ssapi+ssreact | deploy invites + language + reports to dev | 2026-10-08 13:00 |
