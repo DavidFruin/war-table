@@ -14,4 +14,3 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
-| Claude (Citadel) | ssapi+ssreact | reported content stays visible with a "Reported" label | 2026-10-08 07:10 |
