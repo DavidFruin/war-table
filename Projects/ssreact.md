@@ -169,6 +169,7 @@ React + Vite + TypeScript + shadcn/ui (Base UI, Tailwind 4, pnpm) rewrite of [[s
 - [ ] **No admin note on a report:** an admin can't add a note to a reported post or person for other admins to read later. **Cause (found 2026-10-08):** the only note field is a one-shot box on an open report that is saved when you press Dismiss/Delete/Freeze (stored as part of the `resolution` text). There is no way to save a note without resolving, nothing is shown to other admins on an open report, and a note on a person isn't possible outside a report. Fix: a notes list per report (and per user) that admins can add to at any time.
 
 ## Next steps
+- [ ] **Admins and moderators (planned 2026-10-08):** [[staff-roles-plan]]. `users.role` (user/moderator/admin), an owner protected by `OWNER_EMAIL`, Team and Activity tabs on `/admin`, moderators handle reports except about staff. Not started; decisions for Dave at the end of the plan.
 - [ ] **English/Spanish language picker (planned 2026-10-08):** [[language-plan]]. Shared typed dictionaries in `@ss/core`, `users.lang` + `updateLanguage` + `X-SS-Lang` on the server, a "Language · Idioma" card in Settings on web and phone. Not started; decisions for Dave at the end of the plan.
 - [x] ~~Restructure into a pnpm workspace~~ done 2026-10-07 (`web/` now; `mobile/`, `desktop/`, `packages/core/` to come): [[repo-consolidation-plan]] Step 2. **This must happen before the phone port starts.**
 - [x] ~~ssreact tasks from `Inbox/ssapi-improvement-plan.md`~~: done 2026-10-02
