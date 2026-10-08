@@ -274,7 +274,7 @@ Moderation stays on the website, so the phone app needs no staff screens.
    `migration6` runs on the first request. The deploy is backward compatible: `isAdmin` stays, and the `admin*` endpoint names don't change.
 2. **The web app.**
 3. **The phone app** with its next update.
-4. **Appoint people** from Admin → Team. No more `sqlite3`.
+4. **Appoint people** from Admin → Team. Roles live in the same SQLite database as everything else (`users.role`). Setting one by hand with the `sqlite3` tool still works, e.g. `UPDATE users SET role = 'moderator' WHERE email = '…'`, but the Team tab doesn't need a server login, checks the rules in section 1, and records the change in Activity, which a hand edit doesn't.
 
 ---
 
