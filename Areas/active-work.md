@@ -14,4 +14,3 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
-| Claude (Citadel) | ssreact/mobile | language plan Phase 4: phone app | 2026-10-08 08:00 |

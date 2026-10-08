@@ -310,6 +310,7 @@ Exclude `components/ui/**` (shadcn primitives), `content/**` and the English-onl
 ---
 
 ## 5. Phase 4: phone app (`ssreact/mobile/`, about 1–1.5 days)
+**Done 2026-10-08 (local only; the phone has not been tried, needs a new build):** ssreact commits from "mobile: language provider..." to "mobile: translate create post, camera...". Details and what Dave must check on a device in [[ssreact]].
 
 1. **Device language:** run `npx expo install expo-localization` (SDK 57 docs first), then use `langFromTags(getLocales().map((l) => l.languageTag))`.
 2. **Storage:** add `LANG_KEY` and `LANG_PENDING_KEY` to the `KEYS` list in `mobile/src/platform/tokenStore.ts`. Only keys in that list are loaded at app start.
