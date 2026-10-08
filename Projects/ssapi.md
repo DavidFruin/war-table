@@ -235,3 +235,9 @@ All of [[media-pipeline-plan]] is built. Verified with [[sstests]] `backend/medi
 ## Links
 - Repo: https://github.com/DavidFruin/ssapi
 - Related: [[simple-social]] (where this came from, and the original vanilla-JS frontend that's still deployed today), [[ssreact]] (the React frontend this backend is meant to eventually serve alongside), [[sstests]] (every test suite for the project, including this repo's own backend tests)
+
+## Moderation + media plan deployed to dev (2026-10-08, Dave's go; prod not touched)
+- ssapi `768fe86` and ssreact `658f494` are on dev.davidfruin.com. Backups: `ssapi.bak-2026-10-08` and `private/userdata.db.pre-moderation-media-20261008`.
+- Ran `composer dump-autoload` locally first (vendor is shipped from the laptop), then the deploy-layout rsync commands and `scripts/deploy-web.sh dev`, then chown to davidfruin. The new `.env` keys are not set on dev (defaults apply).
+- Checked: migrations 3 and 4 ran (`user_version` 4, `blocks`/`reports` tables, new media columns). Backfill `--bytes --details` filled all 61 media rows. `/`, `/terms`, `/privacy`, `/admin` return 200; `config.php` and `vendor/` return 403; a wrong login returns the proper JSON error. Deployed web bundle matches the local build.
+- Not checked: a logged-in click-through (upload, report, block, admin page), real iPhone HEIC.
