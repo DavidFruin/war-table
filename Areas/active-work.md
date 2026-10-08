@@ -14,3 +14,4 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
+| Claude (Citadel) | ssreact+ssapi | language choice popup (web) | 2026-10-08 06:10 |
