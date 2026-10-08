@@ -393,9 +393,21 @@ Web Push (VAPID) doesn't exist in React Native. Native push needs FCM (Android) 
 ### Phase 8: family release: Android APK + iPhone via TestFlight (interim)
 Steps marked **Dave** need his accounts or credentials. The agent prepares everything else, never committing secrets.
 
+> **Status 2026-10-08:**
+> - **Done:** Dave has an **EAS (Expo) account**. The phone app is caught up on language (language plan Phase 4) and needs a new build to try it.
+> - **Not done:** `eas.json` and the app identity (8.2/8.3) don't exist yet, and the invite codes that 8.3 calls the release blocker aren't built yet (access plan Step 1).
+> - **Invite codes, once [[staff-roles-plan]] lands:** created with `requireRole($pdo, $user, 'admin')` (admins and the owner) instead of `is_admin`.
+
 **8.1 Accounts (Dave, week 1):**
 - **Apple Developer Program, individual:** $99/yr; identity verification can take a day or two. Needed for TestFlight now and the Unlisted App Store listing (Phase 9).
 - **No Google Play account is needed.** Android ships as an APK file.
+- **Firebase project (free), for Android push:**
+  1. In the Firebase console, create a project and add an Android app with the package name from 8.2.
+  2. Download `google-services.json`.
+  3. Under Project settings → Service accounts, generate the **FCM V1** private key, then upload it with `eas credentials` → Android → Push Notifications (FCM V1).
+
+  Neither file goes in any repo or this vault. `google-services.json` reaches the build as an EAS file variable (8.2).
+- **`eas init` (Dave, once, in `mobile/`):** it links the app to his EAS account and writes `extra.eas.projectId` (and `owner`) into the config; commit that. Until then the push switch says push isn't set up.
 - **Check one thing early:** Google has announced **developer verification for sideloaded apps on certified Android devices**, rolling out by country from 2026.
   - If it applies where the family lives, Dave must register as a verified Android developer and register the package name, or Android will block the install.
   - Check Google's current Android developer-verification page before the first release. It may need a small fee or the Play Console account after all.
@@ -405,7 +417,9 @@ Steps marked **Dave** need his accounts or credentials. The agent prepares every
   - `name: 'Simple Social'`
   - `ios.bundleIdentifier` / `android.package`: `com.davidfruin.simplesocial`. **DECISION:** Dave confirms; it is permanent, and the App Store listing and every APK update reuse it.
   - auto-incremented build numbers / `versionCode`
-  - `ios.config.usesNonExemptEncryption: false`
+  - `ios.config.usesNonExemptEncryption: false` (the app only uses standard HTTPS, so App Store Connect doesn't ask the export question on every build)
+  - `android.googleServicesFile: process.env.GOOGLE_SERVICES_JSON ?? './google-services.json'`. Dave stores the file once as an EAS **file** environment variable named `GOOGLE_SERVICES_JSON` (check the SDK 57 / EAS docs for the exact command), and `google-services.json` goes in `mobile/.gitignore`.
+  - keep the `extra.eas.projectId` that `eas init` wrote
 - **Permission strings** (camera, microphone, photo library), written in plain language.
 - **Icons:** a 1024×1024 iOS icon (no transparency) and an Android adaptive icon, from the black-and-white heart in `web/public/pwa-icons/`.
 
@@ -415,7 +429,11 @@ Steps marked **Dave** need his accounts or credentials. The agent prepares every
 - `family`: **the `app.davidfruin.com` backend**.
   - Android: `"android": { "buildType": "apk" }`, `distribution: internal`.
   - iOS: `distribution: store`, for TestFlight and later the App Store.
+- Every profile sets `EXPO_PUBLIC_API_BASE` (dev for `development`/`preview`, `https://app.davidfruin.com` for `family`) and its own EAS Update `channel`.
+- `"cli": { "appVersionSource": "remote" }`, with `autoIncrement: true` on `family`, so EAS numbers every build and Dave never edits build numbers by hand.
 - The `family` profile needs prod running ssapi with the invite system (access plan §1.6) and Expo push (Phase 6). **That's the release blocker.**
+  - Prod also needs every backend change the phone app uses (language, moderation, media, and staff roles if done first), so Dave deploys the latest ssapi and web app to prod before the first `family` build.
+  - **DECISION, invites:** build access plan Step 1 first (default; about 2 days of agent work), or release without it. Releasing without it means anyone who finds the APK link can register, exactly as on the website today.
 
 **8.4 Android: APK file:**
 - Build with `eas build -p android --profile family`. The result is a signed `.apk`.
@@ -434,6 +452,8 @@ Steps marked **Dave** need his accounts or credentials. The agent prepares every
   4. Register with the invite code and turn on notifications in Settings. Push works on any phone with Google Play services, through FCM.
 - **Updates (sideloaded apps don't update themselves):**
   - **Recommended: EAS Update** (over-the-air JS updates) for normal changes. The app downloads new JS on launch, with no reinstall. Changes to native modules or permissions still need a new APK.
+    - **Setup (agent):** run `npx expo install expo-updates` and `eas update:configure`, then set a runtime-version policy so an update only reaches builds with matching native code. Prefer `fingerprint` if SDK 57 supports it; check the docs.
+    - **Publishing (Dave):** `eas update --channel family --message "…"` reaches both Android and iPhone builds.
   - For those, add a small **"New version available"** check:
     - The app fetches `https://app.davidfruin.com/downloads/android-version.json` (`{versionCode, url, sha256, notes}`) on launch.
     - If `versionCode` is higher than its own, it shows a banner that opens the APK URL. Android installs it over the old one, because the signing key is the same.
@@ -443,6 +463,11 @@ Steps marked **Dave** need his accounts or credentials. The agent prepares every
 This gets family onto iPhones quickly while Phase 9 (the Unlisted App Store listing) is prepared.
 - `eas build -p ios --profile family`, then `eas submit -p ios`.
 - **Dave:** add each family member in **App Store Connect → Users and Access** with the **most limited role**, restrict their app access to Simple Social, and add them to an **internal testing group**. They install the TestFlight app, then Simple Social from it. There's no review.
+- **Easier for family: external testing with a public link (DECISION, default for everyone but Dave).** Internal testers must be added to Dave's developer team in App Store Connect.
+  - **Instead:** create an **external** testing group, turn on its **public link**, and send the link. Family members only need the TestFlight app; they aren't added to Dave's developer team.
+  - **The cost:** the first build of each version goes through a short **Beta App Review** (often about a day).
+  - **App Store Connect needs:** a privacy policy URL (`/privacy`), a feedback email, a short description, and **a demo login for the reviewer**. Create a test account for them; if invites are on, create it with a code.
+  - **Dave himself** stays an internal tester, so he gets each build at once, with no review.
 - **Builds expire after 90 days.** Upload a new one before then. That stops mattering once Phase 9 is live; family members then move to the App Store version through the unlisted link, after which TestFlight can be stopped.
 
 **8.6 Onboarding a family member:**
