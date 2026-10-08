@@ -614,6 +614,8 @@ See the phone plan's Phase 9. Because Phase B1 puts the API methods in `@ss/core
 - **Existing users see the updated terms once:** Dave sets `TERMS_VERSION=2` in `private/.env` when this deploys, and the terms gate asks everyone to accept again. Its text includes the age line.
 - **The store questionnaires** (phone plan Phases 9/10) must say the same minimum age.
 
+**Done 2026-10-08 (local bench only, not deployed):** 1C.1 ssreact `09a9584`, 1C.2 ssapi `e2b7d2c`, 1C.3 ssreact `150a49c`; sstests `6d3a1f9`, `333ab7e`, `949669f`. Notes and deviations in [[ssapi]] and [[ssreact]]. Left for Dave: the rollout below.
+
 ## 1C.4 Rollout (Dave)
 1. Create `private/blocked-words.txt` with your list on dev and on prod, and make it readable only by you and the web server (as with `.env`).
 2. Deploy ssapi and the web app. The phone changes ship with the next build.
