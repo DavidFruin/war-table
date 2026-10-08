@@ -97,6 +97,11 @@ Replace `$D` with `/home/davidfruin/domains/app.davidfruin.com`.
 4. **Two web bugs left as they are, on purpose:** the page doesn't always start at the top after navigating, and admins can't add a note to a report. "View post" on a report can still fail when the author is frozen or blocked.
 5. **The phone screens for invites and the language popup are unverified on a device.**
 6. **Staff roles** (moderators, admins) are a separate, later plan ([[staff-roles-plan]]); this release only adds the owner.
+7. **Step 1C (store-review fixes) was in progress when this was written** (2026-10-08; access plan Step 1C):
+   - **What it changes:** reported posts **fold away** for the reporter instead of the red-label behaviour above; a word filter reads `private/blocked-words.txt`; the minimum age is 13.
+   - **If it's finished before the prod release, ship it in the same release:** create `$D/private/blocked-words.txt` before step C3.
+   - **Keep `TERMS_VERSION=1` on prod.** Nobody on prod has accepted any terms yet, so everyone sees the new terms, age line included, at their first login anyway. Only dev, where people already accepted version 1, needs `TERMS_VERSION=2`.
+   - Check dev again for the fold-away and the filter before the prod release.
 
 ## E. If something goes wrong
 

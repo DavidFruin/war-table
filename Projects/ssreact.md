@@ -170,13 +170,13 @@ React + Vite + TypeScript + shadcn/ui (Base UI, Tailwind 4, pnpm) rewrite of [[s
 
 ## Next steps
 - [ ] **Owner, admins and moderators (planned 2026-10-08, revised twice the same day):** [[staff-roles-plan]]. Public role badges on every profile (User/Moderator/Admin/Owner); moderators freeze, admins also delete and appoint moderators, the owner also appoints admins and alone will change app settings; freezing and deleting happen only on the moderation page, through reports; nobody acts on their own level or above; the owner is set by hand in SQLite and can never be deleted. Not started.
-- [ ] **English/Spanish language picker (planned 2026-10-08):** [[language-plan]]. Shared typed dictionaries in `@ss/core`, `users.lang` + `updateLanguage` + `X-SS-Lang` on the server, a "Language · Idioma" card in Settings on web and phone. Not started; decisions for Dave at the end of the plan.
+- [x] **English/Spanish (2026-10-08):** [[language-plan]] Phases 1–4 done. The web app is on dev; the phone needs a build to try it. Left: Phase 5, a Spanish speaker reviewing the wording.
 - [x] ~~Restructure into a pnpm workspace~~ done 2026-10-07 (`web/` now; `mobile/`, `desktop/`, `packages/core/` to come): [[repo-consolidation-plan]] Step 2. **This must happen before the phone port starts.**
 - [x] ~~ssreact tasks from `Inbox/ssapi-improvement-plan.md`~~: done 2026-10-02
-- [ ] `packages/core` (`@ss/core`) for the phone app ([[ssreact-native-port-plan]] Phase 1, after the workspace restructure)
+- [x] ~~`packages/core` (`@ss/core`) for the phone app~~: done 2026-10-07 ([[ssreact-native-port-plan]] Phase 1)
 - [ ] **Prod real-use check after the 2.0.0 switch** (login, photo post, push, old home-screen icon)
 - [ ] Real-device checks: push delivery, install prompt, Delete Account with a disposable account, clipboard, fullscreen
-- [ ] Invite-code field + `/admin/invites`; later report/block/terms (`Inbox/access-and-public-launch-plan.md`)
+- [x] ~~Invite-code field + `/admin/invites`; later report/block/terms~~: done 2026-10-07/08, with invites redesigned (profile-page codes, code-first registration; access plan Step 1). Report/block/terms are Step 1B.
 - [ ] GitHub Actions deploy, **on hold until Dave says go**
 
 ## Links
