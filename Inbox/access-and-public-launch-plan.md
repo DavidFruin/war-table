@@ -229,6 +229,7 @@ function requireValidInvite($pdo, string $raw): array {
 **Commits:** `invites: schema (invite_codes, users.role/invited_by/invite_used_at)`, `invites: one code per member, unlimited for the owner`, `invites: code-first registration`, `api docs: invites`.
 
 ## 1.3 Web (ssreact)
+**Done 2026-10-08 (local bench only, not deployed):** ssreact `cd70076` (core API methods, types, strings), `c0a3ac0` (code-first register page), `0249ccb` (Invite someone card), `bdf1839` (welcome dialog), sstests `886751a` (32 browser checks, all pass). Notes in [[ssreact]].
 - **Register page** (`OtpAuthFlow`, register mode):
   - **Step 0 is only an "Invite code" field** and Continue, with the hint "Simple Social is invite-only. Enter the code someone gave you." It calls `checkInviteCode`.
   - On success, show "Invited by <inviterEmail>" at the top. Then the existing email step appears, and the code is sent with `sendRegisterOTP`.
