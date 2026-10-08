@@ -14,3 +14,4 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
+| Claude (Citadel) | ssreact | language plan Phase 3: web app (+ ssapi to dev) | 2026-10-08 04:30 |
