@@ -250,6 +250,7 @@ It returns `{ handler, relogin(retryAll), logout() }`. Move the `waitersRef`/`sh
 > **Built 2026-10-07** (ssreact `0c02eda`, `d74cc57`; ssapi `auth.php` change on dev only). Phone check pending; see the [[ssreact]] note.
 
 - **3.1 Screens:** Login, Register and Reset Password. Register's first step has an **Invite code** field (access plan §1.3/1.4: case-insensitive, sent as `inviteCode` with `sendRegisterOTP`, with the hint "Simple Social is invite-only. Ask the person who invited you for a code."). Until the backend invite system (access plan Step 1) is deployed, the server simply ignores the extra field, so build it now anyway. Port `OtpAuthFlow`'s three steps exactly, in the same order as `simple-social-tui`'s `auth.c` (noted in [[ssreact]]).
+  - **Changed 2026-10-08:** registration is now **code-first**. Register shows only the invite-code field until the server accepts the code, and codes are case-sensitive (access plan §1.4). The field built in Phase 3 is reworked there.
   - Use `TextInput` with `secureTextEntry`, `autoComplete="email"` / `"password"` / `"one-time-code"`, and `textContentType` for iOS autofill.
 - **3.2 Navigation:**
   - `RequireAuth` / `RequireGuest` become redirect logic in the `(auth)` and `(tabs)` layouts, based on `user`.
@@ -396,7 +397,11 @@ Steps marked **Dave** need his accounts or credentials. The agent prepares every
 > **Status 2026-10-08:**
 > - **Done:** Dave has an **EAS (Expo) account**. The phone app is caught up on language (language plan Phase 4) and needs a new build to try it.
 > - **Not done:** `eas.json` and the app identity (8.2/8.3) don't exist yet, and the invite codes that 8.3 calls the release blocker aren't built yet (access plan Step 1).
-> - **Invite codes, once [[staff-roles-plan]] lands:** created with `requireRole($pdo, $user, 'admin')` (admins and the owner) instead of `is_admin`.
+> - **Invite codes (redesigned by Dave 2026-10-08, access plan Step 1):**
+>   - Each member generates **one** code on their own profile page; the owner has unlimited.
+>   - Codes are 8 characters and expire after 7 days.
+>   - Register asks for the code before the email.
+>   - Build it **before** the family release.
 
 **8.1 Accounts (Dave, week 1):**
 - **Apple Developer Program, individual:** $99/yr; identity verification can take a day or two. Needed for TestFlight now and the Unlisted App Store listing (Phase 9).
@@ -471,7 +476,7 @@ This gets family onto iPhones quickly while Phase 9 (the Unlisted App Store list
 - **Builds expire after 90 days.** Upload a new one before then. That stops mattering once Phase 9 is live; family members then move to the App Store version through the unlisted link, after which TestFlight can be stopped.
 
 **8.6 Onboarding a family member:**
-1. Dave creates an invite code on the web `/admin/invites` page (access plan §1.3).
+1. Dave generates an invite code on his own profile page (access plan §1.3). As the owner he has unlimited codes, and each one lasts 7 days.
 2. He sends the APK link (Android) or the TestFlight invite (iPhone; the unlisted App Store link after Phase 9), plus their code.
 3. They register with the code and turn on notifications.
 

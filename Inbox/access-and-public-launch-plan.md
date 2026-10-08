@@ -41,140 +41,215 @@ Additional rules:
 
 ---
 
-# STEP 1 (now): invite-only registration with free codes
+# STEP 1 (now): invite-only registration, one invite per member
+
+> **Redesigned 2026-10-08 by Dave**, replacing the earlier admin-made code batches. His words: "The codes should be auto generated in people's profile page. It should be an complicated code so people can't guess it. Symbols letters (upper and lower) numbers and it should be 8 digits long. There should be a note that says you can only invite one person so choose wisely! As owner i should have infinite codes. There should be a data field in a users info in the database that shows who invited them to the platform. It shouldnt be visible tho. For the current users put their invite as from me as if I invited them. On the register page there should be just a code field and doesnt even offer them an email field until they enter a valid code. Everybody's code on their profile page should generate when they click a generate code button and it should only be valid for 1 week."
 
 ## 1.1 Behaviour
-- **New accounts need an invite code.** Existing users aren't affected.
-- Codes are created by **admins only** in Step 1. Dave is the admin, using the existing, unused `users.is_admin` column, which he sets by hand with `sqlite3`. There is no API to grant admin.
-- **Each code has:**
-  - a maximum number of uses (default 1);
-  - an optional expiry (default 30 days);
-  - an optional private note, such as "for Mum";
-  - a way to revoke it.
-- The code is checked at the **first** registration step, before any email is sent, and again atomically when the account is created.
-  - That also stops strangers from using the registration form to send emails (it complements ssapi plan S4).
-- **Format:** 10 characters from an unambiguous alphabet (`ABCDEFGHJKMNPQRSTUVWXYZ23456789`), shown as `XXXXX-XXXXX`. Input is case-insensitive, and spaces and dashes are ignored.
-- **Mode switch:** `REGISTRATION_MODE` in `private/.env`, either `invite` or `open`.
+- **Every member can invite exactly one person.** The **owner** (Dave) can invite as many as he likes.
+- **Making a code:** on **your own profile page**, an "Invite someone" card has a **Generate code** button, and the note **"You can only invite one person, so choose wisely!"**
+  - The code is valid for **7 days** and works **once**.
+  - The invite is only **spent when someone joins with it**. An unused code that expires can be replaced by generating a new one.
+  - **Members** have at most one active code at a time and can **cancel** it, for example if they sent it to the wrong person. Then they can generate a new one.
+  - **The owner** can have any number of active codes.
+  - Once someone joins with a member's code, the card says "You've used your invite." It never says who.
+  - **If the person you invited later deletes their account, your invite stays spent** ("choose wisely").
+- **The code:** 8 characters, with at least one uppercase letter, one lowercase letter, one number and one symbol, e.g. `kT7$mQ2x`.
+  - Characters that look alike are left out: `0 O o`, `1 l I`.
+  - Symbols come only from `! $ & @ ?`. They're on the first symbol page of iPhone and Android keyboards, and chat apps don't turn them into formatting: WhatsApp turns `*`, `_` and `~` into bold, italic and strikethrough, and phones curl quotes.
+  - A code never **starts or ends** with a symbol, so a trailing `!` or `?` can't be mistaken for punctuation.
+  - Codes are **case-sensitive**. Code fields turn off auto-capitalisation and autocorrect.
+  - With 61 possible characters, there are about 10¹⁴ possible codes. Combined with the guessing limit below and the few codes alive at any time, guessing is hopeless.
+- **Nothing to guess after a week:** expired codes and used codes are **deleted**. If nobody has generated a code in the last week, no valid code exists at all.
+- **Registering:** the Register page shows **only an "Invite code" field** at first.
+  - The email field appears only after the server accepts the code. The rest of registration (email code, password) is unchanged.
+  - The server checks the code again when the account is created, and only then uses it up. If two people try the same code, exactly one gets in.
+  - A code made by an account that has since been frozen or deleted no longer works.
+- **Guessing protection:**
+  - Every wrong code counts against the person's IP through the existing attempt limiter (20 per 15 minutes, then blocked for a while).
+  - The message is always the same: "That invite code isn't valid." It doesn't say whether the code was wrong, expired or used, so it tells a guesser nothing.
+- **Who invited whom:** `users.invited_by` stores the inviter's user id.
+  - **No API ever returns it,** and it doesn't show in either app.
+  - Dave can read it with `sqlite3` (§1.6).
+  - **Existing users are set as invited by Dave** (§1.6).
+- **The owner:** this step adds the `users.role` column, but only uses the value `owner`. Dave sets it on himself by hand. The [[staff-roles-plan]] adds moderator and admin to the same column later.
+- **Mode switch:** `REGISTRATION_MODE` in `private/.env`, `invite` or `open`.
   - The **default in code is `invite`**, so a missing setting fails closed.
-  - `open` exists for local testing and is never set on prod without Dave.
-- **Guessing protection:** failed code checks count per IP through the existing attempt limiter (scope `invite`, 20 per 15 minutes). Error messages are generic: "That invite code isn't valid." The one exception is "That invite code has already been used", which helps family members who reuse a code.
+  - `open` is for local testing and is never set on prod without Dave.
+  - Later, this becomes an owner-only app setting (staff roles plan §7).
+- **Existing accounts and logins are unaffected.**
 
 ## 1.2 Backend (ssapi)
-**Migration** (the next `migrationN`):
+**Migration** (the next free `migrationN`; check `SCHEMA_VERSION` first, and never edit a shipped migration):
 ```sql
 CREATE TABLE IF NOT EXISTS invite_codes (
-  code TEXT PRIMARY KEY,               -- normalized: uppercase, no dashes
+  code TEXT PRIMARY KEY,          -- exactly as generated; compared case-sensitively (SQLite's default BINARY collation)
   created_by INTEGER NOT NULL,
   created_at TEXT NOT NULL,
-  max_uses INTEGER NOT NULL DEFAULT 1,
-  uses INTEGER NOT NULL DEFAULT 0,
-  expires_at TEXT,
-  revoked_at TEXT,
-  note TEXT);
+  expires_at TEXT NOT NULL);      -- created_at + 7 days
+CREATE INDEX IF NOT EXISTS idx_invite_codes_created_by ON invite_codes(created_by);
 ```
-Add `invited_by_code TEXT` to `users` and `invite_code TEXT` to `pending_users`, using the column-exists guard pattern.
+Then add these columns, using the column-exists guard pattern:
+- **`users.role`:** `TEXT NOT NULL DEFAULT 'user'`.
+- **`users.invited_by`:** `INTEGER`. NULL until the backfill in §1.6.
+- **`users.invite_used_at`:** `TEXT`. Set when someone joins with this user's code.
+- **`pending_users.invite_code`:** `TEXT`.
 
-**Helpers (`src/Auth/handlers.php`):**
+**New module `src/Invites/handlers.php`** (add it to `composer.json`'s `autoload.files`, then run `composer dump-autoload`):
 ```php
-const INVITE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const INVITE_UPPER = 'ABCDEFGHJKLMNPQRSTUVWXYZ';   // no I, O
+const INVITE_LOWER = 'abcdefghijkmnpqrstuvwxyz';   // no l, o
+const INVITE_DIGITS = '23456789';                  // no 0, 1
+const INVITE_SYMBOLS = '!$&@?';
+const INVITE_LENGTH = 8;
+const INVITE_DAYS = 7;
 
-function normalizeInviteCode($raw) {
-    return strtoupper(preg_replace('/[^A-Za-z0-9]/', '', (string)$raw));
+// 8 characters with at least one of each class; symbols never first or last.
+function newInviteCode(): string {
+    $all = INVITE_UPPER . INVITE_LOWER . INVITE_DIGITS . INVITE_SYMBOLS;
+    $pick = fn($set) => $set[random_int(0, strlen($set) - 1)];
+    while (true) {
+        $code = '';
+        for ($i = 0; $i < INVITE_LENGTH; $i++) {
+            $code .= $pick(($i === 0 || $i === INVITE_LENGTH - 1) ? INVITE_UPPER . INVITE_LOWER . INVITE_DIGITS : $all);
+        }
+        if (preg_match('/[A-Z]/', $code) && preg_match('/[a-z]/', $code) && preg_match('/[0-9]/', $code)
+            && strpbrk($code, INVITE_SYMBOLS) !== false) return $code;
+    }
 }
 
-function newInviteCode() {
-    $out = '';
-    for ($i = 0; $i < 10; $i++) $out .= INVITE_ALPHABET[random_int(0, strlen(INVITE_ALPHABET) - 1)];
-    return $out;
-}
-
-function registrationNeedsInvite() {
+function registrationNeedsInvite(): bool {
     return strtolower(getenv('REGISTRATION_MODE') ?: 'invite') !== 'open';
 }
 
-// Read-only check (used before sending the OTP email). Returns the normalized code, or exits via bad().
-function checkInviteCode($pdo, $raw) {
-    $keys = attemptKeys('invite', '-');                  // per-IP only
-    checkAttemptLimit($pdo, ['ip' => $keys['ip']]);
-    $code = normalizeInviteCode($raw);
-    $s = $pdo->prepare('SELECT max_uses, uses, expires_at, revoked_at FROM invite_codes WHERE code = ?');
-    $s->execute([$code]);
+function deleteExpiredInvites($pdo): void {
+    $pdo->prepare('DELETE FROM invite_codes WHERE expires_at <= ?')->execute([date('Y-m-d H:i:s')]);
+}
+
+// The live code's row (with created_by), or exits with the one generic message.
+// Rate-limited per IP. Codes from frozen or deleted accounts don't count.
+function requireValidInvite($pdo, string $raw): array {
+    $keys = ['ip' => attemptKeys('invite', '-')['ip']];
+    checkAttemptLimit($pdo, $keys);
+    deleteExpiredInvites($pdo);
+    $s = $pdo->prepare('SELECT i.code, i.created_by, i.expires_at FROM invite_codes i
+        JOIN users u ON u.id = i.created_by AND u.frozen_at IS NULL WHERE i.code = ?');
+    $s->execute([trim($raw)]);   // trim only: codes are case-sensitive
     $row = $s->fetch(PDO::FETCH_ASSOC);
-    $valid = $row && $row['revoked_at'] === null
-        && ($row['expires_at'] === null || $row['expires_at'] > date('Y-m-d H:i:s'));
-    if (!$valid) { recordFailedAttempt($pdo, ['ip' => $keys['ip']]); bad("That invite code isn't valid.", 400); }
-    if ((int)$row['uses'] >= (int)$row['max_uses']) bad('That invite code has already been used.', 400);
-    return $code;
+    if (!$row) { recordFailedAttempt($pdo, $keys); bad("That invite code isn't valid.", 400); }
+    return $row;
 }
 ```
-`recordFailedAttempt` iterates the keys array with an `email`/`ip` limit map. Passing only `ip` works, because `$limits['ip']` exists. Check that this holds after any ssapi-plan changes to that function.
+`recordFailedAttempt` takes a keys map; passing only `ip` works, because its limits map has an `ip` entry. Confirm that still holds in the current code.
 
-**Flow changes:**
-- **`handle_sendRegisterOTP`:** if `registrationNeedsInvite()`, then `$code = checkInviteCode($pdo, $_POST['inviteCode'] ?? '')` **before** the S4 throttle and before any email. Store `invite_code` on the `pending_users` row.
+**Endpoints:**
+- **`checkInviteCode`** (public, the Register page's first step): `requireValidInvite`, then `{valid: true, expiresAt}`.
+- **`getMyInvites`** (logged in):
+  - `{unlimited, canGenerate, used, codes: [{code, expiresAt}]}`.
+  - `unlimited` is true for the owner. `used` means `invite_used_at` is set. `codes` are the caller's live codes.
+- **`generateInviteCode`** (logged in):
+  - **Owner:** always makes a new code.
+  - **Member who has already used their invite:** 403 `You've already used your invite.`
+  - **Member with a live code:** 400 `You already have an active code. Cancel it to make a new one.`
+  - **Otherwise:** insert `newInviteCode()` with a 7-day expiry. Retry on the rare primary-key collision. Returns `{code, expiresAt}`.
+  - Frozen accounts can't log in, so they can't generate.
+- **`cancelInviteCode`** (logged in): params `code`. Deletes it only if it's the caller's own code; the same 400 message otherwise.
+
+**Registration changes:**
+- **`handle_sendRegisterOTP`:** when `registrationNeedsInvite()`, call `requireValidInvite($pdo, $_POST['inviteCode'] ?? '')` **first**, before the send throttles and before any email. Save the code on the `pending_users` row.
 - **`handle_verifyRegisterOTP`:** unchanged.
-- **`handle_finishRegister`:** inside the `BEGIN IMMEDIATE` transaction from ssapi plan S14, before the `INSERT`:
+- **`handle_finishRegister`:** inside the existing `BEGIN IMMEDIATE` transaction, before the `INSERT`:
   ```php
   if (registrationNeedsInvite()) {
-      $code = $pendingRow['invite_code'] ?? null;  // SELECT invite_code along with otp/dateCreated
-      $claim = $pdo->prepare('UPDATE invite_codes SET uses = uses + 1
-          WHERE code = ? AND revoked_at IS NULL AND uses < max_uses
-          AND (expires_at IS NULL OR expires_at > ?)');
-      $claim->execute([$code, date('Y-m-d H:i:s')]);
-      if ($claim->rowCount() !== 1) { $pdo->exec('ROLLBACK'); bad('That invite code is no longer valid. Ask for a new one.', 400); }
+      $s = $pdo->prepare('SELECT i.created_by FROM invite_codes i JOIN users u ON u.id = i.created_by AND u.frozen_at IS NULL
+          WHERE i.code = ? AND i.expires_at > ?');
+      $s->execute([$pendingRow['invite_code'] ?? '', date('Y-m-d H:i:s')]);
+      $inviterId = $s->fetchColumn();
+      if ($inviterId === false) { $pdo->exec('ROLLBACK'); bad('That invite code has expired or was already used. Ask for a new one.', 400); }
+      $pdo->prepare('DELETE FROM invite_codes WHERE code = ?')->execute([$pendingRow['invite_code']]);
+      $pdo->prepare('UPDATE users SET invite_used_at = ? WHERE id = ? AND role != ?')->execute([date('Y-m-d H:i:s'), $inviterId, 'owner']);
   }
   ```
-  Then insert the user with `invited_by_code = $code`. The conditional `UPDATE` is what makes a single-use code impossible to redeem twice, even with two simultaneous registrations.
-- **Admin endpoints**, all calling `requireAdmin()` (users.is_admin = 1, otherwise 403):
-  - `adminCreateInvites(count=1..50, maxUses=1..100, expiresDays=0..365 (0 = never), note?)` → `{codes: ['ABCDE-FGHJK', …]}`. Retry on the rare primary-key collision.
-  - `adminListInvites(offset)` → codes with their uses, max, expiry, revoked state, note, and who used them (`SELECT email FROM users WHERE invited_by_code = ?`).
-  - `adminRevokeInvite(code)`.
-- **`getMyInfo`:** add `isAdmin` (bool) and `registrationMode` (`invite`/`open`). Both are additive.
-- **`.env.example`:** add `REGISTRATION_MODE=invite`.
+  - Then insert the user with `invited_by = $inviterId` (NULL in `open` mode).
+  - `BEGIN IMMEDIATE` makes the select-then-delete atomic, so two simultaneous registrations can't both use one code.
+  - Add `invite_code` to the `SELECT` that reads the pending row.
+- **Deleting an account** (`deleteAccount`, and the staff plan's `deleteUserAndData` later) also deletes that user's `invite_codes` rows.
+- **`getMyInfo`:**
+  - Add `registrationMode` (`invite`/`open`). It's additive.
+  - **Never** add `invited_by` to it, or to any other response.
+- **Messages:** every new message gets its Spanish in `src/I18n/es.php`, and `check-messages.php` must pass ([[language-plan]]).
+- **API docs** (`ssreact/web/src/content/api-docs.html`, English): the new endpoints, the `inviteCode` parameter, and the code rules.
+- **`.env.example`:** `REGISTRATION_MODE=invite`.
 
-**Verify on the bench:**
-1. Make alice an admin and run `adminCreateInvites(count=2)` → two codes.
-2. `sendRegisterOTP` with no code → 400. With a bad code → 400, and `mail.log` stays unchanged. With a valid code in lowercase with spaces → 200, and the email is captured.
-3. Finish registration → the user is created with `invited_by_code` set, and the code's `uses` is 1.
-4. Reuse the same code → "already been used" before any email.
-5. Two concurrent `finishRegister` calls holding the same single-use code (two pending emails, both with that code) → exactly one account.
-6. A revoked code and an expired code → rejected.
-7. 21 bad codes from one IP → 429.
-8. `REGISTRATION_MODE=open` → registration works without a code. Remove the setting → back to invite mode.
-9. A non-admin calling the admin endpoints → 403.
-10. Existing users still log in normally.
+**Verify on the bench (`sstests/backend/invites/run.sh`):**
+1. **Code format:** 1,000 calls to `newInviteCode()` all match the rules: 8 characters; every class present; only the allowed alphabet; no symbol first or last; no `0 O o 1 l I`.
+2. **A member's one invite:**
+   - Alice (a member) generates a code. A second generate → 400 (active code). Cancel, then generate again → OK.
+   - Bob registers with Alice's code. Alice's `getMyInvites` now says `used`, and generating → 403.
+   - In the database: Bob's `invited_by` = Alice's id, and the code row is gone.
+3. **Owner:** with `role='owner'` set by hand, the owner generates 3 codes in a row → 3 live codes. Using one doesn't stop the owner generating more.
+4. **The register checks:**
+   - `checkInviteCode` with a wrong code, the right code in the wrong case, an expired code (set `expires_at` in the past) and a used code → all the same 400 message.
+   - `sendRegisterOTP` without a valid code sends **no** email.
+   - 21 wrong codes from one IP → 429.
+5. **Race:** two pending registrations holding the same code, finished at the same moment → exactly one account.
+6. **Frozen inviter:** freeze Alice while her code is live → the code stops working.
+7. **Mode switch:** `REGISTRATION_MODE=open` → registration works without a code, and `invited_by` is NULL. Remove the setting → invite mode.
+8. **Not leaked:** no response anywhere contains `invited_by`. Grep the responses of `getMyInfo`, `getUserInfo`, `getUsers` and `getStaff` (if present).
+9. **Regression:** existing users still log in, and the i18n, moderation and media suites still pass.
 
-**Commits:**
-- `invites: schema + validation at registration`
-- `invites: admin create/list/revoke`
-- `invites: getMyInfo isAdmin/registrationMode`
+**Commits:** `invites: schema (invite_codes, users.role/invited_by/invite_used_at)`, `invites: one code per member, unlimited for the owner`, `invites: code-first registration`, `api docs: invites`.
 
 ## 1.3 Web (ssreact)
-- **Registration** (`OtpAuthFlow`, register mode): when `registrationMode` is `invite`, add an "Invite code" field to step 1 next to the email field. Before `getMyInfo` is available (logged out), always show the field, and treat it as optional only if the server says `open`.
-  - Simplest option: always show the field, with the hint "Simple Social is invite-only. Ask the person who invited you for a code."
-  - Send `inviteCode` with `sendRegisterOTP`.
-  - **Clients:** the API method goes in `ssreact/packages/core/src/api-client.ts` (`@ss/core`) once the phone plan's Phase 1 has landed; before that, in `web/src/lib/api.ts`. Web and phone share it either way after Phase 1.
-- **Landing / Register copy:** "Simple Social is invite-only." That is a true statement.
-- **Admin, `/admin/invites`** (route guarded on `user.isAdmin`; link from Settings for admins):
-  - A form: count, max uses, expiry days, note → shows the new codes with a copy button.
-  - A table of existing codes, with who used each one and a Revoke button.
-- **Verify** with `pnpm dev` against the bench: register with a code end to end (read the OTP from `mail.log`). The admin page creates, lists and revokes codes, and non-admins can't see the page. Run `pnpm lint && pnpm build`.
+- **Register page** (`OtpAuthFlow`, register mode):
+  - **Step 0 is only an "Invite code" field** and Continue, with the hint "Simple Social is invite-only. Enter the code someone gave you." It calls `checkInviteCode`.
+  - On success the existing email step appears, and the code is sent with `sendRegisterOTP`.
+  - The field turns off `autoCapitalize`, `autoCorrect` and `spellCheck`, uses a monospace font, and has a show/hide toggle.
+  - `/register?invite=<code>` (URL-encoded) fills the field in and checks it at once.
+  - When the server says `registrationMode: open`, skip step 0. Before login that isn't known, so always show step 0 unless a check says otherwise.
+- **Your own profile page: an "Invite someone" card,** shown only on your own profile (driven by `getMyInvites`):
+  - **Member, no code yet:** the note **"You can only invite one person, so choose wisely!"** and a **Generate code** button. Confirm first: "Generate your one invite code? It works for 7 days."
+  - **Member with a live code:** the code in large monospace, "Valid until <date>", **Copy**, **Share**, and **Cancel code**.
+    - Share uses the Web Share API where it exists, otherwise copies the message. The message puts the code on its own line, with the website and the download page: "Join me on Simple Social!", then the code, then "Valid for 7 days. Codes are case-sensitive.", then the links.
+  - **Member who has used their invite:** "You've used your invite." Nothing else, and never who.
+  - **Owner:** "As the owner you can invite as many people as you like." It shows Generate code and a list of live codes, each with its expiry, Copy, Share and Cancel.
+- **Client code:** the API methods go in `packages/core/src/api-client.ts` (`checkInviteCode`, `getMyInvites`, `generateInviteCode`, `cancelInviteCode`). The `sendRegisterOTP` client method gains `inviteCode` (the phone app already passes it).
+- **Translate everything** with `tr()` and Spanish in `es.ts`. The note in Spanish: "Solo puedes invitar a una persona, ¡así que elige bien!" (the reviewer may adjust it).
+- **Verify** with `pnpm dev` against the bench:
+  - Register end to end: code first, then email, reading the OTP from `mail.log`.
+  - The profile card in each state: member with no code, live code, used, and owner.
+  - `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm build`.
 
 ## 1.4 Phone (`ssreact/mobile/`)
-The same invite field on Register (phone plan, Phase 3.1). There is no admin UI on the phone; Dave uses the web `/admin/invites` page.
+The phone app's Register screen already has an invite field next to the email (`OtpAuthFlow`, `askInviteCode`). Rework it to match the web:
+- **Code-first:** a code-only step, then the email step.
+- **The code field:** `autoCapitalize="none"`, `autoCorrect={false}`, and a monospace font.
+- **The profile card:** the same "Invite someone" card on your own profile in `ProfileView`, with the system share sheet.
+- **Verify:** `npx expo lint` and `npx tsc --noEmit` pass. This is JavaScript only, so it can ship in the family build.
 
 ## 1.5 Other clients
-- **Terminal clients** ([[simple-social-cli]], [[simple-social-cli-interactive]], [[simple-social-tui]]) and **the vanilla web app** ([[simple-social]]):
+- **Terminal clients** ([[simple-social-cli]], [[simple-social-cli-interactive]], [[simple-social-tui]]):
   - Login and everything else keeps working.
-  - **Registration from them will fail** with "That invite code isn't valid" until each one adds an invite-code prompt to its register flow.
-  - For family-only use that's acceptable: people register on the web or phone app, then log in anywhere.
-  - Adding the prompt to each terminal client is a small, separate job in each repo, **not part of this plan**.
-- Note this in the hand-off.
+  - **Registration from them fails** until each one adds a code step before the email. That's acceptable for family use: people register on the web or phone, then log in anywhere.
+  - Adding that step is a small, separate job in each repo, not part of this plan.
 
 ## 1.6 Step 1 rollout (Dave)
-This rides on the same deploy that puts ssapi on prod (ssapi plan D6 / the phone plan's prerequisite):
-1. Set `REGISTRATION_MODE=invite` in prod's `private/.env`, or leave it unset, which means invite mode.
-2. `UPDATE users SET is_admin=1 WHERE email='<Dave>'`.
-3. Create codes on `/admin/invites` and send one to each family member, along with the APK link (Android) or the TestFlight invite / unlisted App Store link (iPhone) (phone plan, Phase 8).
+1. **Deploy ssapi** (dev first, then prod):
+   1. Back up the database.
+   2. Deploy, then run `composer dump-autoload` for the new `src/Invites` module.
+
+   The migration runs on the first request. Leave `REGISTRATION_MODE` unset, which means invite mode.
+2. **Make yourself the owner and record existing users as invited by you**, once on dev and once on prod:
+   ```
+   sqlite3 private/userdata.db "UPDATE users SET role = 'owner' WHERE email = '<your login email>';"
+   sqlite3 private/userdata.db "UPDATE users SET invited_by = (SELECT id FROM users WHERE role = 'owner') WHERE invited_by IS NULL AND role != 'owner';"
+   ```
+3. **Deploy the web app**, and the phone app with its family build (phone plan Phase 8).
+4. **To see who invited whom** (it's never shown in the app):
+   ```
+   sqlite3 private/userdata.db "SELECT u.email, i.email AS invited_by FROM users u LEFT JOIN users i ON i.id = u.invited_by ORDER BY u.id;"
+   ```
+5. **Invite family:** generate a code on your profile page and send it with the APK link (Android) or the TestFlight link (iPhone).
 
 ---
 
@@ -193,7 +268,7 @@ This rides on the same deploy that puts ssapi on prod (ssapi plan D6 / the phone
 
 **Scope for Step 1B:** everything below. The parts about store listings in "Phase D" apply to the Unlisted submission (phone plan, Phase 9).
 
-**Not in Step 1B:** payments and member-generated invites (Step 2).
+**Not in Step 1B:** payments (Step 2). Member-generated invites are already in Step 1: one per member, unlimited for the owner.
 
 ## 1B.1 Behaviour spec (agree this with Dave before coding)
 
@@ -468,7 +543,7 @@ See the phone plan's Phase 9. Because Phase B1 puts the API methods in `@ss/core
 - Content obligations for a public service hosting photos and video. For example, US providers must report apparent child sexual abuse material to NCMEC when they become aware of it. Research the obligations, and decide on a response process and tooling (for example, a hash-matching service) before opening to the public.
 
 ## 2.4 Moderation (already built in Step 1B)
-Step 1B's report/block/admin/terms work carries over. In Step 2, **members also gain the ability to generate their own invites** (§2.1), using the same `invite_codes` table with `created_by` = the member and a per-member monthly allowance. Raise the moderation capacity to match (§2.6).
+Step 1B's report/block/admin/terms work carries over. In Step 2, the **per-member allowance changes** from Step 1's one invite for life to the §2.1 model (e.g. a monthly allowance), using the same `invite_codes` table. Raise the moderation capacity to match (§2.6).
 
 ## 2.5 Public store release
 This is the phone plan's **Phase 10** (built on the same App Store listing from Phase 9). It covers: store identity, listing content, privacy questionnaires, age rating, review notes, TestFlight external/production, Google's closed test (at least 12 testers for 14 days for personal accounts) and the Apple submission checklist. It also includes the subscription disclosures from §2.2. Android moves from the APK to Google Play here.
@@ -492,7 +567,7 @@ This is the phone plan's **Phase 10** (built on the same App Store listing from 
 7. Whether to also list on the web: Stripe, with the regional rules on in-app links to web purchases checked at the time.
 
 ## Estimates
-- **Step 1 (invites):** backend about 1 day, web about 1 day; the phone field is included in the phone plan.
+- **Step 1 (invites, redesigned 2026-10-08):** backend about 1 day, web about 1 day, phone about half a day.
 - **Step 1B (moderation, terms, privacy):** backend 2–3 days, web 2–3 days, phone UI in phone plan 9.0. The legal text depends on Dave's review.
 - **Step 2:** payments and entitlements 1–2 weeks; usernames (if chosen) about 1 week; the public store release (phone Phase 10) 2–3 weeks, including Google's 14-day test.
   - **Total: about 4–6 weeks** after Dave's go, not counting LLC and account setup time.

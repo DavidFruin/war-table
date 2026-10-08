@@ -94,7 +94,10 @@ Everyone can still report, block, and delete their own posts and comments, as to
 
 ### 1.1 Migration (`migration6`, `SCHEMA_VERSION` 6)
 Follow `migration5`'s pattern (`PRAGMA table_info` before each `ALTER`):
-- `users.role TEXT NOT NULL DEFAULT 'user'`, then `UPDATE users SET role = 'admin' WHERE is_admin = 1`. Dave makes himself owner by hand after deploying (section 6). Leave `is_admin` in the table but stop reading it, with a comment in `schema.php`.
+- `users.role`: **the invites migration (access plan Step 1) adds this column first**, using only `owner`.
+  - Here, add it only if it's still missing: `TEXT NOT NULL DEFAULT 'user'`.
+  - Then **always** run `UPDATE users SET role = 'admin' WHERE is_admin = 1 AND role = 'user'`, so Dave's owner role isn't overwritten.
+  - Leave `is_admin` in the table but stop reading it, with a comment in `schema.php`.
 - `posts.frozen_at TEXT`, `posts.frozen_by INTEGER`, `comments.frozen_at TEXT`, `comments.frozen_by INTEGER`.
 - The `staff_actions` table:
   ```sql
@@ -348,7 +351,7 @@ The moderation page stays on the website, and the phone app gets no staff option
    3. Run `composer dump-autoload` for the new `src/Staff` module.
 
    `migration6` runs on the first request, and your current admin flag becomes `role = 'admin'`.
-2. **Make yourself the owner**, right after deploying, on dev and then on prod:
+2. **Make yourself the owner**, right after deploying, on dev and then on prod. **Skip this if you already did it with the invites deploy** (access plan §1.6):
    ```
    sqlite3 private/userdata.db "UPDATE users SET role = 'owner' WHERE email = '<your login email>';"
    ```
