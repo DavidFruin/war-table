@@ -214,6 +214,10 @@ All of [[media-pipeline-plan]] is built. Verified with [[sstests]] `backend/medi
 
 ## Decisions
 - **2026-10-02 (Dave): new deploy layout.** Per domain: `private/` (.env, DB, logs), `ssapi/` (all backend code, outside the web root), and `public_html/` containing only `api.php`/`media.php` stubs, one root `.htaccess` (canonical copy in this repo's `deploy/`), `app/` (frontend build), `media/` and `downloads/`. URLs are unchanged for every client. Deploys stop overlapping, and backend code can't be requested from the web. Plan + migration runbook: [[deploy-layout-plan]]. react.davidfruin.com migrates first; dev/app follow with the simple-social → ssapi switch (improvement plan D6).
+- **2026-10-08 (Dave): the server keeps translating its own messages** ([[language-plan]] L5, as built in `7427f1c`).
+  - **Required on the server:** push notifications and the code emails. The server writes them while the app isn't involved, and a push goes to *another* person, so it needs the recipient's stored `users.lang`.
+  - **A choice:** error messages could instead have been codes the apps translate (one Spanish list instead of two). Dave chose to keep `respond()` + `es.php`: it's already built and tested, and every client gets it for free.
+  - **Don't switch to codes mid-conversion.** Revisit only as a cleanup after language plan Phases 3–4, if ever.
 - **Copy, don't move, and don't rewrite git history.** Simplest correct choice for "make these independently cloneable" — a `git filter-repo`-style history-preserving extraction was not attempted; this repo's history starts fresh from the 2026-09-30 copy.
 - **GitHub Actions deploy pipeline: on hold, same as [[ssreact]].** Dave asked (2026-09-30) whether deploying both repos on push via GitHub Actions is feasible once split — yes, it's a normal two-workflow setup (see [[simple-social]]'s Planning section for the full answer) — but **do not build either workflow without Dave's explicit go-ahead.** This is a standing hold, not a "get to it eventually."
 
