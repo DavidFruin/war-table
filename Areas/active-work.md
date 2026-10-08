@@ -14,3 +14,4 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
+| citadel / Claude | ssapi, ssreact, sstests | Step 1C store-review fixes (fold away, word filter, min age 13) | 2026-10-08 23:41 |
