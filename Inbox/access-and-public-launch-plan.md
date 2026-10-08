@@ -94,6 +94,7 @@ Additional rules:
 - **Existing accounts and logins are unaffected.**
 
 ## 1.2 Backend (ssapi)
+**Done 2026-10-08 (local bench only, not deployed):** ssapi `c32199f` (schema), `e8d526c` (one code per member), `c9f2f2b` (code-first registration), ssreact `00e8d9c` (API docs), sstests `f8501df` (44 bench checks, all pass). Notes and deviations in [[ssapi]].
 **Migration** (the next free `migrationN`; check `SCHEMA_VERSION` first, and never edit a shipped migration):
 ```sql
 CREATE TABLE IF NOT EXISTS invite_codes (
