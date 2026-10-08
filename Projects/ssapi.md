@@ -214,6 +214,13 @@ All of [[media-pipeline-plan]] is built. Verified with [[sstests]] `backend/medi
 
 ## Decisions
 - **2026-10-02 (Dave): new deploy layout.** Per domain: `private/` (.env, DB, logs), `ssapi/` (all backend code, outside the web root), and `public_html/` containing only `api.php`/`media.php` stubs, one root `.htaccess` (canonical copy in this repo's `deploy/`), `app/` (frontend build), `media/` and `downloads/`. URLs are unchanged for every client. Deploys stop overlapping, and backend code can't be requested from the web. Plan + migration runbook: [[deploy-layout-plan]]. react.davidfruin.com migrates first; dev/app follow with the simple-social → ssapi switch (improvement plan D6).
+- **2026-10-08 (Dave): invites, redesigned.**
+  - **Who:** every member can invite exactly one person, using a code generated on their own profile; the owner has unlimited codes.
+  - **The code:** 8 characters mixing upper- and lowercase letters, numbers and symbols, valid 7 days, deleted once used or expired.
+  - **Registration** asks for the code before the email field appears.
+  - **`users.invited_by`** is stored but never returned by any API. Existing users are set as invited by Dave.
+  - **Why:** growth only through people already trusted, and no live codes to guess when nobody is inviting.
+  - Details in [[access-and-public-launch-plan]] Step 1.
 - **2026-10-08 (Dave): staff roles.**
   - **Roles:** owner > admin > moderator > user, shown publicly as a badge on every profile.
   - **Where actions happen:** freezing and deleting only on the moderation page, by resolving a report. There are no staff buttons on posts or profiles; staff report things like anyone else.
