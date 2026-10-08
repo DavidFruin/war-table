@@ -174,6 +174,7 @@ export function translatePlural(lang: Lang, base: PluralBase, count: number, par
 ---
 
 ## 3. Phase 2: server (ssapi, about half a day to a day)
+**Done 2026-10-08 (local only, not deployed):** ssapi `10405fd` (users.lang + updateLanguage, migration5), `7427f1c` (tr() and 131 Spanish messages), `5680cf8` (push and emails), ssreact `8c24162` (API docs), sstests `1453883` and a follow-up (bench checks + message checker). Details and deviations in [[ssapi]].
 
 ### 2.1 Migration: `users.lang`
 In the next free `migrationN`: `ALTER TABLE users ADD COLUMN lang TEXT` (NULL means "never chosen") and bump `SCHEMA_VERSION`. Don't edit migrations that already shipped.
