@@ -1,5 +1,5 @@
 ---
-status: ready for prod on Dave's go (dev deployed and tested 2026-10-09). Before starting, approve Terms/Privacy (LEGAL_DRAFT) and do section B.
+status: PARTLY DONE on prod 2026-10-09 (backend ssapi d703ca8 at schema 7, web ssreact be956b9, .env settings, blocked-words.txt, backups *-20261009); still to do: C4 owner commands and C5 media backfill (blocked for the agent), then C8/C9. Was: ready for prod on Dave's go (dev deployed and tested 2026-10-09). Before starting, approve Terms/Privacy (LEGAL_DRAFT) and do section B.
 for: Dave (and an agent he gives el1 access to)
 ---
 
