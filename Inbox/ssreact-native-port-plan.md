@@ -395,7 +395,7 @@ Web Push (VAPID) doesn't exist in React Native. Native push needs FCM (Android) 
 Steps marked **Dave** need his accounts or credentials. The agent prepares everything else, never committing secrets.
 
 > **Status 2026-10-08:**
-> - **Done:** Dave has an **EAS (Expo) account**. The phone app is caught up on language (language plan Phase 4) and needs a new build to try it.
+> - **Done:** Dave has an **EAS (Expo) account**. **2026-10-09:** he connected it to his GitHub. Still needed: an EAS project for this app, linked to the ssreact repo with the **base directory `mobile`** (the app lives in a subfolder of the workspace), and its `projectId` in `app.config.ts`. A projectId isn't a secret. Builds should start **by hand** (or from one release branch or tag Dave controls), **never on every push**: agents push to ssreact many times a day. The phone app is caught up on language (language plan Phase 4) and needs a new build to try it.
 > - **Not done:** `eas.json` and the app identity (8.2/8.3) don't exist yet, and the invite codes that 8.3 calls the release blocker aren't built yet (access plan Step 1).
 > - **Invite codes (redesigned by Dave 2026-10-08, access plan Step 1):**
 >   - Each member generates **one** code on their own profile page; the owner has unlimited.
