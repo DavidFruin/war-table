@@ -251,6 +251,8 @@ Bench users: **O** (owner), **A1** and **A2** (admins), **M1** and **M2** (moder
 - **Spanish:** one 403 with `X-SS-Lang: es` comes back in Spanish.
 - **Regression:** the moderation, media and i18n suites still pass, and so does `check-messages.php`.
 
+**Done 2026-10-09 (local bench only, not deployed):** ssapi `8b83556`, `e5724a9`, `735bd1b`, `4e7d898`, `af4a490`, `d703ca8` (the migration is `migration7`, schema version 7: invites took 6), ssreact `9496859` (API docs), sstests `staff/run.sh` with 122 checks, all pass. Notes and choices in [[ssapi]].
+
 **Commits:**
 - `staff: roles, frozen content columns, staff_actions (migration6)`
 - `staff: hide frozen posts and comments`
