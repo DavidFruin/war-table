@@ -60,7 +60,7 @@ From the media plan's ops list (section 7), once on prod:
 3. `FcgidMaxRequestLen` at least 115343360 and `FcgidIOTimeout` at least 120 s.
 4. **Backups include `public_html/media/`**, not just the database, and a restore has been tried once.
 5. Free disk space on the media volume, with an alert.
-6. PHP **GD** extension in the **command-line** PHP (the backfill in D4 needs it).
+6. PHP **GD** extension in the **command-line** PHP (the backfill in C5 needs it).
 
 ## C. The release (prod, in this order)
 
