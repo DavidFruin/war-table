@@ -14,7 +14,7 @@ for: Dave (and an agent he gives el1 access to)
 - **Reports:** a post or comment you reported stays visible to you with a red "Reported" label, and can't be reported twice.
 - **Invite codes:** registration becomes invite-only. Each member invites one person, the owner as many as they like. A welcome message appears for new members.
 
-**The database changes on its own** at the first request after the new backend is in place (versions 3, 4, 5 and 6, one after another). That is why the backup in step 1 matters.
+**The database changes on its own** at the first request after the new backend is in place (versions 3, 4, 5, 6 and 7, one after another). That is why the backup in step 1 matters.
 
 ---
 
@@ -64,7 +64,7 @@ Replace `$D` with `/home/davidfruin/domains/app.davidfruin.com`.
    rsync -tz deploy/root.htaccess el1:$D/public_html/.htaccess
    ssh el1 "chown -R davidfruin:davidfruin $D/ssapi $D/public_html/.htaccess $D/public_html/api.php $D/public_html/media.php"
    ```
-   Then make **one harmless request** (`curl -s -d action=getMediaLimits https://app.davidfruin.com/api.php`) so the database upgrades, and check it reads version 6: `sqlite3 $D/private/userdata.db 'pragma user_version'`. Then `chown davidfruin:davidfruin $D/private/userdata.db*`.
+   Then make **one harmless request** (`curl -s -d action=getMediaLimits https://app.davidfruin.com/api.php`) so the database upgrades, and check it reads version 7: `sqlite3 $D/private/userdata.db 'pragma user_version'`. Then `chown davidfruin:davidfruin $D/private/userdata.db*`.
 4. **Make yourself the owner and record everyone as invited by you.** Pick the account that is your admin login on prod (on dev it is `me@davidfruin.com`):
    ```
    sqlite3 $D/private/userdata.db "UPDATE users SET role = 'owner' WHERE email = '<your admin login email>';"
@@ -117,3 +117,10 @@ Replace `$D` with `/home/davidfruin/domains/app.davidfruin.com`.
 - Delete the backups a few days later.
 
 Related: [[access-and-public-launch-plan]] (invite codes, §1.6), [[media-pipeline-plan]] (§7), [[language-plan]] (§6), [[ssapi]], [[ssreact]].
+
+## Added 2026-10-09: staff roles and the store-review fixes (Step 1C)
+Also part of this release now (all built, tested on a local bench):
+- **Staff roles** (`Inbox/staff-roles-plan.md`): schema version 7; `composer dump-autoload` for the new `src/Staff` module. The old `is_admin` users become admins at the first request. **Make yourself the owner** with the `UPDATE users SET role = 'owner' ...` command (once, if you haven't already), then appoint people from the website's moderation page (`/admin`, Team tab).
+- **Word filter**: create `private/blocked-words.txt` (one word or phrase per line, readable only by you and the web server). No file means no filtering.
+- **Minimum age 13**: set `TERMS_VERSION=2` in `private/.env`.
+- The old `adminFreezeUser` endpoint is gone; web builds older than this release don't know the new moderation page.
