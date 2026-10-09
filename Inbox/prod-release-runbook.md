@@ -1,17 +1,20 @@
 ---
-status: ready to follow once Dave has checked dev (written 2026-10-08)
+status: ready to follow once the latest is on dev and Dave has checked it (written 2026-10-08, consolidated 2026-10-09)
 for: Dave (and an agent he gives el1 access to)
 ---
 
-# Prod release runbook: moderation, media, English/Spanish, reports, invite codes
+# Prod release runbook: moderation, staff roles, media, English/Spanish, invite codes, store-review fixes
 
 **What this is.** Prod (`app.davidfruin.com`) still runs the backend and web app from 2026-10-06. Everything built since is on **dev** and tested on a local bench. This is the order to put all of it on prod. Nothing here has been done on prod. **Prod only on Dave's go.**
 
 **What prod gets, in plain words**
-- **Moderation:** report, block, an admin page, Terms and Privacy pages, freezing accounts.
+- **Moderation:** report, block, Terms and Privacy pages, and a moderation page (`/admin`) with Reports, Frozen, Team and Activity tabs.
+- **Staff roles:** owner, admin, moderator and user, shown as a badge on every profile. Moderators freeze, admins also delete and appoint moderators, and the owner also appoints admins. Freezing and deleting happen only on the moderation page.
 - **Media:** safer, faster uploads (size limits, a 1 GB quota per person, better video, looping GIFs, smaller feed images).
 - **English/Spanish:** a language picker, a "choose your language" popup at everyone's next login, Spanish server messages, emails and push notifications.
-- **Reports:** a post or comment you reported stays visible to you with a red "Reported" label, and can't be reported twice.
+- **Reports:** a post or comment you reported **folds away** for you ("You reported this post", with Show), and can't be reported twice.
+- **Word filter:** posts and comments containing a word from your private list (`private/blocked-words.txt`) are refused.
+- **Minimum age 13:** in the Terms, the Privacy page and the sign-up checkbox.
 - **Invite codes:** registration becomes invite-only. Each member invites one person, the owner as many as they like. A welcome message appears for new members.
 
 **The database changes on its own** at the first request after the new backend is in place (versions 3, 4, 5, 6 and 7, one after another). That is why the backup in step 1 matters.
@@ -20,17 +23,32 @@ for: Dave (and an agent he gives el1 access to)
 
 ## A. Before touching prod (on dev, with Dave)
 
-Dev already has all of it (backend `c9f2f2b`, web `ddc3042`). Check these on **dev.davidfruin.com**:
+**Dev is one step behind.** It runs everything up to invite codes (backend `c9f2f2b`, web `ddc3042`). Step 1C and staff roles (backend `d703ca8`, schema version 7; ssreact up to `be956b9`) have only been tested on a local bench.
+
+**First, put the latest on dev:**
+1. Run the same steps as C1, C3 and C6 below, with dev's folder and `scripts/deploy-web.sh dev`.
+2. Create dev's `private/blocked-words.txt` with a test word.
+3. Set `TERMS_VERSION=2` in dev's `.env`. Dev members already accepted version 1, so this shows them the updated terms.
+
+An agent can do this with Dave's go.
+
+**Then check these on dev.davidfruin.com:**
 
 1. **Log in** with a normal member account: the language popup shows, then the terms dialog (if not accepted), then (for a brand-new member only) the welcome.
 2. **Settings** has the Language card; switching works and survives a reload.
-3. **Report** a post from a second account: it stays, with a red "Reported", and the report menu is gone from it. The report email arrives (needs `ADMIN_REPORT_EMAIL`, see C2).
-4. **Admin page** (`/admin`) opens for the admin account and lists the report.
-5. **Invite someone** on your profile: generate a code, copy it. In a private window open `/register`, enter the code: it should say "Invited by …". Finish registering with a real test email and check the mail code arrives. Then log in as that new member and look at the welcome. (Hotmail/Outlook addresses will not get the mail code; see D1.)
-6. **Upload** a photo, a video and a voice recording; the feed shows them.
-7. Open the **Spanish** pages (`?lang=es`) and have a Spanish speaker read them. The wording is a draft until they have.
-8. **Terms and Privacy** texts: read and approve them (they say "Draft" until `LEGAL_DRAFT` is turned off in `web/src/content/legal.ts`). The store listings need these as public pages.
-9. **Phone** (Expo Go or a development build pointed at dev): the register step, the invite card and its share sheet, the welcome, the language popup, report/block. These screens have only been type-checked, never run on a device.
+3. **Report** a post from a second account: it folds away for that account, Show reveals it with a red "Reported", and it can't be reported again. The report email arrives (needs `ADMIN_REPORT_EMAIL`, see C2).
+4. **Moderation page** (`/admin`), as the owner:
+   - The report is listed. Freeze the post: it disappears for others and shows "Hidden by a moderator" to its author. Unfreeze it from the Frozen tab.
+   - In Team, make a test account a moderator. Log in as it and check it sees Reports, Frozen and Team, but no delete options and nothing about staff.
+   - Activity lists all of it.
+5. **Badges:** every profile shows User, Moderator, Admin or Owner.
+6. **Word filter:** a post containing the test word is refused with the "isn't allowed" message, and the text stays in the box.
+7. **Sign-up** shows the "at least 13 years old" checkbox. The terms dialog appears once for existing members (version 2).
+8. **Invite someone** on your profile: generate a code, copy it. In a private window open `/register`, enter the code: it should say "Invited by …". Finish registering with a real test email and check the mail code arrives. Then log in as that new member and look at the welcome. (Hotmail/Outlook addresses will not get the mail code; see D1.)
+9. **Upload** a photo, a video and a voice recording; the feed shows them.
+10. Open the **Spanish** pages (`?lang=es`) and have a Spanish speaker read them. The wording is a draft until they have.
+11. **Terms and Privacy** texts: read and approve them (they say "Draft" until `LEGAL_DRAFT` is turned off in `web/src/content/legal.ts`). The store listings need these as public pages.
+12. **Phone** (Expo Go or a development build pointed at dev): the register step, the invite card and its share sheet, the welcome, the language popup, report/block and fold-away, badges, and the staff link in Settings. These screens have only been type-checked, never run on a device.
 
 If anything is wrong, stop here and tell the agent; nothing on prod has changed yet.
 
@@ -54,8 +72,9 @@ Replace `$D` with `/home/davidfruin/domains/app.davidfruin.com`.
 2. **Settings in `$D/private/.env`** (add these lines; never commit this file):
    - `ADMIN_REPORT_EMAIL=` where reports are emailed
    - `CONTACT_EMAIL=` shown to suspended people and in Settings
-   - `TERMS_VERSION=1` and `TERMS_URL=/terms`
+   - `TERMS_VERSION=2` and `TERMS_URL=/terms`. Nobody on prod has accepted any version yet, so 1 or 2 makes no difference there; 2 keeps prod and dev the same.
    - Leave `REGISTRATION_MODE` **unset** (that means invite-only). Do **not** set it to `open` on prod.
+   - **Also create `$D/private/blocked-words.txt`**: one word or phrase per line, readable only by you and the web server. No file means no filtering.
 3. **Deploy the backend** (from the ssapi checkout on Dave's machine; it needs a locally built `vendor/`):
    ```
    cd ~/dev/ssapi && git pull && composer dump-autoload --no-dev --optimize
@@ -95,14 +114,11 @@ Replace `$D` with `/home/davidfruin/domains/app.davidfruin.com`.
 2. **Terms and Privacy are drafts** until you approve them and turn `LEGAL_DRAFT` off. The store listings need them as public pages.
 3. **Terminal clients** (sscli, sswiz, sstui) can't register while it's invite-only; logging in still works.
 4. **Two web bugs left as they are, on purpose:** the page doesn't always start at the top after navigating, and admins can't add a note to a report. "View post" on a report can still fail when the author is frozen or blocked.
-5. **The phone screens for invites and the language popup are unverified on a device.**
-6. **Staff roles** (moderators, admins) are a separate, later plan ([[staff-roles-plan]]); this release only adds the owner.
-7. **Step 1C (store-review fixes) was in progress when this was written** (2026-10-08; access plan Step 1C):
-   - **What it changes:** reported posts **fold away** for the reporter instead of the red-label behaviour above; a word filter reads `private/blocked-words.txt`; the minimum age is 13.
-   - **If it's finished before the prod release, ship it in the same release:** create `$D/private/blocked-words.txt` before step C3.
-   - **Keep `TERMS_VERSION=1` on prod.** Nobody on prod has accepted any terms yet, so everyone sees the new terms, age line included, at their first login anyway. Only dev, where people already accepted version 1, needs `TERMS_VERSION=2`.
-   - Check dev again for the fold-away and the filter before the prod release.
-
+5. **The phone screens added since October 7 are unverified on a device:** invites, the language popup, badges, fold-away and the staff link.
+6. **Staff roles:**
+   - **First request:** the old `is_admin` accounts become admins.
+   - **The owner commands in C4 are still needed.** After the release, appoint people from `/admin` → Team.
+   - **The old `adminFreezeUser` endpoint is gone.** No app used it.
 ## E. If something goes wrong
 
 - **Backend broken:** put the old code back (`mv $D/ssapi $D/ssapi.failed && mv $D/ssapi.bak-YYYYMMDD $D/ssapi`). The database changes are additive (new tables and columns), so the old code still runs against the upgraded database. Only restore the database backup if the data itself is damaged, and note that anything people posted after the backup would be lost.
@@ -116,11 +132,4 @@ Replace `$D` with `/home/davidfruin/domains/app.davidfruin.com`.
 - Record the server-check results (B) in [[ssapi]].
 - Delete the backups a few days later.
 
-Related: [[access-and-public-launch-plan]] (invite codes, §1.6), [[media-pipeline-plan]] (§7), [[language-plan]] (§6), [[ssapi]], [[ssreact]].
-
-## Added 2026-10-09: staff roles and the store-review fixes (Step 1C)
-Also part of this release now (all built, tested on a local bench):
-- **Staff roles** (`Inbox/staff-roles-plan.md`): schema version 7; `composer dump-autoload` for the new `src/Staff` module. The old `is_admin` users become admins at the first request. **Make yourself the owner** with the `UPDATE users SET role = 'owner' ...` command (once, if you haven't already), then appoint people from the website's moderation page (`/admin`, Team tab).
-- **Word filter**: create `private/blocked-words.txt` (one word or phrase per line, readable only by you and the web server). No file means no filtering.
-- **Minimum age 13**: set `TERMS_VERSION=2` in `private/.env`.
-- The old `adminFreezeUser` endpoint is gone; web builds older than this release don't know the new moderation page.
+Related: [[access-and-public-launch-plan]] (invite codes §1.6, store-review fixes §1C.4), [[staff-roles-plan]] (§6), [[media-pipeline-plan]] (§7), [[language-plan]] (§6), [[ssapi]], [[ssreact]].
