@@ -14,3 +14,4 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
+| citadel / Claude | ssapi, ssreact, sstests | Replies to comments + reply notifications; remove Settings from desktop nav | 2026-10-09 02:46 |
