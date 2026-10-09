@@ -14,3 +14,4 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
+| citadel / Claude | ssapi, ssreact, sstests | Staff roles plan (owner/admin/moderator): server, shared+web, phone | 2026-10-09 01:05 |
