@@ -1,5 +1,5 @@
 ---
-status: proposal (revised 2026-10-08: owner role, public badges, moderation-page-only actions, owner-only settings)
+status: built and tested on a local bench 2026-10-09 (all three phases); not deployed. Revised 2026-10-08: owner role, public badges, moderation-page-only actions, owner-only settings
 written: 2026-10-08
 for: Sonnet 5 (medium effort), implementing agent
 repos: ssapi @ 8db90d3, ssreact @ 62b07c8 (packages/core, web/, mobile/), sstests
@@ -335,6 +335,8 @@ The moderation page stays on the website, and the phone app gets no staff option
   - a frozen post shows its label to its author;
   - the staff card shows for a moderator but not for a user.
 - This is JavaScript only, so it can ship in any phone update after the language plan's phone build.
+
+**Done 2026-10-09 (local only; not tried on a phone; JavaScript only):** ssreact `807d1c8`, `be956b9`. Notes in [[ssreact]].
 
 **Commits:** `mobile: role badges and frozen label`, `mobile: moderation link in Settings`.
 
