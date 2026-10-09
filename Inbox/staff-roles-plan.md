@@ -319,6 +319,8 @@ Bench users: **O** (owner), **A1** and **A2** (admins), **M1** and **M2** (moder
   - Removing a moderator's role while their page is open sends them to the feed on their next action.
 - **Spanish:** check everything in Spanish at 375 px wide.
 
+**Done 2026-10-09 (local bench only, not deployed):** ssreact `676f3e8`, `10e6fd5`, `5b4ed70`, `433846f` (page and its translation in one commit), `dc704e0` (report dialog wording), sstests `staff/web-staff.sh` (54 browser checks, all pass). Notes in [[ssreact]].
+
 **Commits:** `core: roles and permission helpers`, `web: role badges and frozen label`, `web: moderation page (reports, frozen, team, activity)`, `web: translate the moderation page`.
 
 ---
