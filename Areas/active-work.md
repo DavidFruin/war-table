@@ -14,3 +14,4 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
+| citadel / Claude (2) | ssreact | Visitor language + dark/light toggle (web, logged-out), in a separate worktree | 2026-10-09 03:02 |
