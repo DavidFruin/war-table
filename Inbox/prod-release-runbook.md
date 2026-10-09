@@ -1,5 +1,5 @@
 ---
-status: ready to follow once the latest is on dev and Dave has checked it (written 2026-10-08, consolidated 2026-10-09)
+status: ready for prod on Dave's go (dev deployed and tested 2026-10-09). Before starting, approve Terms/Privacy (LEGAL_DRAFT) and do section B.
 for: Dave (and an agent he gives el1 access to)
 ---
 
@@ -23,7 +23,7 @@ for: Dave (and an agent he gives el1 access to)
 
 ## A. Before touching prod (on dev, with Dave)
 
-**Dev is one step behind.** It runs everything up to invite codes (backend `c9f2f2b`, web `ddc3042`). Step 1C and staff roles (backend `d703ca8`, schema version 7; ssreact up to `be956b9`) have only been tested on a local bench.
+**Dev is current (Dave, 2026-10-09):** Step 1C and staff roles (backend `d703ca8`, schema version 7; ssreact up to `be956b9`) are deployed to dev, and Dave tested them there. No agent recorded the deploy itself in [[ssapi]]; add the details there if they matter. The steps below are kept for reference.
 
 **First, put the latest on dev:**
 1. Run the same steps as C1, C3 and C6 below, with dev's folder and `scripts/deploy-web.sh dev`.
