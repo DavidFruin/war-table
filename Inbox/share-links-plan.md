@@ -1,11 +1,13 @@
 ---
-status: proposal
+status: phases 1-2 done, phase 3 waiting on Dave
 written: 2026-10-28
 for: Sonnet 5 (medium effort), implementing agent
 repos: ssreact @ e70cc01 (packages/core, web/, mobile/), ssapi @ acc2873 (deploy files only), sstests
 ---
 
 # Share links plan: members-only links to posts, comments and profiles
+
+> **Status (2026-10-28):** Phases 1 and 2 are **done** (ssreact `5a94c9e`..`b7c5914`, ssapi `4af5192`); see [[ssreact]] for what changed and how it was checked. **Phase 3 is not started**: it needs Dave's Apple Team ID and the Android signing fingerprint and ships with the phone release. Not deployed anywhere yet.
 
 Dave (2026-10-28) chose **members-only** links ("I want only member visible links") over public share links. A link sent to anyone opens the post, comment or profile **for a logged-in member**. Everyone else sees the login page with a short note, and **nothing about the content**.
 
