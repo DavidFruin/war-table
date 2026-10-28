@@ -14,3 +14,4 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
+| citadel / Claude | ssreact, ssapi (deploy file), sstests | Share links plan, Phases 1 and 2 (web, then phone); no deploy | 2026-10-28 16:39 |
