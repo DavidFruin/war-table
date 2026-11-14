@@ -14,3 +14,4 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
+| Citadel / Claude Code | fruin-wp-ai-chat-bubble | repo created; planning project | 2026-11-14 20:10 |
