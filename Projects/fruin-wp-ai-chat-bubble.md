@@ -10,7 +10,7 @@ A WordPress plugin that adds an AI chat bubble to a site. First target is Dave's
 
 ## Status (2026-11-14)
 - Repo created (private). Technical plan approved 2026-11-14.
-- **Phase 1 code is written and committed locally (not pushed), 39 unit tests pass on PHP 8.1. It has never been run inside WordPress yet.** Next: run it in a WordPress (see the disk note below), then Dave installs the zip on fruininc.com with "Visible to: Administrators only".
+- **Phase 1 code is written and pushed (branch `main`, GitHub's default, not `master`), 39 unit tests pass on PHP 8.1. It has never been run inside a real WordPress yet.** Next: Dave uploads `dist/fruin-wp-ai-chat-bubble.zip` to his WordPress test site (2026-11-14) and reports back; then fruininc.com with "Visible to: Administrators only".
 - **Citadel's disk is almost full (about 1 GB free of 488 GB, 2026-11-14).** A Docker WordPress smoke test filled it to 0 and was removed. Don't pull Docker images there until space is freed. `/tmp` is RAM-backed (32 GB) and safe for throwaway test files. Citadel's own PHP also lacks mbstring/dom/curl/mysqli (no sudo to add them), so `bin/test.sh` runs the tests in Docker (about 0.7 GB of images).
 - What fruininc.com looks like, for the plan:
   - WordPress 7.1.4 + WooCommerce 11.3.0, with Everest Forms and a booking plugin (appointment and contact pages already exist).
