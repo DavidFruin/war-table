@@ -14,4 +14,4 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
-| Citadel / Claude Code | fruin-wp-ai-chat-bubble | Phase 1: AI chat (settings, providers, bubble) | 2026-11-15 00:39 |
+| Citadel / Claude Code | fruin-wp-ai-chat-bubble | Phase 1 written; waiting on Dave for how to try it in WordPress | 2026-11-15 00:53 |

@@ -9,7 +9,9 @@ repo: https://github.com/DavidFruin/fruin-wp-ai-chat-bubble
 A WordPress plugin that adds an AI chat bubble to a site. First target is Dave's own site, fruininc.com. It does two jobs: a **sales assistant** (hosting plans, domains, website packages, web development, translation services) and a **tech support bot** that points visitors to the right documentation page.
 
 ## Status (2026-11-14)
-- Repo created (private). Technical plan approved 2026-11-14; Phase 1 under way.
+- Repo created (private). Technical plan approved 2026-11-14.
+- **Phase 1 code is written and committed locally (not pushed), 39 unit tests pass on PHP 8.1. It has never been run inside WordPress yet.** Next: run it in a WordPress (see the disk note below), then Dave installs the zip on fruininc.com with "Visible to: Administrators only".
+- **Citadel's disk is almost full (about 1 GB free of 488 GB, 2026-11-14).** A Docker WordPress smoke test filled it to 0 and was removed. Don't pull Docker images there until space is freed. `/tmp` is RAM-backed (32 GB) and safe for throwaway test files. Citadel's own PHP also lacks mbstring/dom/curl/mysqli (no sudo to add them), so `bin/test.sh` runs the tests in Docker (about 0.7 GB of images).
 - What fruininc.com looks like, for the plan:
   - WordPress 7.1.4 + WooCommerce 11.3.0, with Everest Forms and a booking plugin (appointment and contact pages already exist).
   - About 213 pages, 48 WooCommerce products, 4 blog posts.
@@ -29,6 +31,9 @@ A WordPress plugin that adds an AI chat bubble to a site. First target is Dave's
 - **Dave answers from Telegram** (one topic per conversation in a private group); the customer stays in the bubble. A generic signed webhook API covers other messaging apps.
 - **Built to also run on hosting customers' sites** — nothing Fruin-specific in code; each site has its own keys and bot. Licensing undecided.
 - Plain PHP + plain JavaScript, no AI SDKs, no build step — fewer moving parts on shared hosting.
+- No "temperature" setting — current Claude models and several OpenAI ones reject it. Claude gets an "Effort" setting instead (default low, right for chat).
+- Default model is `claude-opus-5-5`; Dave can switch to a cheaper one in settings. For Claude models that support it, a declined request is retried on Anthropic's fallback model automatically.
+- The bubble's own text is hard-coded in English and Spanish and follows the page's language, rather than using translation files — it has to work with whatever translation plugin a site uses.
 
 ## Phases
 1. AI chat (settings, knowledge entries, providers, bubble) — **in progress 2026-11-14**
