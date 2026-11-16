@@ -14,3 +14,4 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
+| Citadel / Claude Code | ssterminal (+ ssapi time zones) | Catch-up plan for the terminal apps, verify token, UTC times; local bench only | 2026-11-16 15:32 |
