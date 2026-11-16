@@ -14,4 +14,3 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
-| Citadel / Claude Code | ssapi (+ ssreact where the API changes) | Implementing the November review (ssapi-review-2026-11): security, speed, simpler; deploying to dev only | 2026-11-16 10:26 |
