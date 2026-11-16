@@ -14,3 +14,4 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
+| Claude Code / Citadel | aprender (+ ssapi, ssreact link) | Build Spanish practice app: schema, PHP API, page, lesson skill | 2026-11-16 |
