@@ -55,3 +55,8 @@ Default session about 15 minutes.
   estimated ranks, the least model-proof part of the weekly rules.
 - Default daily numbers (1 lesson, 10 new words) to revisit after the
   placement batch.
+
+## 2026-11-17 (later)
+- "Seguir aprendiendo": after the daily goal the page offers to keep going (lessons, words and reviews past the daily limits). Deployed to dev.
+- Gender of nouns is now a main focus: area `genero` (20-35 % of every batch), a 10-topic track in `content/guia/prioridades.md`, fill-in templates in `lecciones.md` (gap + hint `(el / la)` or `(frío)`), enforced by check.php. Batch 0002 will be the first with it.
+
