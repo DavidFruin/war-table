@@ -34,8 +34,10 @@ Default session about 15 minutes.
 - **Deployed to dev** (2026-11-16): root.htaccess (old copy kept as
   `.htaccess.bak-2026-11-16`), aprender, and the ssreact web build. Checked over
   HTTP: page, assets, redirect, 401 when logged out, src/ not served.
-- Still to do by Dave: log in on dev, open `/aprender/`, then Ajustes → Subir lote →
-  `content/lotes/0001-diagnostico.json`.
+- **Batch 0001-diagnostico imported on dev (2026-11-17, Citadel)**: 8 points, 8 lessons,
+  71 exercises, 20 words. Run with the page's own `validateBatch()`/`importBatch()` as
+  the site user, since there is no CLI import. Backup first:
+  `private/aprender.db.pre-0001-20261117`. Not on prod (aprender isn't there yet).
 - From Citadel, `el1` (10.111.1.2) times out. The same server answers on
   10.111.2.1:10102 (same host key). Deploy with
   `RSYNC_RSH="ssh -o Hostname=10.111.2.1 -o HostKeyAlias=[173.255.247.77]:10102"`,
