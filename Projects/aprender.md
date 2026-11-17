@@ -31,12 +31,15 @@ Default session about 15 minutes.
   `0001-diagnostico` (placement test) written; it simulates 114/114 correct.
 - Commits: aprender up to d3b967c; ssreact 9f2d69a (Settings link);
   ssapi 08c57a4 (root.htaccess rule for /aprender/).
-- **Not deployed.** `ssh el1` times out from Citadel (10.111.1.2:10102).
-  To deploy to dev, from a machine that reaches el1:
-  1. ssapi `deploy/root.htaccess` → `public_html/.htaccess` on dev (by hand).
-  2. `aprender/scripts/deploy.sh dev`
-  3. ssreact `scripts/deploy-web.sh dev` (Settings link).
-  4. Open dev's `/aprender/`, Ajustes → Subir lote → `content/lotes/0001-diagnostico.json`.
+- **Deployed to dev** (2026-11-16): root.htaccess (old copy kept as
+  `.htaccess.bak-2026-11-16`), aprender, and the ssreact web build. Checked over
+  HTTP: page, assets, redirect, 401 when logged out, src/ not served.
+- Still to do by Dave: log in on dev, open `/aprender/`, then Ajustes → Subir lote →
+  `content/lotes/0001-diagnostico.json`.
+- From Citadel, `el1` (10.111.1.2) times out. The same server answers on
+  10.111.2.1:10102 (same host key). Deploy with
+  `RSYNC_RSH="ssh -o Hostname=10.111.2.1 -o HostKeyAlias=[173.255.247.77]:10102"`,
+  then `chown -R davidfruin:davidfruin` on what was copied, since the copy runs as root.
 
 ## Open
 - Frequency list for vocabulary (everyday vs formal text): undecided;
