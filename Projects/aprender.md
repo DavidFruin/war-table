@@ -60,3 +60,4 @@ Default session about 15 minutes.
 - "Seguir aprendiendo": after the daily goal the page offers to keep going (lessons, words and reviews past the daily limits). Deployed to dev.
 - Gender of nouns is now a main focus: area `genero` (20-35 % of every batch), a 10-topic track in `content/guia/prioridades.md`, fill-in templates in `lecciones.md` (gap + hint `(el / la)` or `(frío)`), enforced by check.php. Batch 0002 will be the first with it.
 
+- "Corrige" now says how many errors the sentence has (exercise field `errores`, DB schema v2; dev DB upgraded, backup `private/aprender.db.pre-v2-20261117`). Prod not yet.
