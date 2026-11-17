@@ -43,8 +43,15 @@ Default session about 15 minutes.
   `RSYNC_RSH="ssh -o Hostname=10.111.2.1 -o HostKeyAlias=[173.255.247.77]:10102"`,
   then `chown -R davidfruin:davidfruin` on what was copied, since the copy runs as root.
 
+- **Focus and weekly instructions (2026-11-17)**: verbs and sentence structure
+  first, vocabulary second, accents/punctuation/writing last, as numbers in
+  `content/guia/prioridades.md`, enforced by `bin/check.php`. The grading and
+  lesson-writing rules are in `content/guia/`, written for any AI model; the
+  `calificar` and `crear-lecciones` skills point there. Commits eff866d, 006090c.
+
 ## Open
 - Frequency list for vocabulary (everyday vs formal text): undecided;
-  batch 0001 uses hand-picked words without ranks.
+  batch 0001 uses hand-picked words without ranks. Until chosen, batches use
+  estimated ranks, the least model-proof part of the weekly rules.
 - Default daily numbers (1 lesson, 10 new words) to revisit after the
   placement batch.
