@@ -61,3 +61,4 @@ Default session about 15 minutes.
 - Gender of nouns is now a main focus: area `genero` (20-35 % of every batch), a 10-topic track in `content/guia/prioridades.md`, fill-in templates in `lecciones.md` (gap + hint `(el / la)` or `(frío)`), enforced by check.php. Batch 0002 will be the first with it.
 
 - "Corrige" now says how many errors the sentence has (exercise field `errores`, DB schema v2; dev DB upgraded, backup `private/aprender.db.pre-v2-20261117`). Prod not yet.
+- 2026-11-18: words now have `frases`, one fill-in sentence per form (verbs: 6-8, at least 4 tenses; nouns 3; adjectives 4); reviews show `frases_por_palabra` (default 4) at once, least recently seen first. One wrong of 3+ = "hard". DB schema v3 on dev (backup `private/aprender.db.pre-v3-20261118`). Batch 0001 words still have one sentence each.
