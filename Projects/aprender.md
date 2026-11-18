@@ -62,3 +62,4 @@ Default session about 15 minutes.
 
 - "Corrige" now says how many errors the sentence has (exercise field `errores`, DB schema v2; dev DB upgraded, backup `private/aprender.db.pre-v2-20261117`). Prod not yet.
 - 2026-11-18: words now have `frases`, one fill-in sentence per form (verbs: 6-8, at least 4 tenses; nouns 3; adjectives 4); reviews show `frases_por_palabra` (default 4) at once, least recently seen first. One wrong of 3+ = "hard". DB schema v3 on dev (backup `private/aprender.db.pre-v3-20261118`). Batch 0001 words still have one sentence each.
+- 2026-11-18 (later): Dave disliked the fill-in word review; replaced by **dictation** (phone Spanish voice via Web Speech API, setting `voz_dictado` default es; Spain/Mexico-only words use their own accent). The per-form `frases` feature was removed (table left empty in schema v3). Definir card unchanged.
