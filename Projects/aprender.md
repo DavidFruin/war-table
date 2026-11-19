@@ -6,8 +6,9 @@ repo: https://github.com/DavidFruin/aprender
 # aprender
 
 ## Summary
-Dave's daily Spanish grammar and vocabulary practice: an owner-only page at
-`/aprender/` on the [[simple-social]] site, linked from Settings' info block.
+Daily Spanish grammar and vocabulary practice, on its own site
+https://aprender.davidfruin.com since 2026-11-19 (before that an owner-only
+page at `/aprender/` on the [[simple-social]] dev site).
 Written practice only, interface entirely in Spanish, Mexican + Spain Spanish
 (vosotros included). Long-term goal: the whole grammar and the RAE's
 vocabulary; near-term: comfortably define 20,000 words in 1-5 years.
@@ -74,3 +75,13 @@ Default session about 15 minutes.
 - 2026-11-18: map page (#mapa): every lesson on a dotted line with best grade (unanswered = wrong); current lesson can be started or skipped any time; done lessons can be retaken. New lessons must have exactly 10 questions per region (check.php). Answered fields locked.
 - 2026-11-18: dictation has a 🇲🇽/🇪🇸 accent switch beside ♀/♂. Mexican voices Piper `es_MX-ald-medium` (man) and `es_MX-claude-high` (woman, by pitch; Dave to confirm by ear). word_audio has an accent column (schema v6, dev backup `private/aprender.db.pre-v6-20261118`); setting `acento_dictado` default mx. Batch 0001 re-recorded in both accents; `bin/grabaciones.php` adds recordings to an already-imported batch.
 - 2026-11-18: Dave wants Mexico first, plus Spain's vocabulary and vosotros, and **nothing paid**. Built `content/vocabulario/` with `tools/vocabulario/construir.py` from free data only (Leipzig spa-mx web corpus, OpenSubtitles counts, Wiktionary via kaikki; ~1.4 GB in `~/aprender-datos`, not in the repo). Weights from Dave's ChatGPT spec (35/25/15/10/10/5) in `pesos.json`; "modern/practical" come only from Wiktionary labels. 30,000-lemma main list, 594-word Spain list, 530 Mexicanisms. Known weakness: no free Mexican *spoken* data, so slang ranks low (chido ~11k, órale ~29k).
+
+## 2026-11-19: own site, aprender.davidfruin.com
+- Dave asked for its own subdomain with "the exact same login" as Simple Social and all Simple Social users copied over. He chose: users from **app** (live), **copied once** (not shared live), and **everyone gets their own progress** with the same lessons; only the owner uploads batches.
+- Virtualmin sub-server of davidfruin.com (dir dns web ssl logrotate), PHP **fcgid** like dev (it was created as FPM; switched), wildcard cert linked. Virtualmin put the vhost on the deprecated IPv6 `...b55::25` while DNS AAAA is `...f03c:95ff:fe9a:83b8`, so IPv6 got the wrong cert; fixed with `modify-domain --shared-ip6`. Watch for this on any new sub-server.
+- Layout: `aprender/` (app), `ssapi/` (accounts only), `public_html/` (page + `api.php`, `auth.php` stubs + own .htaccess with an enforcing CSP), `private/` (.env with its own JWT_SECRET and SITE_NAME=Aprender; `userdata.db` accounts; `aprender/contenido.db` shared lessons/words; `aprender/usuarios/<id>.db` per learner). Deploy: `scripts/deploy.sh` with RSYNC_RSH for the private route.
+- ssapi d0822b8: `SSAPI_ACTIONS` lets another site serve only some actions; `SITE_NAME`/`MAIL_FROM` brand the emailed codes. Defaults unchanged, so app/dev are unaffected (not redeployed there).
+- 19 accounts copied from app with `scripts/copiar-usuarios.php` (read-only snapshot of app, ssapi's own migrations to v11, everything but accounts emptied; app's userdata.db untouched). Dave's dev aprender data split with `bin/separar.php` into contenido.db + usuarios/1.db; snapshot kept as `private/aprender-de-dev-20261119.db`.
+- Verified live: page, 403 on private files, Spanish errors, social actions refused, a real token through Apache (throwaway account, deleted after). Not verified: an emailed code actually arriving (needs a real inbox), Dave's own login.
+- **Pending Dave:** log in and confirm; then remove `/aprender/` from dev (files, root.htaccess rule, the ssreact Settings link) and add a link on davidfruin.com. Anything done on dev's aprender after 2026-11-19 09:20 UTC isn't on the new site.
+- Also pending (Dave liked both): "put this word in the sentence" word review, and "rewrite in the past" as a required template in verb lessons.

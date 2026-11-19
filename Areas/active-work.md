@@ -14,4 +14,3 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
-| Citadel (Claude Code) | aprender | Moving aprender to its own subdomain aprender.davidfruin.com with its own login and per-person progress | 2026-11-19 |
