@@ -14,4 +14,3 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
-| Citadel (Claude Code) | aprender | Removing aprender from dev.davidfruin.com and adding a link on davidfruin.com | 2026-11-19 |
