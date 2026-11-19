@@ -50,9 +50,9 @@ Default session about 15 minutes.
   `calificar` and `crear-lecciones` skills point there. Commits eff866d, 006090c.
 
 ## Open
-- Frequency list for vocabulary (everyday vs formal text): undecided;
-  batch 0001 uses hand-picked words without ranks. Until chosen, batches use
-  estimated ranks, the least model-proof part of the weekly rules.
+- Ranked list now exists (see 2026-11-18 below); still open: a placement
+  test to find where Dave's gaps start, and making weekly batches draw from
+  the list (plus a set share of Spain words). Waiting for Dave's go-ahead.
 - Default daily numbers (1 lesson, 10 new words) to revisit after the
   placement batch.
 
@@ -71,3 +71,6 @@ Default session about 15 minutes.
 - 2026-11-18: tense names in forms (`forma`) and in prompts' parentheses are tappable buttons showing a short Spanish explanation (TIEMPOS_DEF in app.js; a test keeps it equal to TIEMPOS in reglas.php).
 - 2026-11-18: dictation has a ♀/♂ switch (plays that voice, saves `voz_dictado`).
 - 2026-11-18: a lesson failed 3 times (SALTAR_TRAS_FALLOS) can be skipped (button on the failed result and at the lesson's restart). Table `lesson_skips`, schema v5 (dev backup `private/aprender.db.pre-v5-20261118`). Skipped point still gets a grammar review card; informe.php lists skips and prioridades.md says to re-teach the point differently.
+- 2026-11-18: map page (#mapa): every lesson on a dotted line with best grade (unanswered = wrong); current lesson can be started or skipped any time; done lessons can be retaken. New lessons must have exactly 10 questions per region (check.php). Answered fields locked.
+- 2026-11-18: dictation has a 🇲🇽/🇪🇸 accent switch beside ♀/♂. Mexican voices Piper `es_MX-ald-medium` (man) and `es_MX-claude-high` (woman, by pitch; Dave to confirm by ear). word_audio has an accent column (schema v6, dev backup `private/aprender.db.pre-v6-20261118`); setting `acento_dictado` default mx. Batch 0001 re-recorded in both accents; `bin/grabaciones.php` adds recordings to an already-imported batch.
+- 2026-11-18: Dave wants Mexico first, plus Spain's vocabulary and vosotros, and **nothing paid**. Built `content/vocabulario/` with `tools/vocabulario/construir.py` from free data only (Leipzig spa-mx web corpus, OpenSubtitles counts, Wiktionary via kaikki; ~1.4 GB in `~/aprender-datos`, not in the repo). Weights from Dave's ChatGPT spec (35/25/15/10/10/5) in `pesos.json`; "modern/practical" come only from Wiktionary labels. 30,000-lemma main list, 594-word Spain list, 530 Mexicanisms. Known weakness: no free Mexican *spoken* data, so slang ranks low (chido ~11k, órale ~29k).
