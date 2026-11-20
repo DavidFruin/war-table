@@ -85,3 +85,11 @@ Default session about 15 minutes.
 - Verified live: page, 403 on private files, Spanish errors, social actions refused, a real token through Apache (throwaway account, deleted after). Not verified: an emailed code actually arriving (needs a real inbox), Dave's own login.
 - Dave logged in and confirmed it works (2026-11-19). Then: dev's aprender files and databases moved to `/home/davidfruin/backups/aprender-dev-20261119/` (not deleted); dev's root.htaccess now 301s `/aprender*` to the new site (ssapi commit); the ssreact Settings link (still owner-only) points to the new site, deployed to dev only; davidfruin.com's links page (repo my-links) has "Aprender (learn Spanish)". That deploy also published Dave's uncommitted Kick-label fix in my-links, still uncommitted there.
 - Also pending (Dave liked both): "put this word in the sentence" word review, and "rewrite in the past" as a required template in verb lessons.
+
+## 2026-11-20: leaderboard, options, first-time steps
+- Usernames (required before anything else, `nombres.db`) and a leaderboard page (Tabla): who did today's lessons, and streaks.
+- Formality (`sintaxis.tratamiento`) is batch 0002's estructura topic at Dave's request; placement lesson `diag-tratamiento` (rewrite formally or informally) is live.
+- Dave chose: the course is **Mexico / Latin America**; **España** (vosotros, leísmo, Spain words, Spain words in the vocabulary test) and **vos** are switches, off by default. Spain and vos content goes in lessons of their own (never mixed into general lessons). Accents count only in tilde lessons and punctuation only in exercises about it, unless the learner turns those on. Placement lesson `diag-voseo` (batch 0001-voseo) is live. Schema v9.
+- New accounts must pick a username, look at the main settings, take the vocabulary test, then do every placement lesson before the app opens. Accounts with any answers before 2026-11-20 skip all of it. A placement lesson added later just goes first in line.
+- Punctuation without AI: exact for lesson answers (optional commas written `[,]`); free writing could only get mechanical hints (¿ ¡ pairs, capitals), not built.
+- Still pending Dave's go-ahead: "put this word in the sentence" review and "rewrite in the past" in verb lessons; a gender (género) placement lesson was offered.

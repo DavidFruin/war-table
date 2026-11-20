@@ -14,4 +14,3 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
-| citadel | aprender | España/vos/puntuación options, onboarding flow | 2026-11-20T12:17Z |
