@@ -92,4 +92,6 @@ Default session about 15 minutes.
 - New accounts must pick a username, look at the main settings, take the vocabulary test, then do every placement lesson before the app opens. Accounts with any answers before 2026-11-20 skip all of it. A placement lesson added later just goes first in line.
 - Punctuation without AI: exact for lesson answers (optional commas written `[,]`); free writing could only get mechanical hints (¿ ¡ pairs, capitals), not built.
 - 2026-11-20: "rewrite in the past" is a checked rule: every verb lesson has 1-2 transformar exercises worded "Pasa la frase al <past tense>: «…»". Vos questions now name the vos countries (Argentina, Uruguay, Paraguay, Central America).
-- Still pending Dave's go-ahead: "put this word in the sentence" word review; a gender (género) placement lesson was offered.
+- 2026-11-20 (schema 10): every wrong answer shows the rule it broke. Accent/spelling rules are found automatically (src/diagnostico.php); grammar rules come from the exercise's explicacion plus "fallos" (likely wrong answers with their rule, required on completar/conjugar from batch 0002). The weekly worksheet asks for a "regla" when a mistake got no specific rule, and the next batch must add it as a fallo correction. Word form sentences need an explicacion.
+- 2026-11-20: "use it" word review shipped: each word gets 1-2 "usar" sentences (rewrite a sentence using the word), one of the turns in word reviews.
+- Still pending Dave's go-ahead: a gender (género) placement lesson was offered.
