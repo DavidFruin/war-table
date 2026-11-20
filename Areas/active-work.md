@@ -14,3 +14,4 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
+| citadel/claude | aprender | word-in-sentence review; rule shown on every wrong answer | 2026-11-20 15:14 |
