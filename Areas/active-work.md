@@ -14,4 +14,3 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
-| citadel/claude | aprender | "rewrite in the past" verb-lesson template; vos country note | 2026-11-20 14:05 |
