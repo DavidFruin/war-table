@@ -14,4 +14,3 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
-| Claude Code / Citadel | aprender | writing batch 0002 | 2026-11-21T18:38Z |
