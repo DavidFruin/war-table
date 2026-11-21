@@ -331,3 +331,9 @@ Dave: "use the UTC before any time stamp on the website and make sure that all t
 - ssreact `f0e585f`: every time on the site reads "UTC 2026-09-16 19:20:03 (GMT-06:00)"; server times parsed as UTC. Deployed to dev with a backup (`private/userdata.db.pre-utc-20261116`, `ssapi.bak-2026-11-16b`); a post at 14:30 Los Angeles time now reads 21:30 UTC.
 - **Prod:** check app's php.ini `date.timezone` before releasing; the migration converts from whatever it says.
 - **Decision (Dave, 2026-11-16): keep the unlike and unfollow notifications** (review item, and old S9). Closed.
+
+## Pre-release check of dev (2026-11-20)
+- Dev runs the latest ssreact web build and ssapi up to `948e9f8` (schema 11); only `d0822b8` (accounts-only mode for other sites, off by default) isn't on dev. Prod is at schema 8 with the 2026-10-09 web build.
+- All 10 backend benches pass; ssreact core 111/111, typecheck and lint clean. The i18n check "reset email in English without it" failed once and passed on two reruns: a timing race in the bench (the mail is written after the response), not the server.
+- **Prod's PHP writes America/Los_Angeles times** (latest session 16:42 = server clock PST). Migration 11 converts from `ini_get('date.timezone')`, else UTC; set `LEGACY_TIMEZONE=America/Los_Angeles` in prod's `.env` before the release so the conversion can't silently use UTC.
+- Still not done on dev: a logged-in click-through. Dev holds copies of real members' accounts and no test account, so it needs Dave signed in or a disposable test account.

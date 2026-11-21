@@ -14,4 +14,3 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
-| admin (Citadel) | ssreact + ssapi | checking dev before a prod release | 2026-11-20 17:50 |
