@@ -96,3 +96,6 @@ Default session about 15 minutes.
 - 2026-11-20: "use it" word review shipped: each word gets 1-2 "usar" sentences (rewrite a sentence using the word), one of the turns in word reviews.
 - 2026-11-20: anti-cheating priority (Dave): on touch screens answers are typed only on the page's own keyboard (system keyboard suppressed with inputmode=none; trusted input and paste blocked), because phone autocorrect/suggestions give answers away. Hardware keyboards on tablets are blocked too.
 - Still pending Dave's go-ahead: a gender (género) placement lesson was offered.
+- 2026-11-20: weekly report and guide judge each lesson by its **first try** (retakes don't count in scores or weak points; a lesson failed first and passed later is still weak). Dave's request.
+- 2026-11-20: sign-ups capped at **50 accounts** (`MAX_USERS=50` in the site's private/.env; ssapi f776a2c, unset elsewhere so app/dev unaffected; .env backup kept beside it). 21 accounts at the time. Database download is now owner-only, like batch upload. Deployed.
+- Placement (0001) finished 2026-11-20; every topic but past tenses failed on the first try. Batch 0002 not written yet.
