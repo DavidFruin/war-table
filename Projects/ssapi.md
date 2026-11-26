@@ -337,3 +337,10 @@ Dave: "use the UTC before any time stamp on the website and make sure that all t
 - All 10 backend benches pass; ssreact core 111/111, typecheck and lint clean. The i18n check "reset email in English without it" failed once and passed on two reruns: a timing race in the bench (the mail is written after the response), not the server.
 - **Prod's PHP writes America/Los_Angeles times** (latest session 16:42 = server clock PST). Migration 11 converts from `ini_get('date.timezone')`, else UTC; set `LEGACY_TIMEZONE=America/Los_Angeles` in prod's `.env` before the release so the conversion can't silently use UTC.
 - Still not done on dev: a logged-in click-through. Dev holds copies of real members' accounts and no test account, so it needs Dave signed in or a disposable test account.
+
+## Released to prod (2026-11-20, Dave's go)
+- Dev's ssapi and web build copied to prod. Prod went from schema 8 to 11; `LEGACY_TIMEZONE=America/Los_Angeles` was added to prod's `.env` first, and the converted times were checked on real rows (+8h).
+- Backups kept next to each original with a `-20261120` / `.pre-release-20261120` suffix: the database, `ssapi/`, `public_html/app/`, `.htaccess`, `.env`.
+- Checked after: protected paths answer 403, a wrong login gives the normal JSON error, registration without an invite code is refused, the login page loads with no console errors. Not checked: a logged-in click-through (no test account on prod).
+- Not in this release: `f776a2c` (MAX_USERS cap), still only on master. `MAX_USERS` isn't set on dev or prod, so deploying it changes nothing until it is.
+- Neither this release nor the 2026-10-09 one has a version name or git tag yet (see [[simple-social]] Versions).

@@ -10,10 +10,13 @@ repo: https://github.com/DavidFruin/simple-social
 ## Versions
 - **1.0.0 "Alpha Simple"**: simple-social `28d378f` (2026-09-18, tag `v1.0.0`). The prod launch announced in Dave's 2026-09-18 post.
 - **2.0.0 "Elia"**: ssapi `236a338` + ssreact `466367f` (2026-10-06, tag `v2.0.0` in both repos). The React frontend, ssapi backend and the new server layout, live on prod and dev.
+- **Unnamed so far:** the prod releases of 2026-10-09 and 2026-11-20 have no version entry or tag. Waiting on Dave for names.
 - Scheme: `MAJOR.MINOR.PATCH` with a release name. Bugfix = patch, new feature = minor, big or breaking change = major. Frontend and backend share the product version; tag both repos.
 - **Shown in the app (2026-10-06, ssreact):** landing page last row, a Settings "App Version" block above Delete Account, and a public `/history` page (also in the logged-out top menu and Settings' Info block). The list lives in `packages/core/src/versions.ts` in ssreact (shared by the web app and the phone app); add an entry at the top for each release, alongside the git tag. History starts with "Beta" (2025-09-05, the first post), then Alpha Simple, then Elia.
 
 ## Summary
+Plan and task list now live on the AI-Coms board, project `simple-social` (brief, an 8-phase outline, 23 tasks), set up 2026-11-26 after a full read of all four repos. Keep this note for history and decisions; keep the board for what's next.
+
 Small social app: PHP API backend + web frontend (PWA), live at app.davidfruin.com (dev at dev.davidfruin.com). Terminal front ends are separate repos: [[simple-social-cli]], [[simple-social-cli-interactive]] (wizard), [[simple-social-tui]]. The planned React rewrite of the web frontend is [[ssreact]]. **The PHP backend now also has its own standalone repo, [[ssapi]] (split 2026-09-30)** — this repo (`simple-social`) still holds the original vanilla-JS frontend and is what's actually deployed at app.davidfruin.com today; see the Decisions section below for what moved where and why.
 
 ## Principles
