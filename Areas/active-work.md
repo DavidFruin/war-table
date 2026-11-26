@@ -14,3 +14,4 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
+| Claude Code / Citadel | ssreact | Simple Social Phase II: show/hide password button, self-reload design | 2026-11-26 21:45 |
