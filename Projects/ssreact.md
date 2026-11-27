@@ -320,3 +320,10 @@ Logged-out pages (landing, login, register and reset) now show two switches: Eng
 - It relies on `/` being served no-cache and every path rewriting to the same `index.html` (ssapi `deploy/root.htaccess`). No server or service worker change was needed.
 - Proven by sstests `backend/autoreload/web-autoreload.sh`: 28 checks pass on the new code; on the old code 9 fail (every "moves to the new build" check).
 - Deployed to dev with `deploy-web.sh dev` (dev's old web build kept as `public_html/app.bak-20261127`). Prod waits for Dave's go, together with ssapi `f776a2c`.
+
+## Invite card shows who used your invite (2026-11-27, on dev, not on prod)
+- Dave asked that the invite area show who used your code. The card on your own profile now ends with "Who used your invite": each person's email and the day they joined, newest first (`e82c390`, web and phone). The server side is ssapi `dc4630e` ([[ssapi]]).
+- This reverses the old rule "the card never says who a used invite went to"; the browser check that tested that rule was changed to test the new one.
+- Only people who joined since invite codes went live on prod (2026-10-09 02:00 UTC) count. The members who were there before were recorded as the owner's invitees by hand, without a code; listing them would have shown Dave 17 people who never used a code.
+- Proven: the invites bench and browser check fail on the old code and pass on the new. Prod waits for Dave's go.
+
