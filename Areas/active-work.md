@@ -14,3 +14,4 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
+| Citadel / Claude Code | ssreact (Simple Social) | Self-reloading website (II.B.2), then its test | 2026-11-27 15:00 |
