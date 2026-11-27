@@ -343,7 +343,7 @@ Logged-out pages (landing, login, register and reset) now show two switches: Eng
 - Checked after: the new build at every path, protected paths 403, a wrong login gives the normal JSON error, `setUsername` refuses without a login, History shows "Nomina", Terms and Privacy show the new text, no page errors. Not checked: a signed-in click-through (no test account on prod).
 - Still to come: the phone app's own username screens, and the terminal tools' username command plus a "rebuild your tools" note. Old terminal builds already show usernames through the server.
 
-## Plain times (2026-11-27, on dev; prod waits for Dave's go)
+## Plain times (2026-11-27, on dev and prod; no version entry, per Dave)
 - Dave: no "UTC" and no "(GMT-08:00)"; just the date and time, on the reader's own clock ("Don't even use utc"). App wide.
 - Web and phone (`d237cbd`) and terminal tools (ssterminal `17ac055`) now show `2026-11-27 09:05:03` in the reader's own time zone. The server still stores UTC and the writer's offset; only the display changed.
 - Proven by `sstests/backend/time/web-time.sh` (a reader in Los Angeles and one in Kolkata; 14 of 16 fail on the old web) and new arms in the terminal tests. All other browser checks still pass.
