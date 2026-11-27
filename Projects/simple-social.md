@@ -10,7 +10,9 @@ repo: https://github.com/DavidFruin/simple-social
 ## Versions
 - **1.0.0 "Alpha Simple"**: simple-social `28d378f` (2026-09-18, tag `v1.0.0`). The prod launch announced in Dave's 2026-09-18 post.
 - **2.0.0 "Elia"**: ssapi `236a338` + ssreact `466367f` (2026-10-06, tag `v2.0.0` in both repos). The React frontend, ssapi backend and the new server layout, live on prod and dev.
-- **Unnamed so far:** the prod releases of 2026-10-09 and 2026-11-20 have no version entry or tag. Waiting on Dave for names.
+- **2.1.0 "Puerta"**: ssapi `acc2873` + ssreact `1bf1bc8` (2026-10-09, tag `v2.1.0` in both). Invite-only sign-up, moderation and staff roles, English and Spanish, safer uploads, replies to comments. It went out as two prod deploys that day; the commits are what prod ran from then until 2026-11-20 (matched against prod's backups).
+- **2.2.0 "Meridian"**: ssapi `75e7a49` + ssreact `d12beb6` (2026-11-20, tag `v2.2.0` in both). Share links, security fixes, every time in UTC. Names chosen by Dave 2026-11-27.
+- **Unnamed so far:** the prod release of 2026-11-27 (ssapi `f776a2c` + ssreact `87fbc48`: show/hide password, self-reloading site, user cap switched off). 2.3.0 by the scheme; name pending from Dave.
 - Scheme: `MAJOR.MINOR.PATCH` with a release name. Bugfix = patch, new feature = minor, big or breaking change = major. Frontend and backend share the product version; tag both repos.
 - **Shown in the app (2026-10-06, ssreact):** landing page last row, a Settings "App Version" block above Delete Account, and a public `/history` page (also in the logged-out top menu and Settings' Info block). The list lives in `packages/core/src/versions.ts` in ssreact (shared by the web app and the phone app); add an entry at the top for each release, alongside the git tag. History starts with "Beta" (2025-09-05, the first post), then Alpha Simple, then Elia.
 

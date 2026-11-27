@@ -352,3 +352,9 @@ Dave: "use the UTC before any time stamp on the website and make sure that all t
 - Checked after: login page 200, a wrong login gives the normal JSON error, registration without a code is refused, protected paths 403, schema still 11.
 - Prod: on Dave's go, together with the Phase II web build ([[ssreact]]).
 
+## Released to prod (2026-11-27, Dave's go)
+- Prod now runs ssapi `f776a2c` (user cap; `MAX_USERS` not set, so no cap) and the ssreact web build of `87fbc48` (show/hide password, self-reloading site, History lists 2.1.0 "Puerta" and 2.2.0 "Meridian"). Dev first, same build.
+- Backups with the suffix `20261127` / `.pre-release-20261127`: the database, `ssapi/`, `public_html/app/`, `.htaccess`, `.env`.
+- Checked after: the new build at every path, protected paths 403, a wrong login gives the normal JSON error, registration without a code is refused, no console errors on the public pages, schema still 11. Not checked: a signed-in click-through (no test account on prod).
+- Tabs already open on the old build have no self-reload yet; they pick up the new build at their next page load. From now on open tabs follow deploys by themselves.
+
