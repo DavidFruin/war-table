@@ -14,3 +14,4 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
+| Citadel / Claude Code | ssreact + ssterminal + sstests | Times: plain date and time in the viewer's own zone (no UTC, no offset) | 2026-11-27T18:12Z |
