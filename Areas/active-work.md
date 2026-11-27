@@ -14,3 +14,4 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
+| Citadel / Claude Code | Simple Social (ssapi, ssreact, sstests) | Usernames build (Phase III), release 3.0.0 Nomina | 2026-11-27 15:35 |
