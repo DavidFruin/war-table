@@ -358,9 +358,16 @@ Dave: "use the UTC before any time stamp on the website and make sure that all t
 - Checked after: the new build at every path, protected paths 403, a wrong login gives the normal JSON error, registration without a code is refused, no console errors on the public pages, schema still 11. Not checked: a signed-in click-through (no test account on prod).
 - Tabs already open on the old build have no self-reload yet; they pick up the new build at their next page load. From now on open tabs follow deploys by themselves.
 
-## Usernames, server side (2026-11-27, `fa07514`; dev next, prod with 3.0.0 "Nomina")
+## Usernames, server side (2026-11-27, `fa07514`; on prod the same day as 3.0.0 "Nomina")
 - Dave's rules: letters and underscores, 3 to 20, unique ignoring case, **no reserved names**; sign-in stays **email + password**; until a member chooses a name, others keep seeing their **email**.
 - Migration 12 adds `users.username` (NULL until chosen) with a unique index ignoring case. `setUsername` (any time); `finishRegister` takes `username` (optional, so old terminal builds still register; their members are asked in the app). `getMyInfo` adds `username` and `needsUsername`.
 - Every answer that named another member by email now carries `COALESCE(username, email)` **under the same keys** (`userEmail`, `user_email`, `actor_email`, `email`, `emails`, `inviterEmail`), so old app and terminal builds show usernames with no update. Push text and the stored notification name use it too. `getStaff` gives non-staff the name and staff the email plus the username. Staff pages, your own `getMyInfo` and the invite card's `joined` list keep the real email.
 - Proven by `sstests/backend/usernames/run.sh` (45 checks; 34 fail on the previous ssapi). All other benches still pass.
 
+## Released to prod: 3.0.0 "Nomina" (2026-11-27, Dave's go)
+- Prod now runs ssapi `fa07514` and the ssreact web build of `9f7061b`: usernames and the invite card's "Who used your invite" list. Tagged `v3.0.0` in both repos.
+- The first request after the deploy moved prod from schema 11 to 12 (the username column and its index). 19 members and 140 posts, same as before. Right after the deploy no member had a username yet; each is asked at their next app load.
+- Dave's go was also taken as his OK of the new Terms/Privacy wording, which is now live. `TERMS_VERSION` was not changed, so nobody has to accept the terms again.
+- Backups with the suffix `20261127n` / `.pre-nomina-20261127`: the database, `ssapi/`, `public_html/app/`, `.htaccess`, `.env`.
+- Checked after: the new build at every path, protected paths 403, a wrong login gives the normal JSON error, `setUsername` refuses without a login, History shows "Nomina", Terms and Privacy show the new text, no page errors. Not checked: a signed-in click-through (no test account on prod).
+- Still to come: the phone app's own username screens, and the terminal tools' username command plus a "rebuild your tools" note. Old terminal builds already show usernames through the server.

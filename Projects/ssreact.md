@@ -327,7 +327,7 @@ Logged-out pages (landing, login, register and reset) now show two switches: Eng
 - Only people who joined since invite codes went live on prod (2026-10-09 02:00 UTC) count. The members who were there before were recorded as the owner's invitees by hand, without a code; listing them would have shown Dave 17 people who never used a code.
 - Proven: the invites bench and browser check fail on the old code and pass on the new. Prod waits for Dave's go.
 
-## Usernames in the apps, release 3.0.0 "Nomina" (2026-11-27, on dev, prod waits for Dave's go)
+## Usernames in the apps, release 3.0.0 "Nomina" (2026-11-27; on prod the same day)
 - `9f7061b`. Everyone without a username gets a "Choose your username" box on their next app load; it can't be closed until a name is saved (after the language and terms dialogs, before the welcome). A Username card at the top of Settings. Sign-up asks for one on its last step. Until someone chooses, others see their email (Dave). Sign-in stays email + password.
 - The server fills the old email keys with the name, so most of the web needed no change; "(you)" now compares with `publicName(user)` (username, else email).
 - Terms and Privacy reworded (username shown, email private; staff and your inviter can see it); no new acceptance (`TERMS_VERSION` stays 2). Waiting on Dave's OK of the wording.
@@ -335,3 +335,10 @@ Logged-out pages (landing, login, register and reset) now show two switches: Eng
 - Phone app: only "(you)" and new comments use the name so far; its own box, sign-up field and Settings card come with its release (III.D). Terminal tools show names already through the server; their username command comes later (III.E).
 - Proven: `sstests/backend/usernames/web-usernames.sh` (29 checks, fails on the old web). The older browser checks now seed each member's username as their email so their expected names stay the same; all pass (smoke keeps its one old failure).
 
+## Released to prod: 3.0.0 "Nomina" (2026-11-27, Dave's go)
+- Prod now runs ssapi `fa07514` and the ssreact web build of `9f7061b`: usernames and the invite card's "Who used your invite" list. Tagged `v3.0.0` in both repos.
+- The first request after the deploy moved prod from schema 11 to 12 (the username column and its index). 19 members and 140 posts, same as before. Right after the deploy no member had a username yet; each is asked at their next app load.
+- Dave's go was also taken as his OK of the new Terms/Privacy wording, which is now live. `TERMS_VERSION` was not changed, so nobody has to accept the terms again.
+- Backups with the suffix `20261127n` / `.pre-nomina-20261127`: the database, `ssapi/`, `public_html/app/`, `.htaccess`, `.env`.
+- Checked after: the new build at every path, protected paths 403, a wrong login gives the normal JSON error, `setUsername` refuses without a login, History shows "Nomina", Terms and Privacy show the new text, no page errors. Not checked: a signed-in click-through (no test account on prod).
+- Still to come: the phone app's own username screens, and the terminal tools' username command plus a "rebuild your tools" note. Old terminal builds already show usernames through the server.
