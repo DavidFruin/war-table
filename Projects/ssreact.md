@@ -327,3 +327,11 @@ Logged-out pages (landing, login, register and reset) now show two switches: Eng
 - Only people who joined since invite codes went live on prod (2026-10-09 02:00 UTC) count. The members who were there before were recorded as the owner's invitees by hand, without a code; listing them would have shown Dave 17 people who never used a code.
 - Proven: the invites bench and browser check fail on the old code and pass on the new. Prod waits for Dave's go.
 
+## Usernames in the apps, release 3.0.0 "Nomina" (2026-11-27, on dev, prod waits for Dave's go)
+- `9f7061b`. Everyone without a username gets a "Choose your username" box on their next app load; it can't be closed until a name is saved (after the language and terms dialogs, before the welcome). A Username card at the top of Settings. Sign-up asks for one on its last step. Until someone chooses, others see their email (Dave). Sign-in stays email + password.
+- The server fills the old email keys with the name, so most of the web needed no change; "(you)" now compares with `publicName(user)` (username, else email).
+- Terms and Privacy reworded (username shown, email private; staff and your inviter can see it); no new acceptance (`TERMS_VERSION` stays 2). Waiting on Dave's OK of the wording.
+- History: 3.0.0 "Nomina" (Latin for "names"), Dave's name; a major release holding everything shipped today.
+- Phone app: only "(you)" and new comments use the name so far; its own box, sign-up field and Settings card come with its release (III.D). Terminal tools show names already through the server; their username command comes later (III.E).
+- Proven: `sstests/backend/usernames/web-usernames.sh` (29 checks, fails on the old web). The older browser checks now seed each member's username as their email so their expected names stay the same; all pass (smoke keeps its one old failure).
+
