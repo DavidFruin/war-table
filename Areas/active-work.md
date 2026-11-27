@@ -14,3 +14,4 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
+| Citadel / Claude Code | ssreact + ssapi | 3.0.0 "Nomina" production release | 2026-11-27T17:00Z |
