@@ -344,3 +344,11 @@ Dave: "use the UTC before any time stamp on the website and make sure that all t
 - Checked after: protected paths answer 403, a wrong login gives the normal JSON error, registration without an invite code is refused, the login page loads with no console errors. Not checked: a logged-in click-through (no test account on prod).
 - Not in this release: `f776a2c` (MAX_USERS cap), still only on master. `MAX_USERS` isn't set on dev or prod, so deploying it changes nothing until it is.
 - Neither this release nor the 2026-10-09 one has a version name or git tag yet (see [[simple-social]] Versions).
+
+## User cap on dev (2026-11-27; not on prod)
+- Dev now runs `f776a2c` (MAX_USERS cap). Only three files changed on the server; `MAX_USERS` isn't set in dev's `.env`, so there is no cap and nothing changes for members.
+- All 10 backend benches pass on `f776a2c`. On Citadel the media bench needs the user-level GD (`PHP_INI_SCAN_DIR`, see [[sstests]]).
+- Backups on dev with the suffix `20261127` / `.pre-usercap-20261127`: the database, `ssapi/`, `public_html/.htaccess`, `.env`.
+- Checked after: login page 200, a wrong login gives the normal JSON error, registration without a code is refused, protected paths 403, schema still 11.
+- Prod: on Dave's go, together with the Phase II web build ([[ssreact]]).
+

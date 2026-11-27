@@ -312,4 +312,11 @@ Logged-out pages (landing, login, register and reset) now show two switches: Eng
 - Dave asked 2026-11-20; go for this phase 2026-11-26. One button next to the new-password field shows or hides both the password and the confirm field (web and phone; OtpAuthFlow is shared by sign-up and reset). Autocorrect and spellcheck are off on both, since the text can now be visible. The login screen is unchanged (not asked for).
 - Proven on the web by a new sstests check, `backend/showpassword/web-showpassword.sh`: fails on the old code, passes on the new. Not yet checked on a phone: this workstation has no emulator.
 - Found while testing: the `web-*.sh` checks leave vite running after they exit, so the next check on the same port talks to a dead API. The new check has its own ports and stops vite properly; the others still leak. Separately, web-smoke's "after reporting: no report menu on it any more" fails on the old code too: a fault older than this change, not yet looked into.
-- Next in this phase: the self-reloading site. Its design is waiting on Dave (on the AI-Coms board, task 2055).
+- 2026-11-27: Dave said no phone check is needed and no emulator should be set up.
+
+## Self-reloading website (2026-11-27, on dev, not on prod)
+- Dave approved the design 2026-11-27. `web/src/lib/new-version.ts` (`32f38b2`), mounted once in `App`. An open tab fetches `/` every 10 minutes and when it comes back into view (at most once a minute), and compares the `/assets/index-<hash>.js` named there with the one it runs.
+- New build found: a hidden tab reloads at once; a visible tab is never reloaded under the reader, but the next move to another page is a full page load, and coming back to the tab reloads. Nothing reloads while a text box has text, a dialog is open, or on Create Post.
+- It relies on `/` being served no-cache and every path rewriting to the same `index.html` (ssapi `deploy/root.htaccess`). No server or service worker change was needed.
+- Proven by sstests `backend/autoreload/web-autoreload.sh`: 28 checks pass on the new code; on the old code 9 fail (every "moves to the new build" check).
+- Deployed to dev with `deploy-web.sh dev` (dev's old web build kept as `public_html/app.bak-20261127`). Prod waits for Dave's go, together with ssapi `f776a2c`.
