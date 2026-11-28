@@ -36,3 +36,5 @@ All test suites for the Simple Social project, kept in one repo so none of it sh
 ## Links
 - Repo: https://github.com/DavidFruin/sstests
 - Related: [[ssapi]] (backend these tests exercise), [[simple-social]] (original combined repo, still hosts its own separate `tests/front-end-test/`), [[ssreact]] (React frontend — not yet covered by any suite here)
+- **MariaDB benches (2026-11-27):** `backend/lib/db.sh` gives each bench run its own fresh database and login on a private MariaDB that runs as `admin` (data in `~/.local/ssmariadb`, socket only; made once with `mariadb-install-db`). PHP's MariaDB driver comes from `apt download php8.4-mysql`, unpacked into `~/.local/phpmysql` like GD; db.sh adds it to `PHP_INI_SCAN_DIR` (the media bench still needs the GD one set by hand). `backend/mariadb-copy/run.sh` tests the one-time SQLite copy.
+

@@ -371,3 +371,10 @@ Dave: "use the UTC before any time stamp on the website and make sure that all t
 - Backups with the suffix `20261127n` / `.pre-nomina-20261127`: the database, `ssapi/`, `public_html/app/`, `.htaccess`, `.env`.
 - Checked after: the new build at every path, protected paths 403, a wrong login gives the normal JSON error, `setUsername` refuses without a login, History shows "Nomina", Terms and Privacy show the new text, no page errors. Not checked: a signed-in click-through (no test account on prod).
 - Still to come: the phone app's own username screens, and the terminal tools' username command plus a "rebuild your tools" note. Old terminal builds already show usernames through the server.
+
+## MariaDB instead of the SQLite file (2026-11-27, Dave: "No just switch simple social to use mariaDB im making that call"; built and tested locally, not on dev or prod yet)
+- ssapi `3e21d7d`: the server uses a MariaDB database named in `private/.env` (`DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_SOCKET` or `DB_HOST`). It builds all tables at schema 12 in one step; the old SQLite upgrade steps are gone. Text still compares exactly as before; email and username ignore case.
+- ssapi `fa0cec4`: `bin/sqlite-to-mariadb.php` copies a site's `userdata.db` into its new empty database once and checks every row. A copy of dev's data passed (all 15 tables equal, under a second).
+- Every bench and browser check now runs on a private local MariaDB (see [[sstests]]); all pass. MariaDB found two columns too short and two queries SQLite allowed but MariaDB doesn't; all fixed.
+- **Aprender** runs its own copy of ssapi for accounts, still on SQLite. It must not get this ssapi until it moves too.
+- Next: Dave's OK to make a database and login for dev and prod on el1, then dev's move, then prod on his go. The SQLite file stays as the rollback.
