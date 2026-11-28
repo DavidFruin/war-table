@@ -14,3 +14,4 @@ you start; remove it when you stop, whatever the reason.
 
 | Agent/machine | Project | What | Since (UTC) |
 |---|---|---|---|
+| Citadel / Claude Code | ssapi + sstests | Phase IX: Simple Social on MariaDB (local port first) | 2026-11-28T00:43Z |
